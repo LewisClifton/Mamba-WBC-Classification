@@ -16,22 +16,24 @@ from utils import *
 
 torch.backends.cudnn.enabled = True
 
-
 # Data transforms
-TRAIN_TRANSFORM = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.RandomRotation(degrees=30),
-    transforms.RandomAffine(degrees=0, translate=(0.2, 0.2), shear=25),
-    transforms.RandomResizedCrop(size=(256, 256), scale=(0.8, 1.2), interpolation=transforms.InterpolationMode.NEAREST),
-    transforms.RandomHorizontalFlip(p=1.0), 
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+TRANSFORMS = {
+    'train': transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.RandomRotation(degrees=30),
+        transforms.RandomAffine(degrees=0, translate=(0.2, 0.2), shear=25),
+        transforms.RandomResizedCrop(size=(256, 256), scale=(0.8, 1.2), interpolation=transforms.InterpolationMode.NEAREST),
+        transforms.RandomHorizontalFlip(p=1.0), 
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ]),
+    'val': transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
-VAL_TRANSFORM = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-])
+}
+
 
 
 def train_fold(model, train_loader, val_loader, n_epochs, criterion, optimizer, device, using_dist):
@@ -149,8 +151,8 @@ def train_5fold(model_config, dataset, device, using_dist=True):
         val_subset = torch.utils.data.Subset(dataset, val_idx)
 
         # Apply transforms
-        train_dataset = TransformedDataset(train_subset, TRAIN_TRANSFORM)
-        val_dataset = TransformedDataset(val_subset, VAL_TRANSFORM)
+        train_dataset = TransformedDataset(train_subset, TRANSFORMS['train'])
+        val_dataset = TransformedDataset(val_subset, TRANSFORMS['val'])
 
         # Create data loaders and put model on device
         if using_dist:

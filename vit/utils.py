@@ -30,14 +30,15 @@ def save_log(out_dir, all_metrics, model_config, date):
     log_path = os.path.join(out_dir, 'log.txt')
     with open(log_path , 'w') as file:
         
+        file.write('Model configuration:\n')
         file.write(f'Date/time of creation: {date}\n')
+        write_dict_to_file(file, model_config)
 
         for fold_metric, idx in enumerate(all_metrics):
             file.write(f'\nFold {idx} training metrics:\n')
             write_dict_to_file(file, fold_metric)
 
-        file.write('\nModel configuration:\n')
-        write_dict_to_file(file, model_config)
+        
     print(f'Saved log to {log_path}.')
 
 
