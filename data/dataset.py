@@ -15,7 +15,9 @@ class WBC5000dataset(Dataset):
 
         self.labels = WBC5000dataset._get_labels(labels_path, wbc_types)
 
-        # wbc type is semantic, class is numberical classes used by the model
+        self.wbc_types = wbc_types
+
+        # wbc type is semantic, class is numerical classes used by the model
         self.wbc_type_to_class = {label: idx for idx, label in enumerate(wbc_types)}
         self.class_to_wbc_type = {idx: label for idx, label in enumerate(wbc_types)}
     

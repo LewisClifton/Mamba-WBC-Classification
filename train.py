@@ -1,4 +1,5 @@
 import argparse
+import json
 
 import torch
 import torch.multiprocessing as mp
@@ -7,33 +8,24 @@ import torch.optim as optim
 import torch.distributed as dist
 from torch.utils.data import DataLoader, DistributedSampler
 from torch.nn.parallel import DistributedDataParallel as DDP
-from torchvision import transforms
 from sklearn.model_selection import KFold
 
-from dataset import WBC5000dataset, TransformedDataset
+from data.dataset import WBC5000dataset, TransformedDataset
 from utils import *
 
 
 torch.backends.cudnn.enabled = True
 
-# Data transforms
-TRANSFORMS = {
-    'train': transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.RandomRotation(degrees=30),
-        transforms.RandomAffine(degrees=0, translate=(0.2, 0.2), shear=25),
-        transforms.RandomResizedCrop(size=(256, 256), scale=(0.8, 1.2), interpolation=transforms.InterpolationMode.NEAREST),
-        transforms.RandomHorizontalFlip(p=1.0), 
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ]),
-    'val': transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-])
-}
 
+DEFAULT_MODEL_CONFIG = {
+    'Model type': 'swin',
+    'Number of classes': 6,
+    'WBC classes': ["BNE", "SNE", "Basophil", "Eosinophil", "Monocyte", "Lymphocyte"],
+    'Learning rate' : 0.002,
+    'Optimizer weight decay' : 2e-4,
+    'Batch size' : 32,
+    'Number of epochs' : 1,
+}
 
 
 def train_fold(model, train_loader, val_loader, n_epochs, criterion, optimizer, device, using_dist):
@@ -144,15 +136,15 @@ def train_5fold(model_config, dataset, device, using_dist=True):
         print(f"\nFold {fold + 1}/{5}")
 
         # Reinitialise model
-        model = init_model(model_config)
+        model, model_transforms = init_model(model_config)
 
         # Create train and validation subsets
         train_subset = torch.utils.data.Subset(dataset, train_idx)
         val_subset = torch.utils.data.Subset(dataset, val_idx)
 
         # Apply transforms
-        train_dataset = TransformedDataset(train_subset, TRANSFORMS['train'])
-        val_dataset = TransformedDataset(val_subset, TRANSFORMS['val'])
+        train_dataset = TransformedDataset(train_subset, model_transforms['train'])
+        val_dataset = TransformedDataset(val_subset, model_transforms['val'])
 
         # Create data loaders and put model on device
         if using_dist:
@@ -193,7 +185,7 @@ def main(rank, using_dist,
     if using_dist: setup_dist()
 
     # Get dataset
-    dataset = WBC5000dataset(images_dir, labels_path)
+    dataset = WBC5000dataset(images_dir, labels_path, wbc_types=model_config['WBC Classes'])
 
     # Train the model and get the training metrics for each fold
     all_metrics, all_trained = train_5fold(model_config, dataset, rank, using_dist)
@@ -217,26 +209,20 @@ if __name__ == '__main__':
     parser.add_argument('--images_dir', type=str, help='Path to directory for dataset containing training images', required=True)
     parser.add_argument('--labels_path', type=str, help='Path to labels.csv', required=True)
     parser.add_argument('--out_dir', type=str, help='Path to directory where trained model and log will be saved', required=True)
-    parser.add_argument('--n_epochs', type=int, help='Number of epochs to train with (default=2)', default=1)
-    parser.add_argument('--lr', type=float, help='Learning rate (default=0.002)', default=0.002)
-    parser.add_argument('--optim_weight_decay', type=float, help='Learning rate weight decay (default=2e-4)', default=2e-4)
+    parser.add_argument('--config_path', type=str, help='Path to model config .json')
     parser.add_argument('--using_windows', help='If using Windows machine for training (default=False)', action=argparse.BooleanOptionalAction)
-    parser.add_argument('--vit_size', type=str, help='Use of "tiny", "small" or "base" SWIN transformer (default="tiny")', default='tiny', choices=['tiny', 'small', 'base'])
-    parser.add_argument('--batch_size', type=int, help='Minibatch size (default=32)', default=32)
     args = parser.parse_args()
 
     images_dir = args.images_dir
     labels_path = args.labels_path
     out_dir = args.out_dir
+    model_config_path = args.model_config_path
     using_windows = args.using_windows
 
-    model_config = {
-        'Learning rate' : args.lr,
-        'Optimizer weight decay' : args.optim_weight_decay,
-        'Batch size' : args.batch_size,
-        'ViT size' : args.vit_size,
-        'Number of epochs' : args.n_epochs,
-    }
+    # Get the model config and fill in missing keys with default values
+    with open(model_config_path, 'r') as json_file:
+        model_config = json.load(json_file)
+    data_with_defaults = {key: model_config.get(key, DEFAULT_MODEL_CONFIG.get(key)) for key in DEFAULT_MODEL_CONFIG}
     
     # Either using windows with one GPU (test of my laptop) or Linus with two GPUs (BC4)
     if using_windows:
