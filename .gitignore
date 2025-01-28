@@ -1,3 +1,4 @@
 data/WBC 5000
 data/labels.csv
 *.pyc
+out/

@@ -17,9 +17,13 @@ def write_dict_to_file(file, dict_):
 
 
 def save_models(out_dir, all_trained, using_dist):
-    # Save trained models
+    # Create trained models directory if needed
     model_dir = os.path.join(out_dir, 'trained/')
-    for model, idx in enumerate(all_trained):
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
+
+    # Save trained models
+    for idx, model in enumerate(all_trained):
         model_path = os.path.join(model_dir, f'ViT_fold_{idx}.pth')
         if using_dist: 
             torch.save(model.module.state_dict(), model_path)
@@ -28,29 +32,29 @@ def save_models(out_dir, all_trained, using_dist):
     print(f'{len(all_trained)} trained models saved to {model_dir}.')
 
 
-def save_log(out_dir, all_metrics, model_config, date):
+def save_log(out_dir, all_metrics, config, date):
     # Save training log
     log_path = os.path.join(out_dir, 'log.txt')
     with open(log_path , 'w') as file:
         
         file.write('Model configuration:\n')
         file.write(f'Date/time of creation: {date}\n')
-        write_dict_to_file(file, model_config)
+        write_dict_to_file(file, config)
 
-        for fold_metric, idx in enumerate(all_metrics):
+        for idx, fold_metric in enumerate(all_metrics):
             file.write(f'\nFold {idx} training metrics:\n')
             write_dict_to_file(file, fold_metric)
 
         
     print(f'Saved log to {log_path}.')
 
-def save_config(out_dir, model_config):
+def save_config(out_dir, config):
     # Save model configuration
     config_path = os.path.join(out_dir, 'config.json')
     with open(config_path, 'w') as file:
-        json.dump(model_config, file, indent=4)
+        json.dump(config, file, indent=4)
 
-def save(out_dir, all_metrics, all_trained, model_config, using_dist):
+def save(out_dir, all_metrics, all_trained, config, using_dist):
     # Get date/time of saving
     date = datetime.now().strftime('%Y_%m_%d_%p%I_%M')
 
@@ -61,8 +65,8 @@ def save(out_dir, all_metrics, all_trained, model_config, using_dist):
     
     # Save models, log and config json
     save_models(out_dir, all_trained, using_dist)
-    save_log(out_dir, all_metrics, model_config, date)
-    save_config(out_dir, model_config)
+    save_log(out_dir, all_metrics, config, date)
+    save_config(out_dir, config)
 
 
 def setup_dist(rank, world_size):
@@ -103,19 +107,19 @@ TRANSFORMS = {
     
 }
 
-def init_model(model_config):
+def init_model(config):
 
-    model_type = model_config['model_type']
+    model_type = config['Model type']
     # Create model
-    if model_config == 'swin_tiny':
+    if model_type == 'swin_tiny':
         model = swin_t(weights='IMAGENET1K_V1')
-    elif model_config == 'swin_small':
+    elif model_type == 'swin_small':
         model = swin_s(weights='IMAGENET1K_V1')
-    elif model_config == 'swin_base':
+    elif model_type == 'swin_base':
         model = swin_b(weights='IMAGENET1K_V1')
-    elif model_config == 'medmamba':
+    elif model_type == 'medmamba':
         from medmamba.medmamba import VSSM as MedMamba # Import here as inner imports don't work on windows
-        model = MedMamba(num_classes=model_config['Number of classes'])
+        model = MedMamba(num_classes=config['Number of classes'])
 
     if 'swin' in model_type:
         model.head = nn.Linear(model.head.in_features, 8)

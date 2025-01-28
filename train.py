@@ -17,7 +17,7 @@ from utils import *
 torch.backends.cudnn.enabled = True
 
 
-DEFAULT_MODEL_CONFIG = {
+DEFAULT_config = {
     'Model type': 'swin',
     'Number of classes': 6,
     'WBC classes': ["BNE", "SNE", "Basophil", "Eosinophil", "Monocyte", "Lymphocyte"],
@@ -38,6 +38,7 @@ def train_fold(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
     val_loss_per_epoch = []
 
     for epoch in range(n_epochs):
+        break
         model.train()
         train_loss = 0.0
         correct_train = 0
@@ -95,21 +96,22 @@ def train_fold(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
 
         # Print epoch metrics
         if device == 0:
-            print(f"Epoch [{epoch + 1}/{n_epochs}]")
-            print(f"Train Accuracy: {train_accuracy:.4f}, Train Loss: {avg_train_loss:.4f}")
-            print(f"Validation Accuracy: {val_accuracy:.4f}, Validation Loss: {avg_val_loss:.4f}")
+            print(f'Epoch [{epoch + 1}/{n_epochs}]')
+            print(f'Train Accuracy: {train_accuracy:.4f}, Train Loss: {avg_train_loss:.4f}')
+            print(f'Validation Accuracy: {val_accuracy:.4f}, Validation Loss: {avg_val_loss:.4f}')
 
 
     # Return final metrics
     if using_dist:
         # Average per epoch metrics across over all GPUs
-        return {
+        return model, {
             'Average Train Accuracy per epoch': average_across_gpus(train_accuracy_per_epoch, device),
             'Average Train Loss per epoch': average_across_gpus(train_loss_per_epoch, device),
             'Average Validation Accuracy per epoch': average_across_gpus(val_accuracy_per_epoch, device),
             'Average Validation Loss per epoch': average_across_gpus(val_loss_per_epoch, device)
         }
-    return {
+    
+    return model, {
         'Train Accuracy per epoch': train_accuracy_per_epoch,
         'Train Loss per epoch': train_loss_per_epoch,
         'Validation Accuracy per epoch': val_accuracy_per_epoch,
@@ -117,7 +119,7 @@ def train_fold(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
     }
 
 
-def train_5fold(model_config, dataset, device, using_dist=True):
+def train_5fold(config, dataset, device, using_dist=True):
     """
     Perform 5-fold cross-validation (using Distributed Data Parallel if required).
     """
@@ -133,10 +135,10 @@ def train_5fold(model_config, dataset, device, using_dist=True):
 
     # Loop over each fold
     for fold, (train_idx, val_idx) in enumerate(folds.split(dataset)):
-        print(f"\nFold {fold + 1}/{5}")
+        print(f'\nFold {fold + 1}/{5}')
 
         # Reinitialise model
-        model, model_transforms = init_model(model_config)
+        model, model_transforms = init_model(config)
 
         # Create train and validation subsets
         train_subset = torch.utils.data.Subset(dataset, train_idx)
@@ -151,22 +153,22 @@ def train_5fold(model_config, dataset, device, using_dist=True):
             train_sampler = DistributedSampler(train_dataset, shuffle=True)
             val_sampler = DistributedSampler(val_dataset, shuffle=False)
 
-            train_loader = DataLoader(train_dataset, batch_size=model_config['Batch size'], num_workers=8, sampler=train_sampler)
-            val_loader = DataLoader(val_dataset, batch_size=model_config['Batch size'], num_workers=8, sampler=val_sampler)
+            train_loader = DataLoader(train_dataset, batch_size=config['Batch size'], num_workers=8, sampler=train_sampler)
+            val_loader = DataLoader(val_dataset, batch_size=config['Batch size'], num_workers=8, sampler=val_sampler)
 
             model = DDP(model, device_ids=[device], output_device=device)
         else:
-            train_loader = DataLoader(train_dataset, batch_size=model_config['Batch size'], shuffle=False, num_workers=8)
-            val_loader = DataLoader(val_dataset, batch_size=model_config['Batch size'], shuffle=False, num_workers=8)
+            train_loader = DataLoader(train_dataset, batch_size=config['Batch size'], shuffle=False, num_workers=8)
+            val_loader = DataLoader(val_dataset, batch_size=config['Batch size'], shuffle=False, num_workers=8)
 
             model = model.to(device)
         
         # Create criterion and optimizer
         criterion = nn.CrossEntropyLoss()
-        optimizer = optim.AdamW(model.parameters(), lr=model_config['Learning rate'], weight_decay=model_config['Optimizer weight decay'])
+        optimizer = optim.AdamW(model.parameters(), lr=config['Learning rate'], weight_decay=config['Optimizer weight decay'])
 
         # Train the model
-        trained, metrics = train_fold(model, train_loader, val_loader, model_config['Number of epochs'], criterion, optimizer, device, using_dist)
+        trained, metrics = train_fold(model, train_loader, val_loader, config['Number of epochs'], criterion, optimizer, device, using_dist)
         
         all_metrics.append(metrics)
         all_trained.append(trained)
@@ -179,27 +181,27 @@ def main(rank, using_dist,
          images_dir, 
          labels_path,
          out_dir,
-         model_config,):
+         config,):
 
     # Setup GPU network if required
     if using_dist: setup_dist()
 
     # Get dataset
-    dataset = WBC5000dataset(images_dir, labels_path, wbc_types=model_config['WBC Classes'])
+    dataset = WBC5000dataset(images_dir, labels_path, wbc_types=config['WBC classes'])
 
     # Train the model and get the training metrics for each fold
-    all_metrics, all_trained = train_5fold(model_config, dataset, rank, using_dist)
+    all_metrics, all_trained = train_5fold(config, dataset, rank, using_dist)
 
     # Save model and log
     if dist.is_initialized():
         dist.barrier()
         
         if rank == 0:
-            save(out_dir, all_metrics, all_trained, model_config, using_dist=True)
+            save(out_dir, all_metrics, all_trained, config, using_dist=True)
 
         dist.destroy_process_group()
     else:
-        save(out_dir, all_metrics, all_trained, model_config, using_dist=False)
+        save(out_dir, all_metrics, all_trained, config, using_dist=False)
         
 
 if __name__ == '__main__':
@@ -216,13 +218,13 @@ if __name__ == '__main__':
     images_dir = args.images_dir
     labels_path = args.labels_path
     out_dir = args.out_dir
-    model_config_path = args.model_config_path
+    config_path = args.config_path
     using_windows = args.using_windows
 
     # Get the model config and fill in missing keys with default values
-    with open(model_config_path, 'r') as json_file:
-        model_config = json.load(json_file)
-    data_with_defaults = {key: model_config.get(key, DEFAULT_MODEL_CONFIG.get(key)) for key in DEFAULT_MODEL_CONFIG}
+    with open(config_path, 'r') as json_file:
+        config = json.load(json_file)
+    data_with_defaults = {key: config.get(key, DEFAULT_config.get(key)) for key in DEFAULT_config}
     
     # Either using windows with one GPU (test of my laptop) or Linus with two GPUs (BC4)
     if using_windows:
@@ -230,12 +232,12 @@ if __name__ == '__main__':
              images_dir,
              labels_path,
              out_dir,
-             model_config,)
+             config,)
     else:
         mp.spawn(main,
                  args=(True,
                        images_dir,
                        labels_path,
                        out_dir,
-                       model_config,),
+                       config,),
                  nprocs=2)
