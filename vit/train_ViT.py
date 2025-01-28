@@ -5,10 +5,10 @@ import torch.multiprocessing as mp
 import torch.nn as nn
 import torch.optim as optim
 import torch.distributed as dist
-from torch.utils.data import DataLoader, DistributedSampler, random_split
+from torch.utils.data import DataLoader, DistributedSampler
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torchvision import transforms
-from torchvision.models import swin_t, swin_s, swin_b
+from sklearn.model_selection import KFold
 
 from dataset import WBC5000dataset, TransformedDataset
 from utils import *
@@ -16,9 +16,28 @@ from utils import *
 
 torch.backends.cudnn.enabled = True
 
-def train(model, n_epochs, train_loader, val_loader, criterion, optimizer, device):
 
-    # Training metrics
+# Data transforms
+TRAIN_TRANSFORM = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.RandomRotation(degrees=30),
+    transforms.RandomAffine(degrees=0, translate=(0.2, 0.2), shear=25),
+    transforms.RandomResizedCrop(size=(256, 256), scale=(0.8, 1.2), interpolation=transforms.InterpolationMode.NEAREST),
+    transforms.RandomHorizontalFlip(p=1.0), 
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
+VAL_TRANSFORM = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+])
+
+
+def train_fold(model, train_loader, val_loader, n_epochs, criterion, optimizer, device, using_dist):
+    """
+    Train and evaluate the model for a single fold.
+    """
     train_accuracy_per_epoch = []
     train_loss_per_epoch = []
     val_accuracy_per_epoch = []
@@ -47,8 +66,6 @@ def train(model, n_epochs, train_loader, val_loader, criterion, optimizer, devic
             _, preds = outputs.max(1)
             correct_train += (preds == labels).sum().item()
             total_train += labels.size(0)
-
-            break
 
         # Calculate training metrics
         avg_train_loss = train_loss / len(train_loader)
@@ -88,109 +105,107 @@ def train(model, n_epochs, train_loader, val_loader, criterion, optimizer, devic
             print(f"Train Accuracy: {train_accuracy:.4f}, Train Loss: {avg_train_loss:.4f}")
             print(f"Validation Accuracy: {val_accuracy:.4f}, Validation Loss: {avg_val_loss:.4f}")
 
-    # Combine the training metrics in a single dictionary
-    metrics = {
-            'Train accuracy per epoch' : train_accuracy_per_epoch,
-            'Train loss per epoch' : train_loss_per_epoch,
-            'Validation accuracy per epoch' : val_accuracy_per_epoch,
-            'Validation loss per epoch' : val_loss_per_epoch,
+
+    # Return final metrics
+    if using_dist:
+        # Average per epoch metrics across over all GPUs
+        return {
+            'Average Train Accuracy per epoch': average_across_gpus(train_accuracy_per_epoch, device),
+            'Average Train Loss per epoch': average_across_gpus(train_loss_per_epoch, device),
+            'Average Validation Accuracy per epoch': average_across_gpus(val_accuracy_per_epoch, device),
+            'Average Validation Loss per epoch': average_across_gpus(val_loss_per_epoch, device)
         }
-    
-    # Average across GPUs if required
-    if dist.is_initialized():
-        def average_metric_across_gpus(metric):
-            # Average the per epoch metrics across all gpu
-            metric = torch.tensor(metric).to(device)
-            dist.all_reduce(metric, op=dist.ReduceOp.AVG)
-            return metric.tolist()
+    return {
+        'Train Accuracy per epoch': train_accuracy_per_epoch,
+        'Train Loss per epoch': train_loss_per_epoch,
+        'Validation Accuracy per epoch': val_accuracy_per_epoch,
+        'Validation Loss per epoch': val_loss_per_epoch
+    }
+
+
+def train_5fold(model_config, dataset, device, using_dist=True):
+    """
+    Perform 5-fold cross-validation (using Distributed Data Parallel if required).
+    """
+
+    # List of 5 dicts (1 for each fold), containing metrics for each fold
+    all_metrics = []
+
+    # Trained models for each fold
+    all_trained = []
+
+    # 5-Fold cross-validation setup
+    folds = KFold(n_splits=5, shuffle=True, random_state=42)
+
+    # Loop over each fold
+    for fold, (train_idx, val_idx) in enumerate(folds.split(dataset)):
+        print(f"\nFold {fold + 1}/{5}")
+
+        # Reinitialise model
+        model = init_model(model_config)
+
+        # Create train and validation subsets
+        train_subset = torch.utils.data.Subset(dataset, train_idx)
+        val_subset = torch.utils.data.Subset(dataset, val_idx)
+
+        # Apply transforms
+        train_dataset = TransformedDataset(train_subset, TRAIN_TRANSFORM)
+        val_dataset = TransformedDataset(val_subset, VAL_TRANSFORM)
+
+        # Create data loaders and put model on device
+        if using_dist:
+            train_sampler = DistributedSampler(train_dataset, shuffle=True)
+            val_sampler = DistributedSampler(val_dataset, shuffle=False)
+
+            train_loader = DataLoader(train_dataset, batch_size=model_config['Batch size'], num_workers=8, sampler=train_sampler)
+            val_loader = DataLoader(val_dataset, batch_size=model_config['Batch size'], num_workers=8, sampler=val_sampler)
+
+            model = DDP(model, device_ids=[device], output_device=device)
+        else:
+            train_loader = DataLoader(train_dataset, batch_size=model_config['Batch size'], shuffle=False, num_workers=8)
+            val_loader = DataLoader(val_dataset, batch_size=model_config['Batch size'], shuffle=False, num_workers=8)
+
+            model = model.to(device)
         
-        metrics = {metric: average_metric_across_gpus(value) for metric, value in metrics.items()}
+        # Create criterion and optimizer
+        criterion = nn.CrossEntropyLoss()
+        optimizer = optim.AdamW(model.parameters(), lr=model_config['Learning rate'], weight_decay=model_config['Optimizer weight decay'])
 
-    return model, metrics
+        # Train the model
+        trained, metrics = train_fold(model, train_loader, val_loader, model_config['Number of epochs'], criterion, optimizer, device, using_dist)
+        
+        all_metrics.append(metrics)
+        all_trained.append(trained)
 
-def main(rank, world_size, using_dist,
+
+    return all_metrics, all_trained
+
+
+def main(rank, using_dist,
          images_dir, 
          labels_path,
          out_dir,
-         hyperparameters,):
+         model_config,):
 
     # Setup GPU network if required
     if using_dist: setup_dist()
 
-    # Create model
-    if hyperparameters['ViT size'] == 'tiny':
-        model = swin_t(weights="IMAGENET1K_V1")
-    elif hyperparameters['ViT size'] == 'small':
-        model = swin_s(weights="IMAGENET1K_V1")
-    else:
-        model = swin_b(weights="IMAGENET1K_V1")
-    model.head = nn.Linear(model.head.in_features, 8)
-
     # Get dataset
     dataset = WBC5000dataset(images_dir, labels_path)
 
-    # Train/test split
-    train_len = int(0.8 * len(dataset))
-    val_len = len(dataset) - train_len
-    train_dataset, val_dataset = random_split(dataset, [train_len, val_len])
-
-    # Data transforms
-    train_transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.RandomRotation(degrees=30),
-        transforms.RandomAffine(degrees=0, translate=(0.2, 0.2), shear=25),
-        transforms.RandomResizedCrop(size=(256, 256), scale=(0.8, 1.2), interpolation=transforms.InterpolationMode.NEAREST),
-        transforms.RandomHorizontalFlip(p=1.0), 
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ])
-    train_dataset = TransformedDataset(train_dataset, train_transform)
-        
-    val_transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ])
-    val_dataset = TransformedDataset(val_dataset, val_transform)
-
-    # Set up data loaders and model (varies whether using single GPU Windows vs 2 GPU Linux)
-    if dist.is_initialized():
-        # Put model on this gpu
-        model = DDP(model, device_ids=[rank], output_device=rank, find_unused_parameters=False)
-
-        # Distributed samplers split the dataset across the GPUs
-        train_sampler = DistributedSampler(train_dataset, num_replicas=world_size, rank=rank)
-        val_sampler = DistributedSampler(val_dataset, num_replicas=world_size, rank=rank, shuffle=False)
-
-        # Create data loaders for each of the samplers
-        train_loader = DataLoader(train_dataset, batch_size=hyperparameters['Batch size'], shuffle=False, num_workers=8, sampler=train_sampler)
-        val_loader = DataLoader(val_dataset, batch_size=hyperparameters['Batch size'], shuffle=False, num_workers=8, sampler=val_sampler)
-        
-    else:
-        train_loader = DataLoader(train_dataset, batch_size=hyperparameters['Batch size'], shuffle=False, num_workers=0)
-        val_loader = DataLoader(val_dataset, batch_size=hyperparameters['Batch size'], shuffle=False, num_workers=0)
-
-        model = model.to(rank)
-
-    # Loss function and optimizer
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.AdamW(model.parameters(), lr=hyperparameters['Learning rate'], weight_decay=hyperparameters['Optimizer weight decay'])
-
-    # Train the model and get the training metrics
-    trained, metrics = train(model, hyperparameters['Number of epochs'], train_loader, val_loader, criterion, optimizer, rank)
+    # Train the model and get the training metrics for each fold
+    all_metrics, all_trained = train_5fold(model_config, dataset, rank, using_dist)
 
     # Save model and log
     if dist.is_initialized():
         dist.barrier()
         
         if rank == 0:
-            save(trained.module.state_dict(), out_dir, metrics, hyperparameters)
+            save(out_dir, all_metrics, all_trained, model_config, using_dist=True)
 
         dist.destroy_process_group()
     else:
-        save(trained.state_dict(), out_dir, metrics, hyperparameters)
-        
-
+        save(out_dir, all_metrics, all_trained, model_config, using_dist=False)
         
 
 if __name__ == '__main__':
@@ -213,7 +228,7 @@ if __name__ == '__main__':
     out_dir = args.out_dir
     using_windows = args.using_windows
 
-    hyperparameters = {
+    model_config = {
         'Learning rate' : args.lr,
         'Optimizer weight decay' : args.optim_weight_decay,
         'Batch size' : args.batch_size,
@@ -223,16 +238,16 @@ if __name__ == '__main__':
     
     # Either using windows with one GPU (test of my laptop) or Linus with two GPUs (BC4)
     if using_windows:
-        main('cuda', 1, False, # GPU setup arguments
+        main('cuda', False,
              images_dir,
              labels_path,
              out_dir,
-             hyperparameters,)
+             model_config,)
     else:
         mp.spawn(main,
-                 args=(2, True, # GPU setup arguments
+                 args=(True,
                        images_dir,
                        labels_path,
                        out_dir,
-                       hyperparameters,),
+                       model_config,),
                  nprocs=2)
