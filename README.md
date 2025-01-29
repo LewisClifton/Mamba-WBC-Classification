@@ -1,13 +1,13 @@
 # WBC classification using SWIN Transformer and MedMamba
 
 
-[SWIN Transformer](https://pytorch.org/vision/main/models/swin_transformer.html)
-
-[Med Mamba Github](https://github.com/YubiaoYue/MedMamba)
 
 ## Requirements
+- Windows or Linux
+- CUDA drivers
+- 1+ Nvidia GPU (multi-GPU support exclusive to Linux)
 
-## Usage
+## Getting started
 
 - Clone this repo:
 ```
@@ -17,10 +17,22 @@ cd LeukaemiaClassification
 
 - Create conda virtual environment and activate it:
 ```
-conda create -n leukclassificatio
+conda create -n leukclassification
 conda activate leukclassification
 ```
 
-[Windows instructions]() 
+- OS Specific instructions:
+  
+  - For [Windows](https://github.com/LewisClifton/LeukaemiaClassification/blob/main/docs/windows.md) 
 
-[Linux instructions]()
+  - For [Linux](https://github.com/LewisClifton/LeukaemiaClassification/blob/main/docs/linux.md)
+
+
+## Supported models
+- [SWIN Transformer](https://pytorch.org/vision/main/models/swin_transformer.html)
+
+- [MedMamba](https://github.com/YubiaoYue/MedMamba) (Linux only)
+
+## Supported Datasets
+- Private "Chula 5000" WBC dataset
+- BloodMNIST dataset
