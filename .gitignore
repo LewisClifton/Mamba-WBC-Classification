@@ -1,4 +1,4 @@
-chula/data/WBC 5000
-chula/data/labels.csv
-chula/out/
+data/WBC 5000
+data/labels.csv
+out/
 *.pyc

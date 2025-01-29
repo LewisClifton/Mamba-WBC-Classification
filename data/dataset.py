@@ -4,6 +4,7 @@ from PIL import Image
 import pandas as pd
 import torch
 
+from medmnist import BloodMNIST
 
 class WBC5000dataset(Dataset):
     def __init__(self, images_path, labels_path, wbc_types=['BNE', 'SNE', 'Basophil', 'Eosinophil', 'Monocyte', 'Lymphocyte']):
@@ -64,7 +65,7 @@ class WBC5000dataset(Dataset):
     
     def __len__(self):
         return len(self.labels)
-    
+
 class TransformedDataset(Dataset):
     def __init__(self, dataset, transform):
         self.dataset = dataset
