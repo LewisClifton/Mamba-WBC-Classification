@@ -39,7 +39,6 @@ def train_fold(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
     val_loss_per_epoch = []
 
     for epoch in range(n_epochs):
-        break
         model.train()
         train_loss = 0.0
         correct_train = 0
