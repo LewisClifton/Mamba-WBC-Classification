@@ -142,9 +142,9 @@ def init_model(config):
 
 
 def average_across_gpus(list_, device):
-    metric_tensor = torch.tensor(list_).to(device)
-    dist.all_reduce(metric_tensor, op=dist.ReduceOp.AVG)
-    return metric_tensor.tolist()
+    tensor = torch.tensor(list_).to(device)
+    dist.all_reduce(tensor, op=dist.ReduceOp.AVG)
+    return tensor.tolist()
 
 
 def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, device, using_dist):
