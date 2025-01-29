@@ -56,6 +56,7 @@ def train_model(config, train_dataset, val_dataset, device, using_dist=True):
     print('Training...')
     # Initialise model
     model, model_transforms = init_model(config)
+    model = model.to(device)
 
     # Apply transforms
     train_dataset = TransformedDataset(train_dataset, model_transforms['train'])
@@ -73,8 +74,6 @@ def train_model(config, train_dataset, val_dataset, device, using_dist=True):
     else:
         train_loader = DataLoader(train_dataset, batch_size=config['params']['batch_size'], shuffle=False, num_workers=8)
         val_loader = DataLoader(val_dataset, batch_size=config['params']['batch_size'], shuffle=False, num_workers=8)
-
-        model = model.to(device)
     
     # Create criterion and optimizer
     criterion = nn.CrossEntropyLoss()
