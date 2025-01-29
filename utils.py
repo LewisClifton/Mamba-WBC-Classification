@@ -143,7 +143,8 @@ def init_model(config):
 
 def average_across_gpus(list_, device):
     tensor = torch.tensor(list_).to(device)
-    dist.all_reduce(tensor, op=dist.ReduceOp.AVG)
+    dist.all_reduce(tensor, op=dist.ReduceOp.SUM) # GLOO doesn't support AVG :(
+    tensor /= dist.get_world_size()
     return tensor.tolist()
 
 
@@ -157,7 +158,6 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
     val_loss_per_epoch = []
 
     for epoch in range(n_epochs):
-        break
         model.train()
         train_loss = 0.0
         correct_train = 0

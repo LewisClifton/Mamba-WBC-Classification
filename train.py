@@ -67,13 +67,13 @@ def train_model(config, train_dataset, val_dataset, device, using_dist=True):
         train_sampler = DistributedSampler(train_dataset, shuffle=True)
         val_sampler = DistributedSampler(val_dataset, shuffle=False)
 
-        train_loader = DataLoader(train_dataset, batch_size=config['params']['batch_size'], num_workers=8, sampler=train_sampler)
-        val_loader = DataLoader(val_dataset, batch_size=config['params']['batch_size'], num_workers=8, sampler=val_sampler)
+        train_loader = DataLoader(train_dataset, batch_size=config['params']['batch_size'], num_workers=1, sampler=train_sampler)
+        val_loader = DataLoader(val_dataset, batch_size=config['params']['batch_size'], num_workers=1, sampler=val_sampler)
 
         model = DDP(model, device_ids=[device], output_device=device)
     else:
-        train_loader = DataLoader(train_dataset, batch_size=config['params']['batch_size'], shuffle=False, num_workers=8)
-        val_loader = DataLoader(val_dataset, batch_size=config['params']['batch_size'], shuffle=False, num_workers=8)
+        train_loader = DataLoader(train_dataset, batch_size=config['params']['batch_size'], shuffle=False, num_workers=1)
+        val_loader = DataLoader(val_dataset, batch_size=config['params']['batch_size'], shuffle=False, num_workers=1)
     
     # Create criterion and optimizer
     criterion = nn.CrossEntropyLoss()
