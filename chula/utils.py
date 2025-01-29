@@ -118,7 +118,7 @@ def init_model(config):
     elif model_type == 'swin_base':
         model = swin_b(weights='IMAGENET1K_V1')
     elif model_type == 'medmamba':
-        from medmamba.medmamba import VSSM as MedMamba # Import here as inner imports don't work on windows
+        from models.medmamba import VSSM as MedMamba # Import here as inner imports don't work on windows
         model = MedMamba(num_classes=config['Number of classes'])
 
     if 'swin' in model_type:

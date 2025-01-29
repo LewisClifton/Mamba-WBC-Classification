@@ -180,14 +180,14 @@ def train_kfolds(config, dataset, device, using_dist=True):
     return all_metrics, all_trained
 
 
-def main(rank, using_dist,
+def main(rank, world_size, using_dist,
          images_dir, 
          labels_path,
          out_dir,
          config,):
 
     # Setup GPU network if required
-    if using_dist: setup_dist()
+    if using_dist: setup_dist(rank, world_size)
 
     # Get dataset
     dataset = WBC5000dataset(images_dir, labels_path, wbc_types=config['WBC classes'])
@@ -242,14 +242,14 @@ if __name__ == '__main__':
     # Create process group if using multi gpus on Linux
     if using_dist:
         mp.spawn(main,
-                 args=(True,
+                 args=(num_gpus, True,
                        images_dir,
                        labels_path,
                        out_dir,
                        config,),
-                 nprocs=2)
+                 nprocs=num_gpus)
     else:
-        main('cuda', False,
+        main('cuda', 1, False,
              images_dir,
              labels_path,
              out_dir,
