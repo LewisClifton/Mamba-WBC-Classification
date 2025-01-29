@@ -5,5 +5,6 @@
     "Learning rate": 0.002,
     "Optimizer weight decay": 2e-4,
     "Batch size" : 32,
-    "Number of epochs" : 1
+    "Number of epochs" : 1,
+    "Number of K-fold cross validation folds": 5 
 }

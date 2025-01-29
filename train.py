@@ -18,13 +18,14 @@ torch.backends.cudnn.enabled = True
 
 
 DEFAULT_config = {
-    'Model type': 'swin',
+    'Model type': 'swin_t',
     'Number of classes': 6,
     'WBC classes': ["BNE", "SNE", "Basophil", "Eosinophil", "Monocyte", "Lymphocyte"],
     'Learning rate' : 0.002,
     'Optimizer weight decay' : 2e-4,
     'Batch size' : 32,
     'Number of epochs' : 1,
+    'Number of K-fold cross validation folds' : 5,
 }
 
 
@@ -119,10 +120,11 @@ def train_fold(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
     }
 
 
-def train_5fold(config, dataset, device, using_dist=True):
+def train_kfolds(config, dataset, device, using_dist=True):
     """
-    Perform 5-fold cross-validation (using Distributed Data Parallel if required).
+    Perform K-fold cross-validation (using Distributed Data Parallel if required).
     """
+    print(f'\nTraining {config["Model type"]} for {config["Number of K-fold cross validation folds"]} folds.')
 
     # List of 5 dicts (1 for each fold), containing metrics for each fold
     all_metrics = []
@@ -131,11 +133,11 @@ def train_5fold(config, dataset, device, using_dist=True):
     all_trained = []
 
     # 5-Fold cross-validation setup
-    folds = KFold(n_splits=5, shuffle=True, random_state=42)
+    folds = KFold(n_splits=config['Number of K-fold cross validation folds'], shuffle=True, random_state=42)
 
     # Loop over each fold
     for fold, (train_idx, val_idx) in enumerate(folds.split(dataset)):
-        print(f'\nFold {fold + 1}/{5}')
+        print(f'\nFold {fold + 1}/{5}...')
 
         # Reinitialise model
         model, model_transforms = init_model(config)
@@ -173,6 +175,8 @@ def train_5fold(config, dataset, device, using_dist=True):
         all_metrics.append(metrics)
         all_trained.append(trained)
 
+        print('\nDone.\n')
+
 
     return all_metrics, all_trained
 
@@ -190,7 +194,7 @@ def main(rank, using_dist,
     dataset = WBC5000dataset(images_dir, labels_path, wbc_types=config['WBC classes'])
 
     # Train the model and get the training metrics for each fold
-    all_metrics, all_trained = train_5fold(config, dataset, rank, using_dist)
+    all_metrics, all_trained = train_kfolds(config, dataset, rank, using_dist)
 
     # Save model and log
     if dist.is_initialized():
@@ -210,30 +214,34 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--images_dir', type=str, help='Path to directory for dataset containing training images', required=True)
     parser.add_argument('--labels_path', type=str, help='Path to labels.csv', required=True)
-    parser.add_argument('--out_dir', type=str, help='Path to directory where trained model and log will be saved', required=True)
-    parser.add_argument('--config_path', type=str, help='Path to model config .json')
-    parser.add_argument('--using_windows', help='If using Windows machine for training (default=False)', action=argparse.BooleanOptionalAction)
+    parser.add_argument('--out_dir', type=str, help='Path to directory where trained model and log will be saved (default=cwd)', required=True)
+    parser.add_argument('--config_path', type=str, help='Path to model config .json. If config file unprovided, default values are used. Missing fields are replaced with default values')
+    parser.add_argument('--using_windows', action=argparse.BooleanOptionalAction, help='If using Windows machine for training. Forces --num_gpus to 1 (default=False)')
+    parser.add_argument('--num_gpus', type=int, help='Number of GPUs to be used for training. (default=2)', default=2)
+    parser.add_argument('--num_val_folds', type=int, help='Number of folds for K-fold cross validation (default=5)', default=5)
+    
+    # Parse command line args
     args = parser.parse_args()
-
     images_dir = args.images_dir
     labels_path = args.labels_path
     out_dir = args.out_dir
     config_path = args.config_path
     using_windows = args.using_windows
+    num_gpus = args.num_gpus
+    num_val_folds = args.num_val_folds
 
-    # Get the model config and fill in missing keys with default values
+    # Multi GPU not supported for windows and trivially not for 1 GPU
+    using_dist = True
+    if using_windows or num_gpus == 1:
+        using_dist = False
+
+    # Get the model config and fill in missing keys with default values (defined at top of this file)
     with open(config_path, 'r') as json_file:
         config = json.load(json_file)
     data_with_defaults = {key: config.get(key, DEFAULT_config.get(key)) for key in DEFAULT_config}
     
-    # Either using windows with one GPU (test of my laptop) or Linus with two GPUs (BC4)
-    if using_windows:
-        main('cuda', False,
-             images_dir,
-             labels_path,
-             out_dir,
-             config,)
-    else:
+    # Create process group if using multi gpus on Linux
+    if using_dist:
         mp.spawn(main,
                  args=(True,
                        images_dir,
@@ -241,3 +249,9 @@ if __name__ == '__main__':
                        out_dir,
                        config,),
                  nprocs=2)
+    else:
+        main('cuda', False,
+             images_dir,
+             labels_path,
+             out_dir,
+             config,)

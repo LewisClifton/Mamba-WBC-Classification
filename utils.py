@@ -29,7 +29,7 @@ def save_models(out_dir, all_trained, using_dist):
             torch.save(model.module.state_dict(), model_path)
         else:
             torch.save(model.state_dict(), model_path)
-    print(f'{len(all_trained)} trained models saved to {model_dir}.')
+    print(f'\n{len(all_trained)} trained models saved to {model_dir}')
 
 
 def save_log(out_dir, all_metrics, config, date):
@@ -46,7 +46,7 @@ def save_log(out_dir, all_metrics, config, date):
             write_dict_to_file(file, fold_metric)
 
         
-    print(f'Saved log to {log_path}.')
+    print(f'\nSaved log to {log_path}')
 
 def save_config(out_dir, config):
     # Save model configuration
