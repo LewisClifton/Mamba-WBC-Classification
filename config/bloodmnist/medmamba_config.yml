@@ -5,6 +5,6 @@ data:
   n_classes: 8
 params:
   learning_rate: 0.002
-  optim_weight_decay: 2e-4
+  optim_weight_decay: 2.e-4
   batch_size: 32
   epochs: 1

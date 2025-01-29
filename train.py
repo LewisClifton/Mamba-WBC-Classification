@@ -83,16 +83,12 @@ def train_model(config, train_dataset, val_dataset, device, using_dist=True):
     # Train the model
     trained, metrics = train_loop(model, train_loader, val_loader, config['params']['epochs'], criterion, optimizer, device, using_dist)
 
-    print('\nDone.\n')
+    print('Done.\n')
 
     return trained, metrics
     
 
-def main(rank, world_size, using_dist,
-         images_dir, 
-         labels_path,
-         out_dir,
-         config,):
+def main(rank, world_size, using_dist, out_dir, config):
 
     # Setup GPU network if required
     if using_dist: setup_dist(rank, world_size)
@@ -101,7 +97,7 @@ def main(rank, world_size, using_dist,
     # Train using specified dataset with/without k-fold cross validation
     if config['data']['dataset'] == 'chula':
         # Get dataset
-        dataset = WBC5000dataset(images_dir, labels_path, wbc_types=config['data']['classes'])
+        dataset = WBC5000dataset(config['data']['images_dir'], config['data']['labels_path'], wbc_types=config['data']['classes'])
 
         # Train the model using k-fold cross validation and get the training metrics for each fold
         trained, metrics = train_kfolds(config, dataset, rank, using_dist)
@@ -135,17 +131,13 @@ if __name__ == '__main__':
 
     # Command line args
     parser = argparse.ArgumentParser()
-    parser.add_argument('--images_dir', type=str, help='Path to directory for dataset containing training images', required=True)
-    parser.add_argument('--labels_path', type=str, help='Path to labels.csv', required=True)
-    parser.add_argument('--out_dir', type=str, help='Path to directory where trained model and log will be saved (default=cwd)', required=True)
-    parser.add_argument('--config_path', type=str, help='Path to model config .yml.')
+    parser.add_argument('--out_dir', type=str, help='Path to directory where trained model and log will be saved (default=cwd)', default='.')
+    parser.add_argument('--config_path', type=str, help='Path to model config .yml.', required=True)
     parser.add_argument('--using_windows', action=argparse.BooleanOptionalAction, help='If using Windows machine for training. Forces --num_gpus to 1 (default=False)')
     parser.add_argument('--num_gpus', type=int, help='Number of GPUs to be used for training. (default=2)', default=2)
    
     # Parse command line args
     args = parser.parse_args()
-    images_dir = args.images_dir
-    labels_path = args.labels_path
     out_dir = args.out_dir
     config_path = args.config_path
     using_windows = args.using_windows
@@ -162,16 +154,6 @@ if __name__ == '__main__':
 
     # Create process group if using multi gpus on Linux
     if using_dist:
-        mp.spawn(main,
-                 args=(num_gpus, True,
-                       images_dir,
-                       labels_path,
-                       out_dir,
-                       config,),
-                 nprocs=num_gpus)
+        mp.spawn(main, args=(num_gpus, True, out_dir, config), nprocs=num_gpus)
     else:
-        main('cuda', 1, False,
-             images_dir,
-             labels_path,
-             out_dir,
-             config,)
+        main('cuda', 1, False, out_dir, config)
