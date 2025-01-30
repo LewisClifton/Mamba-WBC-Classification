@@ -168,9 +168,12 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
 
             # Forward pass
             outputs = model(images)
-            print(outputs.shape)
-            print(labels.shape)
-            loss = criterion(outputs, labels)
+            
+            predictions = torch.argmax(outputs, dim=1)
+            print(outputs)
+            print(labels)
+            print(predictions)
+            loss = criterion(predictions, labels)
 
             # Backward pass and optimization
             optimizer.zero_grad()
