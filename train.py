@@ -128,6 +128,13 @@ def main(rank, world_size, using_dist, out_dir, config):
 
 if __name__ == '__main__':
 
+    print(torch.__version__)  # PyTorch version
+    print(torch.cuda.is_available())  # Is CUDA available
+    print(torch.version.cuda)  # CUDA version used by PyTorch
+    print(torch.cuda.get_device_name(0))  # Check the name of the first GPU
+    print(torch.cuda.get_device_capability(0))  # Check the compute capability
+
+
     # Command line args
     parser = argparse.ArgumentParser()
     parser.add_argument('--out_dir', type=str, help='Path to directory where trained model and log will be saved (default=cwd)', default='.')
