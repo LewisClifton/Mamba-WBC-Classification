@@ -21,7 +21,8 @@ def train_kfolds(config, dataset, device, using_dist=True):
     """
     Train with k-fold cross-validation
     """
-    print(f'\nTraining {config["model"]["type"]} for {config["model"]["k-folds"]} folds.')
+    if device == 0:
+        print(f'\nTraining {config["model"]["type"]} for {config["model"]["k-folds"]} folds.')
 
     # List of 5 dicts (1 for each fold), containing metrics for each fold
     all_metrics = []
@@ -34,7 +35,8 @@ def train_kfolds(config, dataset, device, using_dist=True):
 
     # Loop over each fold
     for fold, (train_idx, val_idx) in enumerate(folds.split(dataset)):
-        print(f'\nFold {fold + 1}/{5}')
+        if device == 0:
+            print(f'\nFold {fold + 1}/{5}')
         
         # Create train and validation subsets for this fold
         train_dataset = torch.utils.data.Subset(dataset, train_idx)
@@ -53,7 +55,8 @@ def train_model(config, train_dataset, val_dataset, device, using_dist=True):
     '''
     Train a single model (using Distributed Data Parallel if required)
     '''
-    print('Training...')
+    if device == 0:
+        print('Training...')
     # Initialise model
     model, model_transforms = init_model(config)
     model = model.to(device)
@@ -82,7 +85,8 @@ def train_model(config, train_dataset, val_dataset, device, using_dist=True):
     # Train the model
     trained, metrics = train_loop(model, train_loader, val_loader, config['params']['epochs'], criterion, optimizer, device, using_dist)
 
-    print('Done.\n')
+    if device == 0:
+        print('Done.\n')
 
     return trained, metrics
     
@@ -127,13 +131,6 @@ def main(rank, world_size, using_dist, out_dir, config):
         
 
 if __name__ == '__main__':
-
-    print(torch.__version__)  # PyTorch version
-    print(torch.cuda.is_available())  # Is CUDA available
-    print(torch.version.cuda)  # CUDA version used by PyTorch
-    print(torch.cuda.get_device_name(0))  # Check the name of the first GPU
-    print(torch.cuda.get_device_capability(0))  # Check the compute capability
-
 
     # Command line args
     parser = argparse.ArgumentParser()

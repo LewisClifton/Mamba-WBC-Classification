@@ -168,11 +168,6 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
 
             # Forward pass
             outputs = model(images)
-
-            print(outputs.shape)
-            print(labels.shape)
-            print(outputs.dtype)
-            print(labels.dtype)
             
             # Calculate loss
             loss = criterion(outputs, labels.squeeze(dim=1))
@@ -203,7 +198,7 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
                 images, labels = images.to(device), labels.to(device)
 
                 outputs = model(images)
-                loss = criterion(outputs, labels)
+                loss = criterion(outputs, labels.squeeze(dim=1))
 
                 val_loss += loss.item()
                 _, preds = outputs.max(1)
