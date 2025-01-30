@@ -173,6 +173,8 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
             print(outputs)
             print(labels)
             print(predictions)
+            print(predictions.dtype)  # Should be torch.float32
+            print(labels.dtype) 
             loss = criterion(predictions, labels)
 
             # Backward pass and optimization
