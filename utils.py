@@ -12,13 +12,29 @@ from sklearn.metrics import roc_auc_score
 
 
 def write_dict_to_file(file, dict_):
-    # For writing dictionary contents to a file when saving
+    """
+    Write a dictionary to a given file
+
+    Args:
+        file(TextIOWrapper[_WrappedBuffer]): File to be written to
+        dict_(dict): Dictionary to be written to the file
+    """
+    
     for k, v in dict_.items():
         if isinstance(v, list) and len(v) == 0: continue # avoids error
         file.write(f'{k}: {v}\n')
 
 
 def save_models(out_dir, trained, using_dist):
+    """
+    Save trained model(s) to a given output directory
+
+    Args:
+        out_dir(string): Path to directory to save the model(s) to
+        trained(torch.nn.Module or list[torch.nn.Module]): Model or list of models to be saved
+        using_dist(bool): Whether multiple GPUs were used to train the model(s)
+    """
+
     # Create trained models directory if needed
     model_dir = os.path.join(out_dir, 'trained/')
     if not os.path.exists(model_dir):
@@ -42,12 +58,18 @@ def save_models(out_dir, trained, using_dist):
             torch.save(trained.state_dict(), model_path)
 
 
-def save_log(out_dir, metrics, date):
-    # Save training log
+def save_log(out_dir, metrics):
+    """
+    Save training log
+
+    Args:
+        out_dir(string): Path to directory to save the log file to
+        metrics(dict or list[dict]): Model or list of metrics dictionarys to be saved
+    """
+    
     log_path = os.path.join(out_dir, 'log.txt')
     with open(log_path , 'w') as file:
 
-        file.write(f'Date/time of creation: {date}\n')
         if isinstance(metrics, list):
             # Save metrics for each fold
             for idx, fold_metrics in enumerate(metrics):
@@ -61,14 +83,33 @@ def save_log(out_dir, metrics, date):
     print(f'\nSaved log to {log_path}')
 
 def save_config(out_dir, config):
+    """
+    # Save model config file
+
+    Args:
+        out_dir(string): Path to directory to save the config file to
+        config(dict): Training config dictionary to be saved
+    """
     # Save model configuration
     config_path = os.path.join(out_dir, 'config.yml')
     with open(config_path, "w") as file:
         yaml.dump(config, file, default_flow_style=False)
 
 def save(out_dir, metrics, trained, config, using_dist):
+    """
+    Save trained models, training log and model configuration file
+
+    Args:
+        out_dir(string): Path to directory to save the log, models and config file to
+        metrics(dict or list[dict]): Model or list of metrics dictionarys to be saved
+        trained(torch.nn.Module or list[torch.nn.Module]): Model or list of models to be saved
+        config(dict): Model config dictionary to be saved
+        using_dist(bool): Whether multiple GPUs were used to train the model(s)
+    """
+
     # Get date/time of saving
     date = datetime.now().strftime('%Y_%m_%d_%p%I_%M')
+    metrics['Date/time of creation'] = date
 
     # Create output directory
     out_dir = os.path.join(out_dir, f'{date}/')
@@ -82,13 +123,20 @@ def save(out_dir, metrics, trained, config, using_dist):
 
 
 def setup_dist(rank, world_size):
+    """
+    Standard process group set up for Pytorch Distributed Data Parallel
+
+    Args:
+        rank(int): Id of the GPU used to call this function
+        world_size(int): Total number of GPUs in process group
+    """
      # Set up process group and gpu model
     os.environ['MASTER_ADDR'] = 'localhost'
     os.environ['MASTER_PORT'] = '12355'
     dist.init_process_group('gloo', rank=rank, world_size=world_size)
 
 
-# Data transforms
+# Data transforms for each dataset
 TRANSFORMS = {
     'swin': {
         'train': transforms.Compose([
@@ -121,6 +169,16 @@ TRANSFORMS = {
 
 
 def init_model(config):
+    """
+    Initialise fresh model prior to training
+
+    Args:
+        config(dict): Training config containing model configuration
+
+    Returns:
+        torch.nn.Module: Initialised model ready for training
+        dict: Dictionary containing the required data transforms. Use "train"/"val" keys to access training/validation data transforms
+    """
 
     model_type = config['model']['type']
     # Create model
@@ -144,6 +202,16 @@ def init_model(config):
 
 
 def average_across_gpus(list_, device):
+    """
+    # Average the items in a list across all GPUs used in the process group
+
+    Args:
+        list_(list[object]): List of objects to be averaged over each GPU
+        device(torch.cuda.device): Id of the device used to call this function
+
+    Returns:
+        list[object]: List averaged over each GPU
+    """
     tensor = torch.tensor(list_).to(device)
     dist.all_reduce(tensor, op=dist.ReduceOp.SUM) # GLOO doesn't support AVG :(
     tensor /= dist.get_world_size()
@@ -152,7 +220,20 @@ def average_across_gpus(list_, device):
 
 def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, device, using_dist):
     """
-    Train and evaluate the model for a single fold.
+    Training loop used for training a single model
+
+    Args:
+        model(torch.nn.Module): Model to be trained
+        train_loader(torch.utils.data.DataLoader): Training data data loader
+        val_loader(torch.utils.data.DataLoader): Validation data data loader
+        n_epochs(int): Number of epochs to train for
+        criterion(torch.nn.Module): Training loss function
+        optimizer(torch.optim): Training optimizer
+        device(torch.cuda.device): Id of the device to execute this training loop
+
+    Returns:
+        torch.nn.Module: Trained model
+        dict: Dictionary containing various training metrics
     """
     train_accuracy_per_epoch = []
     train_loss_per_epoch = []

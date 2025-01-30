@@ -19,7 +19,17 @@ torch.backends.cudnn.enabled = True
 
 def train_kfolds(config, dataset, device, using_dist=True):
     """
-    Train with k-fold cross-validation
+    Train a model with k-fold cross-validation
+
+    Args:
+        config(dict): Dictionary containing training configuration with top level keys of "model","data","params"
+        dataset(torch.utils.data.Dataset): Dataset used for training
+        device(torch.cuda.device): Device used for training
+        using_dist(bool): True if using distributed training across 2+ GPUs
+
+    Returns:
+        list[torch.Module]: List of trained models, one for each fold
+        list[dict]: List of training metrics for each of the models
     """
     if device == 0:
         print(f'\nTraining {config["model"]["type"]} for {config["model"]["k-folds"]} folds.')
@@ -52,9 +62,20 @@ def train_kfolds(config, dataset, device, using_dist=True):
     return all_trained, all_metrics
 
 def train_model(config, train_dataset, val_dataset, device, using_dist=True):
-    '''
-    Train a single model (using Distributed Data Parallel if required)
-    '''
+    """
+    Train a single model
+
+    Args:
+        config(dict): Dictionary containing training configuration with top level keys of "model","data","params"
+        train_dataset(torch.utils.data.Dataset): Dataset used for training
+        val_dataset(torch.utils.data.Dataset): Dataset used for validation
+        device(torch.cuda.device): Device used for training
+        using_dist(bool): True if using distributed training across 2+ GPUs
+
+    Returns:
+        torch.Module: Trained model
+        dict: Training metrics for the model
+    """
     if device == 0:
         print('Training...')
     # Initialise model
