@@ -168,14 +168,14 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
 
             # Forward pass
             outputs = model(images)
+
+            print(outputs.shape)
+            print(labels.shape)
+            print(outputs.dtype)
+            print(labels.dtype)
             
-            predictions = torch.argmax(outputs, dim=1)
-            print(outputs)
-            print(labels)
-            print(predictions)
-            print(predictions.dtype)  # Should be torch.float32
-            print(labels.dtype) 
-            loss = criterion(predictions, labels)
+            # Calculate loss
+            loss = criterion(outputs, labels)
 
             # Backward pass and optimization
             optimizer.zero_grad()
