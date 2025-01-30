@@ -175,7 +175,7 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
             print(labels.dtype)
             
             # Calculate loss
-            loss = criterion(outputs, labels)
+            loss = criterion(outputs, labels.squeeze(dim=1))
 
             # Backward pass and optimization
             optimizer.zero_grad()
