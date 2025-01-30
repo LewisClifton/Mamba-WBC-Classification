@@ -117,7 +117,6 @@ def main(rank, world_size, using_dist, out_dir, config):
     # Setup GPU network if required
     if using_dist: setup_dist(rank, world_size)
 
-
     # Train using specified dataset with/without k-fold cross validation
     if config['data']['dataset'] == 'chula':
         # Get dataset
