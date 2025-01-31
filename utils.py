@@ -256,7 +256,7 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
             outputs = model(images)
             
             # Calculate loss
-            
+
             loss = criterion(outputs, labels)
 
             # Backward pass and optimization
@@ -270,8 +270,6 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
             correct_train += (preds == labels).sum().item()
             total_train += labels.size(0)
             probabilities = F.softmax(outputs, dim=1)[:, 1]
-            print("Labels shape:", labels.shape)
-            print("Probabilities shape:", probabilities.shape)
 
             train_roc_auc += (roc_auc_score(labels.detach().cpu(), probabilities.detach().cpu(), multi_class='ovr')) 
 
