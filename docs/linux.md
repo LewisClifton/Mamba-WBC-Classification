@@ -15,9 +15,11 @@
 
 ## Usage
 
-Example training configuration files for the available datasets can be found [here](https://github.com/LewisClifton/LeukaemiaClassification/tree/main/config).
+Example training config files for the available datasets can be found [here](https://github.com/LewisClifton/LeukaemiaClassification/tree/main/config).
 
-Note: different datasets may require differently structured config files  so make note of the structure used in the files provided when making modifications.
+Note on configs: some config files require editing prior to running for example to enter the paths to local datasets. Check config files before running to ensure these paths are set correctly. 
+
+Note on modification of configs: different datasets may require differently structured config files so make note of the structure used in the files provided when making modifications. 
 
 - Train SWIN Transformer using private Chula dataset:
 ```
