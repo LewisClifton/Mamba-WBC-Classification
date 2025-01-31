@@ -61,6 +61,8 @@ class WBC5000dataset(Dataset):
 
         label = self.labels.iloc[idx]['label']
         label = self.get_class_from_wbc_type(label)
+
+        label = torch.tensor(label, dtype=torch.long).unsqueeze(0)
         
         return image, label
     
@@ -77,7 +79,7 @@ class TransformedDataset(Dataset):
 
         image = self.transform(image)
         
-        return image, torch.tensor(label, dtype=torch.long)
+        return image, label
 
     def __len__(self):
         return len(self.dataset)
