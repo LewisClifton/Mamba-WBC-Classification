@@ -77,7 +77,7 @@ class TransformedDataset(Dataset):
 
         image = self.transform(image)
         
-        return image, label
+        return image, torch.tensor(label, dtype=torch.long)
 
     def __len__(self):
         return len(self.dataset)
