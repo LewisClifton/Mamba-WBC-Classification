@@ -23,7 +23,16 @@ class WBC5000dataset(Dataset):
     
     @staticmethod
     def _get_labels(labels_path, wbc_types):
-        # Get cleaned labels 
+        """
+        Get clean labels from the Chula dataset
+
+        Args:
+            labels_path(string): Path of labels.csv
+            wbc_types(list[string]): List of WBC type labels to be considered (ignore rest)
+
+        Returns:
+            pandas.Dataframe: Dataframe containing image names and cleaned and filtered WBC labels
+        """
 
         # Read labels
         labels = pd.read_csv(labels_path)
@@ -48,10 +57,28 @@ class WBC5000dataset(Dataset):
 
         return labels
 
-    def get_wbc_type_from_class(self, int):
-        return self.class_to_wbc_type[int]
+    def get_wbc_type_from_class(self, class_):
+        '''
+        Convert integer class value to corresponding WBC type
+
+        Args:
+            class_(int): Integer class value to be converted
+
+        Return:
+            string: WBC type label
+        '''
+        return self.class_to_wbc_type[class_]
 
     def get_class_from_wbc_type(self, label):
+        '''
+        Convert WBC type to corresponding integer class value 
+
+        Args:
+            label: WBC type label
+            
+        Return:
+            int: Integer class value to be converted
+        '''
         return self.wbc_type_to_class[label]
 
     def __getitem__(self, idx):
