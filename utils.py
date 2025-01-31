@@ -264,7 +264,6 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
             _, preds = outputs.max(1)
             correct_train += (preds == labels).sum().item()
             total_train += labels.size(0)
-            probabilities = F.softmax(outputs, dim=1)
 
         # Calculate training metrics
         avg_train_loss = train_loss / len(train_loader)
@@ -287,7 +286,6 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
                 _, preds = outputs.max(1)
                 correct_val += (preds == labels).sum().item()
                 total_val += labels.size(0)
-                probabilities = F.softmax(outputs, dim=1).squeeze()
                 
         # Calculate validation metrics
         avg_val_loss = val_loss / len(val_loader)
