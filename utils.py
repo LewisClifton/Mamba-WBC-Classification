@@ -270,7 +270,7 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
             _, preds = outputs.max(1)
             correct_train += (preds == labels).sum().item()
             total_train += labels.size(0)
-            probabilities = F.softmax(outputs, dim=1)[:, 1]
+            probabilities = F.softmax(outputs, dim=1)[:, 1].unsqueeze(1)
             print(outputs.shape)
             print(probabilities.shape)
             train_roc_auc += (roc_auc_score(labels.detach().cpu(), probabilities.detach().cpu(), multi_class='ovr')) 
