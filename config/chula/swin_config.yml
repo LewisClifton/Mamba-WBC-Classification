@@ -3,8 +3,8 @@ model:
   k-folds: 5
 data:
   dataset: chula
-  images_dir: C:\Users\lewis\Desktop\Year4_2\Project\train\data\WBC 5000
-  labels_path: C:\Users\lewis\Desktop\Year4_2\Project\train\data\labels.csv
+  images_dir: [Path to WBC 5000 images directory]
+  labels_path: [Path to labels.csv]
   n_classes: 6
   classes:
   - "BNE"
@@ -16,5 +16,5 @@ data:
 params:
   learning_rate: 0.002
   optim_weight_decay: 2.e-4
-  batch_size: 32
+  batch_size: 8
   epochs: 1
