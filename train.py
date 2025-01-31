@@ -31,7 +31,7 @@ def train_kfolds(config, dataset, device, using_dist=True):
         list[torch.Module]: List of trained models, one for each fold
         list[dict]: List of training metrics for each of the models
     """
-    if device == 0:
+    if device == 'cuda:0':
         print(f'\nTraining {config["model"]["type"]} for {config["model"]["k-folds"]} folds.')
 
     # List of 5 dicts (1 for each fold), containing metrics for each fold
@@ -45,7 +45,7 @@ def train_kfolds(config, dataset, device, using_dist=True):
 
     # Loop over each fold
     for fold, (train_idx, val_idx) in enumerate(folds.split(dataset)):
-        if device == 0:
+        if device == 'cuda:0':
             print(f'\nFold {fold + 1}/{5}')
         
         # Create train and validation subsets for this fold
@@ -76,7 +76,7 @@ def train_model(config, train_dataset, val_dataset, device, using_dist=True):
         torch.Module: Trained model
         dict: Training metrics for the model
     """
-    if device == 0:
+    if device == 'cuda:0':
         print('Training...')
     # Initialise model
     model, model_transforms = init_model(config)
@@ -106,7 +106,7 @@ def train_model(config, train_dataset, val_dataset, device, using_dist=True):
     # Train the model
     trained, metrics = train_loop(model, train_loader, val_loader, config['params']['epochs'], criterion, optimizer, device, using_dist)
 
-    if device == 0:
+    if device == 'cuda:0':
         print('Done.\n')
 
     return trained, metrics
@@ -179,4 +179,4 @@ if __name__ == '__main__':
     if using_dist:
         mp.spawn(main, args=(num_gpus, True, out_dir, config), nprocs=num_gpus)
     else:
-        main('cuda', 1, False, out_dir, config)
+        main('cuda:0', 1, False, out_dir, config)
