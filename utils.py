@@ -57,17 +57,19 @@ def save_models(out_dir, trained, using_dist):
             torch.save(trained.state_dict(), model_path)
 
 
-def save_log(out_dir, metrics):
+def save_log(out_dir, date, metrics):
     """
     Save training log
 
     Args:
         out_dir(string): Path to directory to save the log file to
+        date(string): Date/time of training
         metrics(dict or list[dict]): Model or list of metrics dictionarys to be saved
     """
     
     log_path = os.path.join(out_dir, 'log.txt')
     with open(log_path , 'w') as file:
+        file.write(f'Date/time of creation: {date}\n')
 
         if isinstance(metrics, list):
             # Save metrics for each fold
@@ -108,7 +110,6 @@ def save(out_dir, metrics, trained, config, using_dist):
 
     # Get date/time of saving
     date = datetime.now().strftime('%Y_%m_%d_%p%I_%M')
-    metrics['Date/time of creation'] = date
 
     # Create output directory
     out_dir = os.path.join(out_dir, f'{date}/')
@@ -117,7 +118,7 @@ def save(out_dir, metrics, trained, config, using_dist):
     
     # Save models, log and config yml
     save_models(out_dir, trained, using_dist)
-    save_log(out_dir, metrics, date)
+    save_log(out_dir, date, metrics)
     save_config(out_dir, config)
 
 
@@ -240,6 +241,7 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
     val_loss_per_epoch = []
 
     for epoch in range(n_epochs):
+        break
         model.train()
         train_loss = 0.0
         correct_train = 0
