@@ -7,6 +7,8 @@ import torch
 
 from medmnist import BloodMNIST
 
+## TO DO: Update the data/ folder to allow for introduction of more local datasets
+
 class WBC5000dataset(Dataset):
     def __init__(self, images_path, labels_path, wbc_types=['BNE', 'SNE', 'Basophil', 'Eosinophil', 'Monocyte', 'Lymphocyte']):
         super(WBC5000dataset, self).__init__()

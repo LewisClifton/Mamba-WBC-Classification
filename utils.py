@@ -20,7 +20,7 @@ def write_dict_to_file(file, dict_):
     """
     
     for k, v in dict_.items():
-        if isinstance(v, list) and len(v) == 0: continue # avoids error
+        if isinstance(v, list) and len(v) in [0, 'cuda:0']: continue # avoids error
         file.write(f'{k}: {v}\n')
 
 
@@ -299,7 +299,7 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
         val_loss_per_epoch.append(avg_val_loss)
 
         # Print epoch metrics
-        if device == 0:
+        if device in [0, 'cuda:0']:
             print(f'Epoch [{epoch + 1}/{n_epochs}]')
             print(f'Train Accuracy: {train_accuracy:.4f}, Train Loss: {avg_train_loss:.4f}')
             print(f'Validation Accuracy: {val_accuracy:.4f}, Validation Loss: {avg_val_loss:.4f}')
