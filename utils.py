@@ -300,7 +300,7 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
 
         # Print epoch metrics
         if device in [0, 'cuda:0'] and verbose:
-            print(f'Epoch [{epoch + 1}/{n_epochs}]')
+            print(f'Epoch [{epoch + 1}/{n_epochs}]:')
             print(f'Train Accuracy: {train_accuracy:.4f}, Train Loss: {avg_train_loss:.4f}')
             print(f'Validation Accuracy: {val_accuracy:.4f}, Validation Loss: {avg_val_loss:.4f}')
 

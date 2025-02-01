@@ -46,7 +46,7 @@ def train_kfolds(config, dataset, device, using_dist=True, verbose=False):
     # Loop over each fold
     for fold, (train_idx, val_idx) in enumerate(folds.split(dataset)):
         if device in [0, 'cuda:0']:
-            print(f'\nFold {fold + 1}/{5}')
+            print(f'\nFold {fold + 1}/{5}:')
         
         # Create train and validation subsets for this fold
         train_dataset = torch.utils.data.Subset(dataset, train_idx)
@@ -107,7 +107,7 @@ def train_model(config, train_dataset, val_dataset, device, using_dist=True, ver
     trained, metrics = train_loop(model, train_loader, val_loader, config['params']['epochs'], criterion, optimizer, device, using_dist, verbose)
 
     if device in [0, 'cuda:0']:
-        print('Done.\n')
+        print('Done.')
 
     return trained, metrics
     
