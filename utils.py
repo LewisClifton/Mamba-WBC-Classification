@@ -218,7 +218,7 @@ def average_across_gpus(list_, device):
     return tensor.tolist()
 
 
-def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, device, using_dist):
+def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, device, using_dist, verbose=False):
     """
     Training loop used for training a single model
 
@@ -299,7 +299,7 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
         val_loss_per_epoch.append(avg_val_loss)
 
         # Print epoch metrics
-        if device in [0, 'cuda:0']:
+        if device in [0, 'cuda:0'] and verbose:
             print(f'Epoch [{epoch + 1}/{n_epochs}]')
             print(f'Train Accuracy: {train_accuracy:.4f}, Train Loss: {avg_train_loss:.4f}')
             print(f'Validation Accuracy: {val_accuracy:.4f}, Validation Loss: {avg_val_loss:.4f}')

@@ -17,7 +17,7 @@ from utils import *
 torch.backends.cudnn.enabled = True
 
 
-def train_kfolds(config, dataset, device, using_dist=True):
+def train_kfolds(config, dataset, device, using_dist=True, verbose=False):
     """
     Train a model with k-fold cross-validation
 
@@ -53,7 +53,7 @@ def train_kfolds(config, dataset, device, using_dist=True):
         val_dataset = torch.utils.data.Subset(dataset, val_idx)
 
         # Train this fold
-        trained, metrics = train_model(config, train_dataset, val_dataset, device, using_dist)
+        trained, metrics = train_model(config, train_dataset, val_dataset, device, using_dist, verbose)
 
         # Aggregate models and metrics from this fold
         all_trained.append(trained)
@@ -61,7 +61,7 @@ def train_kfolds(config, dataset, device, using_dist=True):
 
     return all_trained, all_metrics
 
-def train_model(config, train_dataset, val_dataset, device, using_dist=True):
+def train_model(config, train_dataset, val_dataset, device, using_dist=True, verbose=False):
     """
     Train a single model
 
@@ -104,7 +104,7 @@ def train_model(config, train_dataset, val_dataset, device, using_dist=True):
     optimizer = optim.AdamW(model.parameters(), lr=config['params']['learning_rate'], weight_decay=config['params']['optim_weight_decay'])
 
     # Train the model
-    trained, metrics = train_loop(model, train_loader, val_loader, config['params']['epochs'], criterion, optimizer, device, using_dist)
+    trained, metrics = train_loop(model, train_loader, val_loader, config['params']['epochs'], criterion, optimizer, device, using_dist, verbose)
 
     if device in [0, 'cuda:0']:
         print('Done.\n')
@@ -112,7 +112,7 @@ def train_model(config, train_dataset, val_dataset, device, using_dist=True):
     return trained, metrics
     
 
-def main(rank, world_size, using_dist, out_dir, config):
+def main(rank, world_size, using_dist, out_dir, config, verbose=False):
 
     # Setup GPU network if required
     if using_dist: setup_dist(rank, world_size)
@@ -123,7 +123,7 @@ def main(rank, world_size, using_dist, out_dir, config):
         dataset = WBC5000dataset(config['data']['images_dir'], config['data']['labels_path'], wbc_types=config['data']['classes'])
 
         # Train the model using k-fold cross validation and get the training metrics for each fold
-        trained, metrics = train_kfolds(config, dataset, rank, using_dist)
+        trained, metrics = train_kfolds(config, dataset, rank, using_dist, verbose)
 
     elif config['data']['dataset'] == 'bloodmnist':
         # Get dataset
@@ -131,7 +131,7 @@ def main(rank, world_size, using_dist, out_dir, config):
         val_dataset = BloodMNIST(split='val', download=True)
 
         # Train model only once (i.e. without k-fold cross validation)
-        trained, metrics = train_model(config, train_dataset, val_dataset, rank, using_dist)
+        trained, metrics = train_model(config, train_dataset, val_dataset, rank, using_dist, verbose)
 
     # Can add more datasets here..
     elif config['data']['dataset'] == 'foo':
@@ -156,8 +156,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--out_dir', type=str, help='Path to directory where trained model and log will be saved (default=cwd)', default='.')
     parser.add_argument('--config_path', type=str, help='Path to model config .yml.', required=True)
-    parser.add_argument('--using_windows', action=argparse.BooleanOptionalAction, help='If using Windows machine for training. Forces --num_gpus to 1 (default=False)')
+    parser.add_argument('--using_windows', action=argparse.BooleanOptionalAction, help='If using Windows machine for training. Forces --num_gpus to 1')
     parser.add_argument('--num_gpus', type=int, help='Number of GPUs to be used for training. (default=2)', default=2)
+    parser.add_argument('--verbose', action=argparse.BooleanOptionalAction, help='Whether to print per epoch metrics during training')
    
     # Parse command line args
     args = parser.parse_args()
@@ -165,6 +166,7 @@ if __name__ == '__main__':
     config_path = args.config_path
     using_windows = args.using_windows
     num_gpus = args.num_gpus
+    verbose = args.verbose
 
     # Multi GPU not supported for windows and trivially not for 1 GPU
     using_dist = True
@@ -177,6 +179,6 @@ if __name__ == '__main__':
 
     # Create process group if using multi gpus on Linux
     if using_dist:
-        mp.spawn(main, args=(num_gpus, True, out_dir, config), nprocs=num_gpus)
+        mp.spawn(main, args=(num_gpus, True, out_dir, config, verbose), nprocs=num_gpus)
     else:
-        main(0, 1, False, out_dir, config)
+        main(0, 1, False, out_dir, config, verbose)
