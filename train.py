@@ -130,8 +130,8 @@ def main(rank, world_size, using_dist, out_dir, config, verbose=False):
 
     elif config['data']['dataset'] == 'bloodmnist':
         # Get dataset
-        train_dataset = BloodMNIST(split='train', download=True)
-        val_dataset = BloodMNIST(split='val', download=True)
+        train_dataset = BloodMNIST(split='train', download=True, size=224)
+        val_dataset = BloodMNIST(split='val', download=True, size=224)
 
         # Train model only once (i.e. without k-fold cross validation)
         trained, metrics = train_model(config, train_dataset, val_dataset, rank, using_dist, verbose)

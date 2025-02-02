@@ -107,6 +107,8 @@ class TransformedDataset(Dataset):
         image, label = self.dataset[idx]
 
         image = self.transform(image)
+
+        label = torch.tensor(label, dtype=torch.long)
         
         return image, label
 

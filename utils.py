@@ -138,7 +138,6 @@ TRANSFORMS = {
             transforms.Resize((224, 224)),
             transforms.RandomRotation(degrees=30),
             transforms.RandomAffine(degrees=0, translate=(0.2, 0.2), shear=25),
-            transforms.RandomResizedCrop(size=(256, 256), scale=(0.8, 1.2), interpolation=transforms.InterpolationMode.NEAREST),
             transforms.RandomHorizontalFlip(p=1.0), 
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])]),
@@ -262,12 +261,13 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
             # Track metrics
             train_loss += loss.item()
             _, preds = outputs.max(1)
+
             correct_train += (preds == labels).sum().item()
             total_train += labels.size(0)
 
         # Calculate training metrics
         avg_train_loss = train_loss / len(train_loader)
-        train_accuracy = correct_train / total_train
+        train_accuracy = (correct_train / total_train) * 100
 
         # Validation loop
         model.eval()
@@ -289,7 +289,7 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
                 
         # Calculate validation metrics
         avg_val_loss = val_loss / len(val_loader)
-        val_accuracy = correct_val / total_val
+        val_accuracy = (correct_val / total_val) * 100
 
         # Store metrics for this epoch
         train_accuracy_per_epoch.append(train_accuracy)
