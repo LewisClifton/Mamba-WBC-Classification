@@ -262,6 +262,9 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
             train_loss += loss.item()
             _, preds = outputs.max(1)
             correct_train += (preds == labels.squeeze(1)).sum().item()
+            print("\n")
+            print(preds)
+            print(labels.squeeze(1))
             total_train += labels.size(0)
 
         # Calculate training metrics
