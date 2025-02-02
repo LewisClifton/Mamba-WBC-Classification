@@ -261,8 +261,7 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
             # Track metrics
             train_loss += loss.item()
             _, preds = outputs.max(1)
-
-            correct_train += (preds == labels).sum().item()
+            correct_train += (preds == labels.squeeze(1)).sum().item()
             total_train += labels.size(0)
 
         # Calculate training metrics
@@ -284,7 +283,7 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
 
                 val_loss += loss.item()
                 _, preds = outputs.max(1)
-                correct_val += (preds == labels).sum().item()
+                correct_val += (preds == labels.squeeze(1)).sum().item()
                 total_val += labels.size(0)
                 
         # Calculate validation metrics
