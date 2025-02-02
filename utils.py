@@ -187,7 +187,7 @@ def init_model(config):
         model = MedMamba(num_classes=config['data']['n_classes'])
 
     if 'swin' in model_type:
-        model.head = nn.Linear(model.head.in_features, 8)
+        model.head = nn.Linear(model.head.in_features, config['data']['n_classes'])
         transform = TRANSFORMS['swin']
     elif model_type == 'medmamba':
         transform = TRANSFORMS['medmamba']
