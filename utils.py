@@ -43,18 +43,13 @@ def save_models(out_dir, trained, using_dist):
         # Save trained models for each fold
         for idx, model in enumerate(trained):
             model_path = os.path.join(model_dir, f'SWIN_ViT_fold_{idx}.pth')
-            if using_dist: 
-                torch.save(model.module.state_dict(), model_path)
-            else:
-                torch.save(model.state_dict(), model_path)
+            torch.save(model.state_dict(), model_path)
         print(f'\n{len(trained)} trained models saved to {model_dir}')
     else:
         # Save the model
         model_path = os.path.join(model_dir, f'SWIN_ViT.pth')
-        if using_dist: 
-            torch.save(trained.module.state_dict(), model_path)
-        else:
-            torch.save(trained.state_dict(), model_path)
+        torch.save(trained.state_dict(), model_path)
+        print(f'Saved trained model to {model_path}')
 
 
 def save_log(out_dir, date, metrics):
@@ -242,6 +237,10 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
 
     for epoch in range(n_epochs):
         model.train()
+
+        if using_dist:
+            train_loader.sampler.set_epoch(epoch)
+
         train_loss = 0.0
         correct_train = 0
         total_train = 0

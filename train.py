@@ -96,7 +96,7 @@ def train_model(config, train_dataset, val_dataset, device, using_dist=True, ver
 
         model = DDP(model, device_ids=[device], output_device=device)
     else:
-        train_loader = DataLoader(train_dataset, batch_size=config['params']['batch_size'], shuffle=False, num_workers=1)
+        train_loader = DataLoader(train_dataset, batch_size=config['params']['batch_size'], shuffle=True, num_workers=1)
         val_loader = DataLoader(val_dataset, batch_size=config['params']['batch_size'], shuffle=False, num_workers=1)
     
     # Create criterion and optimizer
@@ -109,6 +109,9 @@ def train_model(config, train_dataset, val_dataset, device, using_dist=True, ver
     if device in [0, 'cuda:0']:
         print('Done.')
 
+    if using_dist:
+        return trained.module, metrics
+    
     return trained, metrics
     
 
