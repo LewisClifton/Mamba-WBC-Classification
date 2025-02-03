@@ -10,7 +10,7 @@ import torch.utils.checkpoint as checkpoint
 from einops import rearrange, repeat
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 
-from mamba_ssm.ops.selective scan_interface import selective_scan_fn, selective_scan_ref
+from mamba_ssm.ops.selective_scan_interface import selective_scan_fn, selective_scan_ref
 
 
 DropPath.__repr__ = lambda self: f"timm.DropPath({self.drop_prob})"
