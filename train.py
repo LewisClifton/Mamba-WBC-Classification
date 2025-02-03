@@ -175,9 +175,9 @@ if __name__ == '__main__':
     with open(config_path, 'r') as yml:
         config = yaml.safe_load(yml)
 
-    # Multi GPU not supported for windows and trivially not for 1 GPU and not for MedMamba
+    # Multi GPU not supported for windows and trivially not for 1 GPU
     using_dist = True
-    if using_windows or num_gpus == 1 or config['model']['type'] == 'medmamba':
+    if using_windows or num_gpus == 1:
         using_dist = False
 
     # Create process group if using multi gpus on Linux
