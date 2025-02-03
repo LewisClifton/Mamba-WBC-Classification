@@ -10,7 +10,7 @@ import torch.utils.checkpoint as checkpoint
 from einops import rearrange, repeat
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 
-from mamba_ssm.ops.selective_scan_interface import selective_scan_fn, selective_scan_ref
+from mamba_ssm.ops.selective_scan_interface import selective_scan_fn
 
 
 DropPath.__repr__ = lambda self: f"timm.DropPath({self.drop_prob})"
@@ -304,7 +304,6 @@ class SS2D(nn.Module):
         self.A_logs = self.A_log_init(self.d_state, self.d_inner, copies=4, merge=True) # (K=4, D, N)
         self.Ds = self.D_init(self.d_inner, copies=4, merge=True) # (K=4, D, N)
 
-        # self.selective_scan = selective_scan_fn
         self.forward_core = self.forward_corev0
 
         self.out_norm = nn.LayerNorm(self.d_inner)

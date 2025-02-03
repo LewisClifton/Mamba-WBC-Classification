@@ -2,3 +2,4 @@ data/WBC 5000
 data/labels.csv
 out/
 *.pyc
+my_config/
