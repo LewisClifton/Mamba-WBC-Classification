@@ -30,13 +30,3 @@ python train.py --config_path='config/chula/swin_config' --out_dir='.' --num_gpu
 ```
 python train.py --config_path='config/bloodmnist/swin_config' --out_dir='.' --num_gpus=1
 ```
-
-- Train MedMamba using private Chula dataset:
-```
-python train.py --config_path='config/chula/medmamba_config' --out_dir='.' --num_gpus=1
-```
-
-- Train MedMamba using BloodMNIST dataset:
-```
-python train.py --config_path='config/bloodmnist/medmamba_config' --out_dir='.' --num_gpus=1
-```

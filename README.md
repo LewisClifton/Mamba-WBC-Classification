@@ -1,4 +1,4 @@
-# WBC classification using SWIN Transformer and MedMamba
+# WBC classification using SWIN Transformer
 
 
 
@@ -30,8 +30,6 @@ conda activate leukclassification
 
 ## Supported models
 - [SWIN Transformer](https://pytorch.org/vision/main/models/swin_transformer.html)
-
-- [MedMamba](https://github.com/YubiaoYue/MedMamba) (Linux only)
 
 ## Supported Datasets
 - Private "Chula 5000" WBC dataset
