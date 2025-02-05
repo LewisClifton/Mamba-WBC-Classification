@@ -7,7 +7,6 @@ import torch.distributed as dist
 import torch.nn as nn
 from torchvision.models import swin_t, swin_s, swin_b
 from torchvision import transforms
-import torch.nn.functional as F
 
 
 def write_dict_to_file(file, dict_):
@@ -184,14 +183,30 @@ def init_model(config):
     elif model_type == 'swin_b':
         model = swin_b(weights='IMAGENET1K_V1')
     elif model_type == 'medmamba':
-            from models.medmamba import VSSM as MedMamba # Import here as inner imports don't work on windows
-            model = MedMamba(num_classes=config['data']['n_classes'])
+        from models.medmamba import VSSM as MedMamba # Import here as inner imports don't work on windows
+        model = MedMamba(num_classes=config['data']['n_classes'])
+    elif model_type == 'vmamba':
+        from models.VMamba.classification.models import build_vssm_model
+        model = build_vssm_model(config)
+    elif model_type == 'mamba_vision':
+        from transformers import AutoModelForImageClassification
+        model = AutoModel.from_pretrained("nvidia/MambaVision-B-1K", trust_remote_code=True)
 
+
+    # Get necessary transform
     if 'swin' in model_type:
         model.head = nn.Linear(model.head.in_features, config['data']['n_classes'])
         transform = TRANSFORMS['swin']
     elif model_type == 'medmamba':
         transform = TRANSFORMS['medmamba']
+    elif model_type == 'mamba_vision':
+        from timm.data.transforms_factory import create_transform
+        transform = create_transform(input_size=(3, 224, 224),
+                                    is_training=True,
+                                    mean=model.config.mean,
+                                    std=model.config.std,
+                                    crop_mode=model.config.crop_mode,
+                                    crop_pct=model.config.crop_pct)
 
     return model, transform
 
