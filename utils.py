@@ -146,6 +146,17 @@ TRANSFORMS = {
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
         },
+    'medmamba': {
+        "train": transforms.Compose([
+            transforms.RandomResizedCrop(224),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]),
+        "val": transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+    }
 
     
     
@@ -172,10 +183,15 @@ def init_model(config):
         model = swin_s(weights='IMAGENET1K_V1')
     elif model_type == 'swin_b':
         model = swin_b(weights='IMAGENET1K_V1')
+    elif model_type == 'medmamba':
+            from models.medmamba import VSSM as MedMamba # Import here as inner imports don't work on windows
+            model = MedMamba(num_classes=config['data']['n_classes'])
 
     if 'swin' in model_type:
         model.head = nn.Linear(model.head.in_features, config['data']['n_classes'])
         transform = TRANSFORMS['swin']
+    elif model_type == 'medmamba':
+        transform = TRANSFORMS['medmamba']
 
     return model, transform
 
