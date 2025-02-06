@@ -280,6 +280,9 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
             correct_train += (preds == labels.squeeze(1)).sum().item()
 
             total_train += labels.size(0)
+            print(preds)
+            print(labels.squeeze(1))
+            print("\n")
 
         # Calculate training metrics
         avg_train_loss = train_loss / len(train_loader)
