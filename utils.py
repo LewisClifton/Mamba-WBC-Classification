@@ -23,7 +23,7 @@ def write_dict_to_file(file, dict_):
         file.write(f'{k}: {v}\n')
 
 
-def save_models(out_dir, trained, using_dist):
+def save_models(out_dir, trained, model_type):
     """
     Save trained model(s) to a given output directory
 
@@ -41,12 +41,12 @@ def save_models(out_dir, trained, using_dist):
     if isinstance(trained, list):
         # Save trained models for each fold
         for idx, model in enumerate(trained):
-            model_path = os.path.join(model_dir, f'SWIN_ViT_fold_{idx}.pth')
+            model_path = os.path.join(model_dir, f'{model_type}_fold_{idx}.pth')
             torch.save(model.state_dict(), model_path)
         print(f'\n{len(trained)} trained models saved to {model_dir}')
     else:
         # Save the model
-        model_path = os.path.join(model_dir, f'SWIN_ViT.pth')
+        model_path = os.path.join(model_dir, f'{model_type}.pth')
         torch.save(trained.state_dict(), model_path)
         print(f'Saved trained model to {model_path}')
 
@@ -111,7 +111,7 @@ def save(out_dir, metrics, trained, config, using_dist):
         os.makedirs(out_dir)
     
     # Save models, log and config yml
-    save_models(out_dir, trained, using_dist)
+    save_models(out_dir, trained, config['model']['type'])
     save_log(out_dir, date, metrics)
     save_config(out_dir, config)
 
@@ -280,9 +280,6 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
             correct_train += (preds == labels.squeeze(1)).sum().item()
 
             total_train += labels.size(0)
-            print(preds)
-            print(labels.squeeze(1))
-            print("\n")
 
         # Calculate training metrics
         avg_train_loss = train_loss / len(train_loader)
