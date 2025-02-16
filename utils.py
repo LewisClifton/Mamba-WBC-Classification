@@ -130,6 +130,9 @@ def setup_dist(rank, world_size):
 
 
 # Data transforms for each dataset
+IMAGENET_MEAN =[0.485, 0.456, 0.406]
+IMAGENET_STD =[0.229, 0.224, 0.225]
+
 TRANSFORMS = {
     'swin': {
         'train': transforms.Compose([
@@ -138,11 +141,11 @@ TRANSFORMS = {
             transforms.RandomAffine(degrees=0, translate=(0.2, 0.2), shear=25),
             transforms.RandomHorizontalFlip(p=1.0), 
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])]),
+            transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)]),
         'val': transforms.Compose([
             transforms.Resize((224, 224)),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+            transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)])
         },
     'medmamba': {
         "train": transforms.Compose([
@@ -160,14 +163,28 @@ TRANSFORMS = {
             transforms.RandomResizedCrop(224),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)
         ]),
         
         'val': transforms.Compose([
             transforms.Resize((224, 224)),
             transforms.CenterCrop(224),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)
+        ])
+    },
+    'mambavision': {
+        'train': transforms.Compose([
+            transforms.RandomResizedCrop(224),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)
+        ]),
+        'val': transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)
         ])
     }
 }
@@ -223,15 +240,9 @@ def init_model(config):
 
     elif model_type == 'mambavision':
         from transformers import AutoModelForImageClassification
-        from timm.data.transforms_factory import create_transform
 
         model = AutoModelForImageClassification.from_pretrained("nvidia/MambaVision-B-1K", trust_remote_code=True)
-        transform = create_transform(input_size=(3, 224, 224),
-                                    is_training=True,
-                                    mean=model.config.mean,
-                                    std=model.config.std,
-                                    crop_mode=model.config.crop_mode,
-                                    crop_pct=model.config.crop_pct)
+        transform = TRANSFORMS['mambavision']
 
     elif model_type == 'vim':
         pass
