@@ -45,9 +45,9 @@ def init_model(config):
         transform = TRANSFORMS['medmamba']
 
     elif model_type == 'vmamba':
-        from VMamba.classification.models import build_vssm_model
+        from vmamba import get_vmamba
 
-        model = build_vssm_model(config)
+        model = get_vmamba(num_classes=config['data']['n_classes'])
         transform = TRANSFORMS['vmamba']
 
     elif model_type == 'mambavision':
@@ -70,7 +70,9 @@ def init_model(config):
         pass
     
     # Add new models using elif
-    elif False:
+    elif model_type == 'foo':
         pass
+
+    
 
     return model, transform
