@@ -156,9 +156,6 @@ TRANSFORMS = {
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
     }
-
-    
-    
 }
 
 
@@ -188,7 +185,7 @@ def init_model(config):
     elif model_type == 'vmamba':
         from models.VMamba.classification.models import build_vssm_model
         model = build_vssm_model(config)
-    elif model_type == 'mamba_vision':
+    elif model_type == 'vim':
         from transformers import AutoModelForImageClassification
         model = AutoModel.from_pretrained("nvidia/MambaVision-B-1K", trust_remote_code=True)
 
@@ -199,7 +196,7 @@ def init_model(config):
         transform = TRANSFORMS['swin']
     elif model_type == 'medmamba':
         transform = TRANSFORMS['medmamba']
-    elif model_type == 'mamba_vision':
+    elif model_type == 'vim':
         from timm.data.transforms_factory import create_transform
         transform = create_transform(input_size=(3, 224, 224),
                                     is_training=True,
