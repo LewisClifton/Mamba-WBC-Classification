@@ -12,19 +12,19 @@ TINY_URL = "https://github.com/MzeroMiko/VMamba/releases/download/%23v2cls/vssm1
 def build_model(num_classes, vssm_config):
     return vmamba(
         num_classes = num_classes,
-        drop_path_rate = vssm_config.MODEL.DROP_PATH_RATE,
-        dims = vssm_config.MODEL.VSSM.EMBED_DIM,
-        depths = vssm_config.MODEL.VSSM.DEPTHS,
-        ssm_d_state = vssm_config.MODEL.VSSM.SSM_D_STATE,
-        ssm_dt_rank = vssm_config.MODEL.VSSM.SSM_DT_RANK,
-        ssm_ratio = vssm_config.MODEL.VSSM.SSM_RATIO,
-        ssm_conv = vssm_config.MODEL.VSSM.SSM_CONV,
-        ssm_conv_bias = vssm_config.MODEL.VSSM.SSM_CONV_BIAS,
-        forward_type = vssm_config.MODEL.VSSM.SSM_FORWARDTYPE,
-        mlp_ratio = vssm_config.MODEL.VSSM.MLP_RATIO,
-        downsample_version = vssm_config.MODEL.VSSM.DOWNSAMPLE,
-        pachembed_version = vssm_config.MODEL.VSSM.PATCHEMBED,
-        norm_layer = vssm_config.MODEL.VSSM.NORM_LAYER,
+        drop_path_rate = vssm_config["MODEL"]["DROP_PATH_RATE"],
+        dims = vssm_config["MODEL"]["VSSM"]["EMBED_DIM"],
+        depths = vssm_config["MODEL"]["VSSM"]["DEPTHS"],
+        ssm_d_state = vssm_config["MODEL"]["VSSM"]["SSM_D_STATE"],
+        ssm_dt_rank = vssm_config["MODEL"]["VSSM"]["SSM_DT_RANK"],
+        ssm_ratio = vssm_config["MODEL"]["VSSM"]["SSM_RATIO"],
+        ssm_conv = vssm_config["MODEL"]["VSSM"]["SSM_CONV"],
+        ssm_conv_bias = vssm_config["MODEL"]["VSSM"]["SSM_CONV_BIAS"],
+        forward_type = vssm_config["MODEL"]["VSSM"]["SSM_FORWARDTYPE"],
+        mlp_ratio = vssm_config["MODEL"]["VSSM"]["MLP_RATIO"],
+        downsample_version = vssm_config["MODEL"]["VSSM"]["DOWNSAMPLE"],
+        pachembed_version = vssm_config["MODEL"]["VSSM"]["PATCHEMBED"],
+        norm_layer = vssm_config["MODEL"]["VSSM"]["NORM_LAYER"],
     )
 
 def get_vmamba(num_classes):
