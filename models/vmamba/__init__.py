@@ -10,7 +10,7 @@ BASE_UL = "https://github.com/MzeroMiko/VMamba/releases/download/%23v2cls/vssm_b
 TINY_URL = "https://github.com/MzeroMiko/VMamba/releases/download/%23v2cls/vssm1_tiny_0230s_ckpt_epoch_264.pth"
 
 def build_model(num_classes, vssm_config):
-    model = vmamba(
+    return vmamba(
         drop_path_rate = vssm_config["MODEL"]["DROP_PATH_RATE"],
         dims = vssm_config["MODEL"]["VSSM"]["EMBED_DIM"],
         depths = vssm_config["MODEL"]["VSSM"]["DEPTHS"],
@@ -25,9 +25,7 @@ def build_model(num_classes, vssm_config):
         pachembed_version = vssm_config["MODEL"]["VSSM"]["PATCHEMBED"],
         norm_layer = vssm_config["MODEL"]["VSSM"]["NORM_LAYER"],
     )
-    model.head = nn.Linear(model.head.in_features, num_classes)
-
-    return model
+    
 
 def get_vmamba(num_classes):
 
@@ -43,5 +41,7 @@ def get_vmamba(num_classes):
     weights = torch.hub.load_state_dict_from_url(weights_url, model_dir='models/vmamba/pretrained/', file_name=weights_url.split('/')[-1])['model']
     model.load_state_dict(weights)
 
+    # Edit final FC with correct number of classes
+    model.head = nn.Linear(model.head.in_features, num_classes)
 
     return model
