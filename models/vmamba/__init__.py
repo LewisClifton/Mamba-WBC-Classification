@@ -38,7 +38,7 @@ def get_vmamba(num_classes):
     model = build_model(num_classes, vssm_config)
 
     # Load the weights from the URL
-    weights = torch.hub.load_state_dict_from_url(weights_url, model_dir='models/vmamba/pretrained/', file_name=weights_url.split('/')[::-1])
+    weights = torch.hub.load_state_dict_from_url(weights_url, model_dir='models/vmamba/pretrained/', file_name=weights_url.split('/')[-1])
     model.load_state_dict(weights)
 
 
