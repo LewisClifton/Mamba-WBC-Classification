@@ -11,6 +11,21 @@
 - ```pip install mamba_ssm```
 - ```pip install scikit-learn matplotlib thop h5py SimpleITK scikit-image medpy yacs pillow pandas```
 
+- ```conda install python=3.12```
+- ```conda install matplotlib h5py SimpleITK scikit-image medpy yacs pillow anaconda::scikit-learn pandas```
+- ```conda install -c conda-forge gcc```
+- ```pip3 install torch torchvision torchaudio```
+- ```pip3 install mambavision```
+- ```pip3 install thop```
+- ```git clone https://github.com/MzeroMiko/VMamba.git```
+- ```cd VMamba```
+- ```pip3 install -r requirements.txt```
+- ```pip3 install git+https://github.com/Dao-AILab/causal-conv1d```
+- ```conda install gcc_linux-64 gxx-linux-64 -y```
+- ```conda install cuda -c nvidia```
+- ```git clone https://github.com/state-spaces/mamba.git && cd mamba```
+- ```CAUSAL_CONV1D_FORCE_BUILD=TRUE CAUSAL_CONV1D_SKIP_CUDA_BUILD=TRUE CAUSAL_CONV1D_FORCE_CXX11_ABI=TRUE pip install .```
+
 
 
 ## Usage
