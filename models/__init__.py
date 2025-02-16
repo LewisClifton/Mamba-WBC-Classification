@@ -44,7 +44,7 @@ def init_model(config):
         transform = TRANSFORMS['medmamba']
 
     elif model_type == 'vmamba':
-        from vmamba import get_vmamba
+        from .vmamba import get_vmamba
 
         model = get_vmamba(num_classes=config['data']['n_classes'])
         transform = TRANSFORMS['vmamba']
