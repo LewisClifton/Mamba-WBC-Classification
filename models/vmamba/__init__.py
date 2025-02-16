@@ -1,5 +1,6 @@
 
 import torch
+import os
 import yaml
 
 from .vmamba import VSSM as vmamba
@@ -28,7 +29,7 @@ def build_model(num_classes, vssm_config):
 
 def get_vmamba(num_classes):
 
-    config_path = 'pretrained/vmambav2v_tiny_224.yaml'
+    config_path = 'models/vmamba/pretrained/vmambav2v_tiny_224.yaml'
     weights_url = TINY_URL # change if required
 
     # Build the model using the architecture specified
