@@ -11,6 +11,18 @@ TINY_URL = "https://github.com/MzeroMiko/VMamba/releases/download/%23v2cls/vssm1
 
 def build_model(num_classes, vssm_config):
     return vmamba(
+        depths=[2, 2, 8, 2], dims=96, drop_path_rate=0.2, 
+        patch_size=4, in_chans=3, num_classes=1000, 
+        ssm_d_state=1, ssm_ratio=1.0, ssm_dt_rank="auto", ssm_act_layer="silu",
+        ssm_conv=3, ssm_conv_bias=False, ssm_drop_rate=0.0, 
+        ssm_init="v0", forward_type="v05_noz", 
+        mlp_ratio=4.0, mlp_act_layer="gelu", mlp_drop_rate=0.0, gmlp=False,
+        patch_norm=True, norm_layer="ln2d", 
+        downsample_version="v3", patchembed_version="v2", 
+        use_checkpoint=False, posembed=False, imgsize=224, 
+    )
+
+    return vmamba(
         drop_path_rate = vssm_config["MODEL"]["DROP_PATH_RATE"],
         dims = vssm_config["MODEL"]["VSSM"]["EMBED_DIM"],
         depths = vssm_config["MODEL"]["VSSM"]["DEPTHS"],
