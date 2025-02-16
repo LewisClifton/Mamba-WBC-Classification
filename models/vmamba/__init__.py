@@ -1,7 +1,7 @@
 
 import torch
 import torch.nn as nn
-import yaml
+from collections import OrderedDict
 
 from .vmamba import VSSM as vmamba
 
@@ -69,6 +69,13 @@ def get_vmamba(num_classes):
     model.load_state_dict(weights)
 
     # Edit final FC with correct number of classes
-    model.classifier.head=nn.Linear(model.num_features, num_classes),
+    model.classifier = nn.Sequential(
+        OrderedDict([
+            ("norm", model.classifier.norm),  # Keep the normalization layer
+            ("permute", model.classifier.permute),  # Keep the permutation logic
+            ("avgpool", model.classifier.avgpool),  # Keep the pooling layer
+            ("flatten", model.classifier.flatten),  # Keep flattening
+            ("head", nn.Linear(model.num_features, num_classes)),  # Replace head layer
+    ]))
 
     return model
