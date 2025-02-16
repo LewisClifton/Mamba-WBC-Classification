@@ -1,6 +1,5 @@
 import torch.nn as nn
-
-from transforms import TRANSFORMS
+from .transforms import TRANSFORMS
 
 def init_model(config):
     """
