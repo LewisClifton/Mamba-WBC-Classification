@@ -4,6 +4,10 @@ import yaml
 
 from vmamba import VSSM as vmamba
 
+SMALL_URL = "https://github.com/MzeroMiko/VMamba/releases/download/%23v2cls/vssm_small_0229_ckpt_epoch_222.pth"
+BASE_UL = "https://github.com/MzeroMiko/VMamba/releases/download/%23v2cls/vssm_base_0229_ckpt_epoch_237.pth"
+TINY_URL = "https://github.com/MzeroMiko/VMamba/releases/download/%23v2cls/vssm1_tiny_0230s_ckpt_epoch_264.pth"
+
 def build_model(num_classes, vssm_config):
     return vmamba(
         num_classes = num_classes,
@@ -25,12 +29,16 @@ def build_model(num_classes, vssm_config):
 def get_vmamba(num_classes):
 
     config_path = 'pretrained/vmambav2v_tiny_224.yaml'
-    weights_path = 'pretrained/vssm1_tiny_0230s_ckpt_epoch_264.pth'
+    weights_url = TINY_URL # change if required
 
+    # Build the model using the architecture specified
     with open(config_path, 'r') as yml:
         vssm_config = yaml.safe_load(yml)  
-
     model = build_model(num_classes, vssm_config)
-    model.load_state_dict(torch.load(weights_path, weights_only=True))
+
+    # Load the weights from the URL
+    weights = torch.hub.load_state_dict_from_url(weights_url, model_dir='models/vmamba/pretrained/', file_name=weights_url.split('/')[::-1])
+    model.load_state_dict(weights)
+
 
     return model
