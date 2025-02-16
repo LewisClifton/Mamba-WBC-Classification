@@ -12,6 +12,7 @@ from sklearn.model_selection import KFold
 
 from data.dataset import WBC5000dataset, BloodMNIST, TransformedDataset
 from utils import *
+from models.init import init_model
 
 
 torch.backends.cudnn.enabled = True
