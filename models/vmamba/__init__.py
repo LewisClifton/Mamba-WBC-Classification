@@ -2,7 +2,7 @@
 import torch
 import yaml
 
-from vmamba import VSSM as vmamba
+from .vmamba import VSSM as vmamba
 
 SMALL_URL = "https://github.com/MzeroMiko/VMamba/releases/download/%23v2cls/vssm_small_0229_ckpt_epoch_222.pth"
 BASE_UL = "https://github.com/MzeroMiko/VMamba/releases/download/%23v2cls/vssm_base_0229_ckpt_epoch_237.pth"
