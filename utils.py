@@ -251,7 +251,7 @@ def init_model(config):
                 return self.model(x)['logits']
 
 
-        model = MambaVisionWrapper("nvidia/MambaVision-B-1K")
+        model = MambaVisionWrapper()
         transform = TRANSFORMS['mambavision']
 
     elif model_type == 'vim':
