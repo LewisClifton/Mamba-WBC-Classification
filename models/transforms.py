@@ -17,6 +17,7 @@ TRANSFORMS = {
             transforms.ToTensor(),
             transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)])
         },
+
     'medmamba': {
         "train": transforms.Compose([
             transforms.RandomResizedCrop(224),
@@ -28,6 +29,7 @@ TRANSFORMS = {
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
         },
+
     'vmamba': {
         'train': transforms.Compose([
             transforms.RandomResizedCrop(224),
@@ -43,6 +45,7 @@ TRANSFORMS = {
             transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)
         ])
     },
+    
     'mambavision': {
         'train': transforms.Compose([
             transforms.RandomResizedCrop(224),

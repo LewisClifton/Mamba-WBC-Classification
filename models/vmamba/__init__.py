@@ -71,11 +71,11 @@ def get_vmamba(num_classes):
     # Edit final FC with correct number of classes
     model.classifier = nn.Sequential(
         OrderedDict([
-            ("norm", model.classifier.norm),  # Keep the normalization layer
-            ("permute", model.classifier.permute),  # Keep the permutation logic
-            ("avgpool", model.classifier.avgpool),  # Keep the pooling layer
-            ("flatten", model.classifier.flatten),  # Keep flattening
-            ("head", nn.Linear(model.num_features, num_classes)),  # Replace head layer
+            ("norm", model.classifier.norm),
+            ("permute", model.classifier.permute),
+            ("avgpool", model.classifier.avgpool),
+            ("flatten", model.classifier.flatten),
+            ("head", nn.Linear(model.num_features, num_classes)),
     ]))
 
     return model

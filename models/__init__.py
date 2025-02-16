@@ -14,59 +14,37 @@ def init_model(config):
     """
 
     model_type = config['model']['type']
+    num_classes=config['data']['n_classes']
 
     # Create the model and get the transform
-    if model_type == 'swin_t':
-        from torchvision.models import swin_t
+    if model_type == 'swin':
+        from models.swin import get_swin
 
-        model = swin_t(weights='IMAGENET1K_V1')
-        model.head = nn.Linear(model.head.in_features, config['data']['n_classes'])
-        transform = TRANSFORMS['swin']
-
-    elif model_type == 'swin_s':
-        from torchvision.models import swin_s
-
-        model = swin_s(weights='IMAGENET1K_V1')
-        model.head = nn.Linear(model.head.in_features, config['data']['n_classes'])
-        transform = TRANSFORMS['swin']
-
-    elif model_type == 'swin_b':
-        from torchvision.models import swin_b
-
-        model = swin_b(weights='IMAGENET1K_V1')
-        model.head = nn.Linear(model.head.in_features, config['data']['n_classes'])
+        model = get_swin(num_classes)
         transform = TRANSFORMS['swin']
 
     elif model_type == 'medmamba':
-        from models.medmamba import VSSM as MedMamba
+        from .medmamba.medmamba import VSSM as MedMamba
 
-        model = MedMamba(num_classes=config['data']['n_classes'])
+        model = MedMamba(num_classes=num_classes)
         transform = TRANSFORMS['medmamba']
 
     elif model_type == 'vmamba':
         from .vmamba import get_vmamba
 
-        model = get_vmamba(num_classes=config['data']['n_classes'])
+        model = get_vmamba(num_classes=num_classes)
         transform = TRANSFORMS['vmamba']
 
     elif model_type == 'mambavision':
-        from transformers import AutoModelForImageClassification
+        from .mambavision import get_mambavision
         
-        # Need a wrapper to remove the dict wrapping of mambavision.forward
-        class MambaVisionWrapper(nn.Module):
-            def __init__(self):
-                super().__init__()
-                self.model = AutoModelForImageClassification.from_pretrained("nvidia/MambaVision-B-1K", trust_remote_code=True)
-
-            def forward(self, x):
-                return self.model(x)['logits']
-
-
-        model = MambaVisionWrapper()
+        model = get_mambavision(num_classes=num_classes)
         transform = TRANSFORMS['mambavision']
 
     elif model_type == 'vim':
-        pass
+        from .vim import get_vim
+
+        model = get_vim()
     
     # Add new models using elif
     elif model_type == 'foo':
