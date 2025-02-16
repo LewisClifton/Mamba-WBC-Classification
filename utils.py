@@ -240,8 +240,18 @@ def init_model(config):
 
     elif model_type == 'mambavision':
         from transformers import AutoModelForImageClassification
+        
+        # Need a wrapper to remove the dict wrapping of mambavision.forward
+        class MambaVisionWrapper(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.model = AutoModelForImageClassification.from_pretrained("nvidia/MambaVision-B-1K", trust_remote_code=True)
 
-        model = AutoModelForImageClassification.from_pretrained("nvidia/MambaVision-B-1K", trust_remote_code=True)
+            def forward(self, x):
+                return self.model(x)['logits']
+
+
+        model = MambaVisionWrapper("nvidia/MambaVision-B-1K")
         transform = TRANSFORMS['mambavision']
 
     elif model_type == 'vim':
