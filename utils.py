@@ -5,7 +5,6 @@ import yaml
 import torch
 import torch.distributed as dist
 import torch.nn as nn
-from torchvision.models import swin_t, swin_s, swin_b
 from torchvision import transforms
 
 
@@ -155,6 +154,21 @@ TRANSFORMS = {
             transforms.Resize((224, 224)),
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+        },
+    'vmamba': {
+        'train': transforms.Compose([
+            transforms.RandomResizedCrop(224),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ]),
+        
+        'val': transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
     }
 }
 
@@ -172,38 +186,55 @@ def init_model(config):
     """
 
     model_type = config['model']['type']
-    # Create model
+
+    # Create the model and get the transform
     if model_type == 'swin_t':
+        from torchvision.models import swin_t
+
         model = swin_t(weights='IMAGENET1K_V1')
-    elif model_type == 'swin_s':
-        model = swin_s(weights='IMAGENET1K_V1')
-    elif model_type == 'swin_b':
-        model = swin_b(weights='IMAGENET1K_V1')
-    elif model_type == 'medmamba':
-        from models.medmamba import VSSM as MedMamba # Import here as inner imports don't work on windows
-        model = MedMamba(num_classes=config['data']['n_classes'])
-    elif model_type == 'vmamba':
-        from models.VMamba.classification.models import build_vssm_model
-        model = build_vssm_model(config)
-    elif model_type == 'vim':
-        from transformers import AutoModelForImageClassification
-        model = AutoModel.from_pretrained("nvidia/MambaVision-B-1K", trust_remote_code=True)
-
-
-    # Get necessary transform
-    if 'swin' in model_type:
         model.head = nn.Linear(model.head.in_features, config['data']['n_classes'])
         transform = TRANSFORMS['swin']
+
+    elif model_type == 'swin_s':
+        from torchvision.models import swin_s
+
+        model = swin_s(weights='IMAGENET1K_V1')
+        model.head = nn.Linear(model.head.in_features, config['data']['n_classes'])
+        transform = TRANSFORMS['swin']
+
+    elif model_type == 'swin_b':
+        from torchvision.models import swin_b
+
+        model = swin_b(weights='IMAGENET1K_V1')
+        model.head = nn.Linear(model.head.in_features, config['data']['n_classes'])
+        transform = TRANSFORMS['swin']
+
     elif model_type == 'medmamba':
+        from models.medmamba import VSSM as MedMamba
+
+        model = MedMamba(num_classes=config['data']['n_classes'])
         transform = TRANSFORMS['medmamba']
-    elif model_type == 'vim':
+
+    elif model_type == 'vmamba':
+        from models.VMamba.classification.models import build_vssm_model
+
+        model = build_vssm_model(config)
+        transform = TRANSFORMS['vmamba']
+
+    elif model_type == 'mambavision':
+        from transformers import AutoModelForImageClassification
         from timm.data.transforms_factory import create_transform
+
+        model = AutoModelForImageClassification.from_pretrained("nvidia/MambaVision-B-1K", trust_remote_code=True)
         transform = create_transform(input_size=(3, 224, 224),
                                     is_training=True,
                                     mean=model.config.mean,
                                     std=model.config.std,
                                     crop_mode=model.config.crop_mode,
                                     crop_pct=model.config.crop_pct)
+
+    elif model_type == 'vim':
+        pass
 
     return model, transform
 
