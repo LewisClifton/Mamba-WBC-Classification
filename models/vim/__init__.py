@@ -12,15 +12,18 @@ def get_vim(num_classes):
     if model_size == 'tiny':
         weights_url = "https://huggingface.co/hustvl/Vim-tiny-midclstok/blob/main/vim_t_midclstok_76p1acc.pth"
         model = VisionMamba(
-        patch_size=16, stride=8, embed_dim=192, depth=24, rms_norm=True, residual_in_fp32=True, fused_add_norm=True, final_pool_type='mean', if_abs_pos_embed=True, if_rope=False, if_rope_residual=False, bimamba_type="v2", if_cls_token=True, if_divide_out=True, use_middle_cls_token=True)
+        patch_size=16, embed_dim=192, depth=24, rms_norm=True, residual_in_fp32=True, fused_add_norm=True, final_pool_type='mean', if_abs_pos_embed=True, if_rope=False, if_rope_residual=False, bimamba_type="v2", if_cls_token=True, if_divide_out=True, use_middle_cls_token=True)
 
     elif model_size == 'small':
         weights_url = "https://huggingface.co/hustvl/Vim-small-midclstok/blob/main/vim_s_midclstok_80p5acc.pth"
-    
+        model = VisionMamba(
+        patch_size=16, embed_dim=384, depth=24, rms_norm=True, residual_in_fp32=True, fused_add_norm=True, final_pool_type='mean', if_abs_pos_embed=True, if_rope=False, if_rope_residual=False, bimamba_type="v2", if_cls_token=True, if_divide_out=True, use_middle_cls_token=True)
+
     elif model_size == 'base':
         weights_url = "https://huggingface.co/hustvl/Vim-base-midclstok/blob/main/vim_b_midclstok_81p9acc.pth"
+        model = VisionMamba(
+        patch_size=16, embed_dim=768, d_state=16, depth=24, rms_norm=True, residual_in_fp32=True, fused_add_norm=True, final_pool_type='mean', if_abs_pos_embed=True, if_rope=False, if_rope_residual=False, bimamba_type="v2", if_cls_token=True, if_devide_out=True, use_middle_cls_token=True)
 
-    # Build the model using the architecture specified
     model.default_cfg = _cfg()
 
     # Load the weights from the URL
