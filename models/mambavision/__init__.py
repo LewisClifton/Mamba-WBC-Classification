@@ -7,7 +7,7 @@ class MambaVisionWrapper(nn.Module):
         super().__init__()
         
         model = AutoModelForImageClassification.from_pretrained("nvidia/MambaVision-B-1K", trust_remote_code=True)
-        model.classifier.head = nn.Linear(model.head.in_features, num_classes)
+        model.classifier.head = nn.Linear(model.classifier.head.in_features, num_classes)
 
         self.model = model
 
