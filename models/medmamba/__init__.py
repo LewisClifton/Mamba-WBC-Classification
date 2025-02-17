@@ -1,5 +1,6 @@
-from .medmamba import MedMamba
 from torchvision import transforms
+
+from .medmamba import VSSM as MedMamba
 
 
 TRANSFORM_MEDMAMBA = {
