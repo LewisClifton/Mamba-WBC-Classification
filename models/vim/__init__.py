@@ -157,7 +157,7 @@ def get(num_classes):
     model = build_model(model_size)
 
     # Load the weights from the url
-    weights_path = torch.hub.load_state_dict_from_url(weights_url, model_dir="models/vim/pretrained/", file_name=weights_url.split('/')[-1])
+    weights_path = torch.hub.load_state_dict_from_url(weights_url, model_dir="models/vim/pretrained/", file_name=weights_url.split('/')[-1])['model']
     model.load_state_dict(weights_path)
 
     # Edit final FC with correct number of classes
