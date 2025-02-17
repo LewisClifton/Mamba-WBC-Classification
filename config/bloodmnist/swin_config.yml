@@ -1,5 +1,5 @@
 model:
-  type: swin_t
+  type: swin
 data:
   dataset: bloodmnist
   n_classes: 8
