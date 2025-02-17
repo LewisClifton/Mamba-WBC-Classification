@@ -2,14 +2,29 @@
 import torch
 import torch.nn as nn
 from collections import OrderedDict
+from torchvision import transforms
 
 from .vmamba import VSSM as vmamba
 
-SMALL_URL = "https://github.com/MzeroMiko/VMamba/releases/download/%23v2cls/vssm_small_0229_ckpt_epoch_222.pth"
-TINY_URL = "https://github.com/MzeroMiko/VMamba/releases/download/%23v2cls/vssm1_tiny_0230s_ckpt_epoch_264.pth"
-BASE_URL = "https://github.com/MzeroMiko/VMamba/releases/download/%23v2cls/vssm_base_0229_ckpt_epoch_237.pth"
 
-def build_model(num_classes, model_size='tiny'):
+TRANSFORM_VMAMBA = {
+    'train': transforms.Compose([
+        transforms.RandomResizedCrop(224),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ]),
+    
+    'val': transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ])
+}
+
+
+def build_model(model_size='tiny'):
 
     model_size = 'tiny'
     if model_size == 'tiny':
@@ -50,7 +65,7 @@ def build_model(num_classes, model_size='tiny'):
         )
 
 
-def get_vmamba(num_classes):
+def get(num_classes):
 
     # Get the correct URL
     model_size = 'tiny'
@@ -78,4 +93,4 @@ def get_vmamba(num_classes):
             ("head", nn.Linear(model.num_features, num_classes)),
     ]))
 
-    return model
+    return model, TRANSFORM_VMAMBA

@@ -1,11 +1,29 @@
 import torch
 import torch.nn as nn
 from timm.models.vision_transformer import _cfg
+from torchvision import transforms
 
 from .vim.models_mamba import VisionMamba
 
 
-def get_vim(num_classes):
+TRANSFORM_VIM = {
+    'train': transforms.Compose([
+        transforms.RandomResizedCrop(224),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ]),
+    
+    'val': transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ])
+}
+
+
+def get(num_classes):
 
     # Build the model
     model_size = 'tiny'
@@ -33,4 +51,4 @@ def get_vim(num_classes):
     # Edit final FC with correct number of classes
     model.head = nn.Linear(model.head.in_features, num_classes)
 
-    return model
+    return model, TRANSFORM_VIM
