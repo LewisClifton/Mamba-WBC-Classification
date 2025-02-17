@@ -1,25 +1,86 @@
+import random
+from PIL import ImageFilter, ImageOps
+
 import torch
 import torch.nn as nn
 from timm.models.vision_transformer import _cfg
+from timm.data.transforms import RandomResizedCropAndInterpolation, ToNumpy, ToTensor
 from torchvision import transforms
 
 from .vim.models_mamba import VisionMamba
 
 
+class GaussianBlur(object):
+    """
+    Apply Gaussian Blur to the PIL image.
+    """
+    def __init__(self, p=0.1, radius_min=0.1, radius_max=2.):
+        self.prob = p
+        self.radius_min = radius_min
+        self.radius_max = radius_max
+
+    def __call__(self, img):
+        do_it = random.random() <= self.prob
+        if not do_it:
+            return img
+
+        img = img.filter(
+            ImageFilter.GaussianBlur(
+                radius=random.uniform(self.radius_min, self.radius_max)
+            )
+        )
+        return img
+
+class Solarization(object):
+    """
+    Apply Solarization to the PIL image.
+    """
+    def __init__(self, p=0.2):
+        self.p = p
+
+    def __call__(self, img):
+        if random.random() < self.p:
+            return ImageOps.solarize(img)
+        else:
+            return img
+
+class gray_scale(object):
+    """
+    Apply Solarization to the PIL image.
+    """
+    def __init__(self, p=0.2):
+        self.p = p
+        self.transf = transforms.Grayscale(3)
+ 
+    def __call__(self, img):
+        if random.random() < self.p:
+            return self.transf(img)
+        else:
+            return img
+
+
 TRANSFORM_VIM = {
     'train': transforms.Compose([
-        transforms.RandomResizedCrop(224),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-    ]),
-    
-    'val': transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.CenterCrop(224),
-        transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-    ])
+            transforms.Resize(224, interpolation=3),
+            transforms.RandomCrop(224, padding=4, padding_mode='reflect'),
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomChoice([
+                gray_scale(p=1.0),
+                Solarization(p=1.0),
+                GaussianBlur(p=1.0)
+            ]),
+            transforms.ColorJitter(0.4, 0.4, 0.4),  # Assuming color_jitter = 0.4
+            transforms.ToTensor(),
+            transforms.Normalize(mean=torch.tensor([0.485, 0.456, 0.406]), 
+                                 std=torch.tensor([0.229, 0.224, 0.225]))
+        ]),
+        
+        'val': transforms.Compose([
+            transforms.Resize(224, interpolation=3),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=torch.tensor([0.485, 0.456, 0.406]), 
+                                 std=torch.tensor([0.229, 0.224, 0.225]))
+        ])
 }
 
 
