@@ -149,11 +149,11 @@ def main(rank, world_size, using_dist, out_dir, model_config, dataset_config, da
         dist.barrier()
         
         if rank in [0, 'cuda:0']:
-            save(out_dir, metrics, trained, {'model' : model_config, 'dataset' : dataset_config})
+            save(out_dir, metrics, trained, model_config, dataset_config)
 
         dist.destroy_process_group()
     else:
-        save(out_dir, metrics, trained, {'model' : model_config, 'dataset' : dataset_config})
+        save(out_dir, metrics, trained, model_config, dataset_config)
         
 
 if __name__ == '__main__':
