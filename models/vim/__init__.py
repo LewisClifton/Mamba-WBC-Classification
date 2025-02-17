@@ -7,7 +7,7 @@ from timm.models.vision_transformer import _cfg
 from timm.data.transforms import RandomResizedCropAndInterpolation, ToNumpy, ToTensor
 from torchvision import transforms
 
-from .vim.models_mamba import VisionMamba
+from .models_mamba import VisionMamba
 
 
 class GaussianBlur(object):
