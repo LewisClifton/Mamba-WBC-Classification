@@ -4,7 +4,7 @@ import torch
 import torch.distributed as dist
 
 
-def save_log(out_dir, date, metrics):
+def save_log(out_dir, date, metrics, dataset_name):
     """
     Save training log
 
@@ -17,6 +17,7 @@ def save_log(out_dir, date, metrics):
     log_path = os.path.join(out_dir, 'log.txt')
     with open(log_path , 'w') as file:
         file.write(f'Date/time of creation: {date}\n')
+        file.write(f'Dataset used: {dataset_name}\n')
 
         if isinstance(metrics, list):
             # Save metrics for each fold

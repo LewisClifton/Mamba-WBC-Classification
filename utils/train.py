@@ -43,6 +43,7 @@ def save_config(out_dir, config):
         out_dir(string): Path to directory to save the config file to
         config(dict): Training config dictionary to be saved
     """
+
     # Save model configuration
     config_path = os.path.join(out_dir, 'config.yml')
     with open(config_path, "w") as file:
@@ -70,9 +71,9 @@ def save(out_dir, metrics, trained, model_config, dataset_config):
         os.makedirs(out_dir)
     
     # Save models, log and config yml
-    save_models(out_dir, trained, model_config['model']['type'])
-    save_log(out_dir, date, metrics)
-    save_config(out_dir, model_config, dataset_config)
+    save_models(out_dir, trained, model_config['name'])
+    save_log(out_dir, date, metrics, dataset_config['name'])
+    save_config(out_dir, model_config)
 
 
 def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, device, using_dist, verbose=False):
