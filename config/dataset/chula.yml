@@ -1,0 +1,11 @@
+name: Chula 5000
+images_dir: [Path to WBC 5000 images directory]
+labels_path: [Path to labels.csv]
+n_classes: 6
+classes:
+- "BNE"
+- "SNE"
+- "Basophil"
+- "Eosinophil"
+- "Monocyte"
+- "Lymphocyte"

@@ -49,7 +49,7 @@ def save_config(out_dir, config):
         yaml.dump(config, file, default_flow_style=False)
 
 
-def save(out_dir, metrics, trained, config):
+def save(out_dir, metrics, trained, model_config, dataset_config):
     """
     Save trained models, training log and model configuration file
 
@@ -70,9 +70,9 @@ def save(out_dir, metrics, trained, config):
         os.makedirs(out_dir)
     
     # Save models, log and config yml
-    save_models(out_dir, trained, config['model']['type'])
+    save_models(out_dir, trained, model_config['model']['type'])
     save_log(out_dir, date, metrics)
-    save_config(out_dir, config)
+    save_config(out_dir, model_config, dataset_config)
 
 
 def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, device, using_dist, verbose=False):

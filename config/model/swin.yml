@@ -1,0 +1,5 @@
+name: swin
+learning_rate: 1.e-4
+optim_weight_decay: 5.e-2
+batch_size: 32
+epochs: 5

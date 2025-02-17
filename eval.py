@@ -16,7 +16,7 @@ from utils.eval import accuracy, sensitivity, f1_score, confusion_matrix
 torch.backends.cudnn.enabled = True
 
 
-def evaluate_model(config, test_dataset, device):
+def evaluate_model(model, test_loader, device):
     """
     Evaluate a trained model on a test dataset.
 
@@ -31,22 +31,6 @@ def evaluate_model(config, test_dataset, device):
 
     
     print('Beginning evaluation...')
-
-    # Load model
-    model, model_transforms = init_model(config['model']['type'], config['data']['num_classes'])
-
-    # Load saved weights
-    model.load_state_dict(torch.load(config['model']['path'], map_location=device))
-    model.eval()
-
-    # Put on device
-    model.to(device)
-
-    # Apply transforms
-    test_dataset = TransformedDataset(test_dataset, model_transforms['test'])
-
-    # Create data loaders
-    test_loader = DataLoader(test_dataset, batch_size=config['params']['batch_size'])
 
     preds = []
     labels = []
@@ -71,26 +55,42 @@ def evaluate_model(config, test_dataset, device):
     }
 
 
-def main(out_dir, config):
+def main(out_dir, model_config, dataset_config):
 
     # Setup GPU network if required
     device = 'cuda'
 
     # Train using specified dataset with/without k-fold cross validation
-    if config['data']['dataset'] == 'chula':
+    if dataset_config['name'] == 'chula':
         # Get dataset
-        test_dataset = WBC5000dataset(config['data']['images_dir'], config['data']['labels_path'], wbc_types=config['data']['classes'])
+        test_dataset = WBC5000dataset(dataset_config['images_dir'], dataset_config['labels_path'], wbc_types=dataset_config['classes'])
 
-    elif config['data']['dataset'] == 'bloodmnist':
+    elif dataset_config['name'] == 'bloodmnist':
         # Get dataset
         test_dataset = BloodMNIST(split='test', download=True, size=224)
 
     # Can add more datasets here..
-    elif config['data']['dataset'] == 'foo':
+    elif dataset_config['name'] == 'foo':
         pass
 
+    # Load model
+    model, model_transforms = init_model(model_config['name'], dataset_config['num_classes'])
+
+    # Load saved weights
+    model.load_state_dict(torch.load(model_config['path'], map_location=device))
+    model.eval()
+
+    # Put on device
+    model.to(device)
+
+    # Apply transforms
+    test_dataset = TransformedDataset(test_dataset, model_transforms['test'])
+
+    # Create data loaders
+    test_loader = DataLoader(test_dataset, batch_size=model_config['batch_size'])
+
     # Evaluate the model
-    metrics = evaluate_model(config, test_dataset, device)
+    metrics = evaluate_model(model, test_loader, device)
 
     # Create output directory for log
     date = datetime.now().strftime('%Y_%m_%d_%p%I_%M')
@@ -107,16 +107,20 @@ if __name__ == "__main__":
     # Command line args
     parser = argparse.ArgumentParser()
     parser.add_argument('--out_dir', type=str, help='Path to directory where trained model and log will be saved (default=cwd)', default='.')
-    parser.add_argument('--config_path', type=str, help='Path to model config .yml.', required=True)
+    parser.add_argument('--model_config_path', type=str, help='Path to model config .yml.', required=True)
+    parser.add_argument('--dataset_config_path', type=str, help='Name of dataset to evaluate model with', required=True)
+
 
     # Parse command line args
     args = parser.parse_args()
     out_dir = args.out_dir
-    config_path = args.config_path
-    using_windows = args.using_windows
+    model_config_path = args.model_config_path
+    dataset_config_path= args.dataset_config_path
 
-    # Load config
-    with open(config_path, "r") as yml:
-        config = yaml.safe_load(yml)
+    # Get the model and dataset configs
+    with open(model_config_path, 'r') as yml:
+        model_config = yaml.safe_load(yml)
+    with open(dataset_config_path, 'r') as yml:
+        dataset_config = yaml.safe_load(yml)
 
-    main(out_dir, config)
+    main(out_dir, model_config, dataset_config)
