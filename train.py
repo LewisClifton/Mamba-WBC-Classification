@@ -119,7 +119,7 @@ def train_model(model_config, dataset_config, train_dataset, val_dataset, device
     return trained, metrics
     
 
-def main(rank, world_size, using_dist, out_dir, model_config, dataset_config, verbose=False):
+def main(rank, world_size, using_dist, out_dir, model_config, dataset_config, dataset_download_dir, verbose=False):
 
     # Setup GPU network if required
     if using_dist: setup_dist(rank, world_size)
@@ -127,14 +127,14 @@ def main(rank, world_size, using_dist, out_dir, model_config, dataset_config, ve
     # Train using specified dataset with/without k-fold cross validation
     if dataset_config['name'] == 'chula':
         # Get dataset
-        dataset = get_dataset(dataset_config)
+        dataset = get_dataset(dataset_config, dataset_download_dir)
 
         # Train the model using k-fold cross validation and get the training metrics for each fold
         trained, metrics = train_5folds(model_config, dataset_config, dataset, rank, using_dist, verbose)
 
     elif dataset_config['name'] == 'bloodmnist':
         # Get dataset
-        train_dataset, val_dataset = get_dataset(dataset_config)
+        train_dataset, val_dataset = get_dataset(dataset_config, dataset_download_dir)
 
         # Train model only once (i.e. without k-fold cross validation)
         trained, metrics = train_model(model_config, dataset_config, train_dataset, val_dataset, rank, using_dist, verbose)
@@ -166,6 +166,7 @@ if __name__ == '__main__':
     parser.add_argument('--using_windows', action=argparse.BooleanOptionalAction, help='If using Windows machine for training. Forces --num_gpus to 1')
     parser.add_argument('--num_gpus', type=int, help='Number of GPUs to be used for training. (default=2)', default=2)
     parser.add_argument('--verbose', action=argparse.BooleanOptionalAction, help='Whether to print per epoch metrics during training')
+    parser.add_argument('--dataset_download_dir', type=str, help='Directory to download dataset to')
    
     # Parse command line args
     args = parser.parse_args()
@@ -175,6 +176,7 @@ if __name__ == '__main__':
     using_windows = args.using_windows
     num_gpus = args.num_gpus
     verbose = args.verbose
+    dataset_download_dir = args.dataset_download_dir
 
     # Get the model and dataset configs
     with open(model_config_path, 'r') as yml:
@@ -189,6 +191,6 @@ if __name__ == '__main__':
 
     # Create process group if using multi gpus on Linux
     if using_dist:
-        mp.spawn(main, args=(num_gpus, True, out_dir, model_config, dataset_config, verbose), nprocs=num_gpus)
+        mp.spawn(main, args=(num_gpus, True, out_dir, model_config, dataset_config, dataset_download_dir, verbose), nprocs=num_gpus)
     else:
-        main(0, 1, False, out_dir, model_config, dataset_config, verbose)
+        main(0, 1, False, out_dir, model_config, dataset_config, dataset_download_dir, verbose)

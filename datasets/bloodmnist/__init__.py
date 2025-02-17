@@ -2,20 +2,17 @@ import os
 
 from medmnist import BloodMNIST
 
-def get(test=False):
+def get(dataset_download_dir, test=False):
 
     # Set up path for the dataset 
-    path = os.path.join(os.getcwd(), 'datasets/bloodmnist/data/')
-    if not os.path.isdir(path):
-        os.mkdir(path)
+    if not os.path.isdir(dataset_download_dir):
+        os.mkdir(dataset_download_dir)
 
     # Get the dataset
     if not test:
-        train_dataset = BloodMNIST(split='train', download=True, size=224)
-        val_dataset = BloodMNIST(split='val', download=True, size=224)
+        train_dataset = BloodMNIST(split='train', download=True, size=224, root=dataset_download_dir)
+        val_dataset = BloodMNIST(split='val', download=True, size=224, root=dataset_download_dir)
         return train_dataset, val_dataset
     else: 
-        test_dataset = BloodMNIST(split='test', download=True, size=224)
+        test_dataset = BloodMNIST(split='test', download=True, size=224, root=dataset_download_dir)
         return test_dataset
-
-    

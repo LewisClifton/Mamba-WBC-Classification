@@ -16,7 +16,7 @@ class TransformedDataset(Dataset):
         return len(self.dataset)
     
 
-def get_dataset(dataset_config, test=False):
+def get_dataset(dataset_config, dataset_download_dir, test=False):
     """
     Initialise fresh model prior to training
 
@@ -40,7 +40,7 @@ def get_dataset(dataset_config, test=False):
     elif dataset_name == 'bloodmnist':
         from .bloodmnist import get
 
-        train_dataset, val_dataset = get(test)
+        train_dataset, val_dataset = get(dataset_download_dir, test)
 
         return train_dataset, val_dataset # Dataset split pre-defined so return here
 
