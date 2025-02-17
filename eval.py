@@ -94,7 +94,7 @@ if __name__ == "__main__":
 
     # Command line args
     parser = argparse.ArgumentParser()
-    parser.add_argument('--out_dir', type=str, help='Path to directory where trained model and log will be saved (default=cwd)', default='.')
+    parser.add_argument('--out_dir', type=str, help='Path to directory where model evaluation log will be saved (default=cwd)', default='.')
     parser.add_argument('--model_config_path', type=str, help='Path to model config .yml.', required=True)
     parser.add_argument('--dataset_config_path', type=str, help='Name of dataset to evaluate model with', required=True)
 
