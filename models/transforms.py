@@ -1,9 +1,9 @@
 from torchvision import transforms
 
-IMAGENET_MEAN =[0.485, 0.456, 0.406]
-IMAGENET_STD =[0.229, 0.224, 0.225]
+IMAGENET_MEAN_ = [0.485, 0.456, 0.406]
+IMAGENET_STD_ = [0.229, 0.224, 0.225]
 
-TRANSFORMS = {
+TRANSFORMS_ = {
     'swin': {
         'train': transforms.Compose([
             transforms.Resize((224, 224)),
@@ -11,11 +11,11 @@ TRANSFORMS = {
             transforms.RandomAffine(degrees=0, translate=(0.2, 0.2), shear=25),
             transforms.RandomHorizontalFlip(p=1.0), 
             transforms.ToTensor(),
-            transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)]),
+            transforms.Normalize(IMAGENET_MEAN_, IMAGENET_STD_)]),
         'val': transforms.Compose([
             transforms.Resize((224, 224)),
             transforms.ToTensor(),
-            transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)])
+            transforms.Normalize(IMAGENET_MEAN_, IMAGENET_STD_)])
         },
 
     'medmamba': {
@@ -35,14 +35,14 @@ TRANSFORMS = {
             transforms.RandomResizedCrop(224),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-            transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)
+            transforms.Normalize(IMAGENET_MEAN_, IMAGENET_STD_)
         ]),
         
         'val': transforms.Compose([
             transforms.Resize((224, 224)),
             transforms.CenterCrop(224),
             transforms.ToTensor(),
-            transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)
+            transforms.Normalize(IMAGENET_MEAN_, IMAGENET_STD_)
         ])
     },
     
@@ -51,13 +51,16 @@ TRANSFORMS = {
             transforms.RandomResizedCrop(224),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-            transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)
+            transforms.Normalize(IMAGENET_MEAN_, IMAGENET_STD_)
         ]),
         'val': transforms.Compose([
             transforms.Resize((224, 224)),
             transforms.CenterCrop(224),
             transforms.ToTensor(),
-            transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)
+            transforms.Normalize(IMAGENET_MEAN_, IMAGENET_STD_)
         ])
     }
 }
+
+def get_transform(model_type): 
+    return TRANSFORMS_[model_type]

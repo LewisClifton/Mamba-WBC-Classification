@@ -1,7 +1,6 @@
-import torch.nn as nn
-from .transforms import TRANSFORMS
+from .transforms import get_transform
 
-def init_model(config):
+def init_model(model_type, num_classes):
     """
     Initialise fresh model prior to training
 
@@ -13,43 +12,37 @@ def init_model(config):
         dict: Dictionary containing the required data transforms. Use "train"/"val" keys to access training/validation data transforms
     """
 
-    model_type = config['model']['type']
-    num_classes=config['data']['n_classes']
 
-    # Create the model and get the transform
+    # Get the required model
     if model_type == 'swin':
         from models.swin import get_swin
 
-        model = get_swin(num_classes)
-        transform = TRANSFORMS['swin']
+        model = get_swin(num_classes=num_classes)
 
     elif model_type == 'medmamba':
-        from .medmamba.medmamba import VSSM as MedMamba
+        from .medmamba import get_medmamba
 
-        model = MedMamba(num_classes=num_classes)
-        transform = TRANSFORMS['medmamba']
+        model = get_medmamba(num_classes=num_classes)
 
     elif model_type == 'vmamba':
         from .vmamba import get_vmamba
 
         model = get_vmamba(num_classes=num_classes)
-        transform = TRANSFORMS['vmamba']
 
     elif model_type == 'mambavision':
         from .mambavision import get_mambavision
         
         model = get_mambavision(num_classes=num_classes)
-        transform = TRANSFORMS['mambavision']
 
     elif model_type == 'vim':
         from .vim import get_vim
 
-        model = get_vim()
-    
+        model = get_vim(num_classes=num_classes)
+
     # Add new models using elif
     elif model_type == 'foo':
         pass
 
-    
+    transform = get_transform(model_type)
 
     return model, transform

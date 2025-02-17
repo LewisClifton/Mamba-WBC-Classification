@@ -80,7 +80,7 @@ def train_model(config, train_dataset, val_dataset, device, using_dist=True, ver
     if device in [0, 'cuda:0']:
         print('Training...')
     # Initialise model
-    model, model_transforms = init_model(config)
+    model, model_transforms = init_model(config['model']['type'], config['data']['n_classes'])
     model = model.to(device)
 
     # Apply transforms

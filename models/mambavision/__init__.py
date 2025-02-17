@@ -1,4 +1,5 @@
 from transformers import AutoModelForImageClassification
+import torch.nn as nn
         
 # Need a wrapper to remove the dict wrapping of mambavision.forward
 class MambaVisionWrapper(nn.Module):
