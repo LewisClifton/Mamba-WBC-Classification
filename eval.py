@@ -7,7 +7,7 @@ import torch
 
 from torch.utils.data import DataLoader
 
-from data.dataset import WBC5000dataset, BloodMNIST, TransformedDataset
+from datasets import get_dataset, TransformedDataset
 from models import init_model
 from utils.common import save_log
 from utils.eval import accuracy, sensitivity, f1_score, confusion_matrix
@@ -61,17 +61,7 @@ def main(out_dir, model_config, dataset_config):
     device = 'cuda'
 
     # Train using specified dataset with/without k-fold cross validation
-    if dataset_config['name'] == 'chula':
-        # Get dataset
-        test_dataset = WBC5000dataset(dataset_config['images_dir'], dataset_config['labels_path'], wbc_types=dataset_config['classes'])
-
-    elif dataset_config['name'] == 'bloodmnist':
-        # Get dataset
-        test_dataset = BloodMNIST(split='test', download=True, size=224)
-
-    # Can add more datasets here..
-    elif dataset_config['name'] == 'foo':
-        pass
+    test_dataset = get_dataset(dataset_config, test=True)
 
     # Load model
     model, model_transforms = init_model(model_config['name'], dataset_config['num_classes'])

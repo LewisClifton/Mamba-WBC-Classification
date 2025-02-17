@@ -5,17 +5,13 @@ from PIL import Image
 import pandas as pd
 import torch
 
-from medmnist import BloodMNIST
-
-## TO DO: Update the data/ folder to allow for introduction of more local datasets
-
-class WBC5000dataset(Dataset):
+class ChulaWBC5000(Dataset):
     def __init__(self, images_path, labels_path, wbc_types=['BNE', 'SNE', 'Basophil', 'Eosinophil', 'Monocyte', 'Lymphocyte']):
-        super(WBC5000dataset, self).__init__()
+        super(ChulaWBC5000, self).__init__()
 
         self.images_path = images_path
 
-        self.labels = WBC5000dataset._get_labels(labels_path, wbc_types)
+        self.labels = ChulaWBC5000._get_labels(labels_path, wbc_types)
 
         self.wbc_types = wbc_types
 
@@ -97,18 +93,11 @@ class WBC5000dataset(Dataset):
     
     def __len__(self):
         return len(self.labels)
+    
 
-class TransformedDataset(Dataset):
-    def __init__(self, dataset, transform):
-        self.dataset = dataset
-        self.transform = transform
+def get(dataset_config, test=False):
+    dataset = ChulaWBC5000(dataset_config['images_dir'], dataset_config['labels_path'], wbc_types=dataset_config['classes'])
 
-    def __getitem__(self, idx):
-        image, label = self.dataset[idx]
+    # TO DO: CHULA TRAIN TEST SPLIT
 
-        image = self.transform(image)
-        
-        return image, label
-
-    def __len__(self):
-        return len(self.dataset)
+    return dataset

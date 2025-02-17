@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader, DistributedSampler
 from torch.nn.parallel import DistributedDataParallel as DDP
 from sklearn.model_selection import KFold
 
-from data.dataset import WBC5000dataset, BloodMNIST, TransformedDataset
+from datasets import get_dataset, TransformedDataset
 from utils.common import setup_dist
 from utils.train import train_loop, save
 from models import init_model
@@ -83,7 +83,7 @@ def train_model(model_config, dataset_config, train_dataset, val_dataset, device
         print('Training...')
 
     # Initialise model
-    model, model_transforms = init_model(model_config['name'], model_config['n_classes'])
+    model, model_transforms = init_model(model_config['name'], dataset_config['n_classes'])
     model = model.to(device)
 
     # Apply transforms
@@ -127,18 +127,17 @@ def main(rank, world_size, using_dist, out_dir, model_config, dataset_config, ve
     # Train using specified dataset with/without k-fold cross validation
     if dataset_config['name'] == 'chula':
         # Get dataset
-        dataset = WBC5000dataset(dataset_config['images_dir'], dataset_config['labels_path'], wbc_types=dataset_config['classes'])
+        dataset = get_dataset(dataset_config)
 
         # Train the model using k-fold cross validation and get the training metrics for each fold
-        trained, metrics = train_5folds(model_config, dataset, rank, using_dist, verbose)
+        trained, metrics = train_5folds(model_config, dataset_config, dataset, rank, using_dist, verbose)
 
     elif dataset_config['name'] == 'bloodmnist':
         # Get dataset
-        train_dataset = BloodMNIST(split='train', download=True, size=224)
-        val_dataset = BloodMNIST(split='val', download=True, size=224)
+        train_dataset, val_dataset = get_dataset(dataset_config)
 
         # Train model only once (i.e. without k-fold cross validation)
-        trained, metrics = train_model(model_config, train_dataset, val_dataset, rank, using_dist, verbose)
+        trained, metrics = train_model(model_config, dataset_config, train_dataset, val_dataset, rank, using_dist, verbose)
 
     # Can add more datasets here..
     elif dataset_config['name'] == 'foo':

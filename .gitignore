@@ -1,5 +1,4 @@
-data/WBC 5000
-data/labels.csv
+datasets/chula/data/WBC 5000/
 out/
 *.pyc
 my_config/
