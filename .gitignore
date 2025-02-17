@@ -3,4 +3,4 @@ data/labels.csv
 out/
 *.pyc
 my_config/
-models/old_vmamba/
+models/vim/causal-conv1d/
