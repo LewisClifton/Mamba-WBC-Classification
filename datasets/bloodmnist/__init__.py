@@ -11,11 +11,11 @@ def get(test=False):
 
     # Get the dataset
     if not test:
-        train_dataset = BloodMNIST(split='train', download=True, size=224, root=path)
-        val_dataset = BloodMNIST(split='val', download=True, size=224, root=path)
+        train_dataset = BloodMNIST(split='train', download=True, size=224)
+        val_dataset = BloodMNIST(split='val', download=True, size=224)
         return train_dataset, val_dataset
     else: 
-        test_dataset = BloodMNIST(split='test', download=True, size=224, root=path)
+        test_dataset = BloodMNIST(split='test', download=True, size=224)
         return test_dataset
 
     
