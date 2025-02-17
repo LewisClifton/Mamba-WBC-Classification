@@ -11,7 +11,8 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from sklearn.model_selection import KFold
 
 from data.dataset import WBC5000dataset, BloodMNIST, TransformedDataset
-from utils import *
+from utils.common import setup_dist
+from utils.train import train_loop, save
 from models import init_model
 
 
@@ -23,10 +24,10 @@ def train_kfolds(config, dataset, device, using_dist=True, verbose=False):
     Train a model with k-fold cross-validation
 
     Args:
-        config(dict): Dictionary containing training configuration with top level keys of "model","data","params"
-        dataset(torch.utils.data.Dataset): Dataset used for training
-        device(torch.cuda.device): Device used for training
-        using_dist(bool): True if using distributed training across 2+ GPUs
+        config (dict): Dictionary containing training configuration with top level keys of "model","data","params"
+        dataset (torch.utils.data.Dataset): Dataset used for training
+        device (torch.cuda.device): Device used for training
+        using_dist (bool): True if using distributed training across 2+ GPUs
 
     Returns:
         list[torch.Module]: List of trained models, one for each fold
@@ -77,8 +78,10 @@ def train_model(config, train_dataset, val_dataset, device, using_dist=True, ver
         torch.Module: Trained model
         dict: Training metrics for the model
     """
+
     if device in [0, 'cuda:0']:
         print('Training...')
+
     # Initialise model
     model, model_transforms = init_model(config['model']['type'], config['data']['n_classes'])
     model = model.to(device)
