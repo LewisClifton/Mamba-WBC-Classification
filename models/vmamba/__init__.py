@@ -77,7 +77,7 @@ def get(num_classes):
         weights_url = "https://github.com/MzeroMiko/VMamba/releases/download/%23v2cls/vssm_base_0229_ckpt_epoch_237.pth"
 
     # Build the model using the architecture specified
-    model = build_model(num_classes, model_size)
+    model = build_model(model_size)
 
     # Load the weights from the URL
     weights = torch.hub.load_state_dict_from_url(weights_url, model_dir='models/vmamba/pretrained/', file_name=weights_url.split('/')[-1])['model']
