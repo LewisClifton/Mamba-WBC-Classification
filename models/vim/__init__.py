@@ -84,30 +84,81 @@ TRANSFORM_VIM = {
 }
 
 
-def get(num_classes):
+def build_model(model_size):
 
     # Build the model
-    model_size = 'tiny'
-    if model_size == 'tiny':
-        weights_url = "https://huggingface.co/hustvl/Vim-tiny-midclstok/blob/main/vim_t_midclstok_76p1acc.pth"
-        model = VisionMamba(
-        patch_size=16, embed_dim=192, depth=24, rms_norm=True, residual_in_fp32=True, fused_add_norm=True, final_pool_type='mean', if_abs_pos_embed=True, if_rope=False, if_rope_residual=False, bimamba_type="v2", if_cls_token=True, if_divide_out=True, use_middle_cls_token=True)
+    if model_size == "tiny":
+        return VisionMamba(
+            patch_size=16,
+            embed_dim=192,
+            depth=24,
+            rms_norm=True,
+            residual_in_fp32=True,
+            fused_add_norm=True,
+            final_pool_type="mean",
+            if_abs_pos_embed=True,
+            if_rope=False,
+            if_rope_residual=False,
+            bimamba_type="v2",
+            if_cls_token=True,
+            if_divide_out=True,
+            use_middle_cls_token=True,
+        )
 
-    elif model_size == 'small':
-        weights_url = "https://huggingface.co/hustvl/Vim-small-midclstok/blob/main/vim_s_midclstok_80p5acc.pth"
-        model = VisionMamba(
-        patch_size=16, embed_dim=384, depth=24, rms_norm=True, residual_in_fp32=True, fused_add_norm=True, final_pool_type='mean', if_abs_pos_embed=True, if_rope=False, if_rope_residual=False, bimamba_type="v2", if_cls_token=True, if_divide_out=True, use_middle_cls_token=True)
+    elif model_size == "small":
+        return VisionMamba(
+            patch_size=16,
+            embed_dim=384,
+            depth=24,
+            rms_norm=True,
+            residual_in_fp32=True,
+            fused_add_norm=True,
+            final_pool_type="mean",
+            if_abs_pos_embed=True,
+            if_rope=False,
+            if_rope_residual=False,
+            bimamba_type="v2",
+            if_cls_token=True,
+            if_divide_out=True,
+            use_middle_cls_token=True,
+        )
 
-    elif model_size == 'base':
-        weights_url = "https://huggingface.co/hustvl/Vim-base-midclstok/blob/main/vim_b_midclstok_81p9acc.pth"
-        model = VisionMamba(
-        patch_size=16, embed_dim=768, d_state=16, depth=24, rms_norm=True, residual_in_fp32=True, fused_add_norm=True, final_pool_type='mean', if_abs_pos_embed=True, if_rope=False, if_rope_residual=False, bimamba_type="v2", if_cls_token=True, if_devide_out=True, use_middle_cls_token=True)
+    elif model_size == "base":
+        return VisionMamba(
+            patch_size=16,
+            embed_dim=768,
+            d_state=16,
+            depth=24,
+            rms_norm=True,
+            residual_in_fp32=True,
+            fused_add_norm=True,
+            final_pool_type="mean",
+            if_abs_pos_embed=True,
+            if_rope=False,
+            if_rope_residual=False,
+            bimamba_type="v2",
+            if_cls_token=True,
+            if_devide_out=True,  # Fix typo? should be `if_divide_out`
+            use_middle_cls_token=True,
+        )
 
-    model.default_cfg = _cfg()
+def get(num_classes):
 
-    # Load the weights from the URL
-    weights = torch.hub.load_state_dict_from_url(weights_url, model_dir='models/vim/pretrained/', file_name=weights_url.split('/')[-1], weights_only=True)['model']
-    model.load_state_dict(weights)
+    # Get the correct URL
+    model_size = "tiny"
+    if model_size == "tiny":
+        weights_url = "https://huggingface.co/hustvl/Vim-tiny-midclstok/resolve/main/vim_t_midclstok_76p1acc.pth"
+    elif model_size == "small":
+        weights_url = "https://huggingface.co/hustvl/Vim-small-midclstok/resolve/main/vim_s_midclstok_80p5acc.pth"
+    elif model_size == "base":
+        weights_url = "https://huggingface.co/hustvl/Vim-base-midclstok/resolve/main/vim_b_midclstok_81p9acc.pth"
+
+    # Build the model using the architecture specified
+    model = build_model(model_size)
+
+    # Load the weights from the url
+    weights_path = torch.hub.load_state_dict_from_url(weights_url, model_dir="models/vim/pretrained/")
+    model.load_state_dict(weights_path)
 
     # Edit final FC with correct number of classes
     model.head = nn.Linear(model.head.in_features, num_classes)

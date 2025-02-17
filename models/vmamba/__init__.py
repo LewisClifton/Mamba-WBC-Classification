@@ -26,7 +26,6 @@ TRANSFORM_VMAMBA = {
 
 def build_model(model_size='tiny'):
 
-    model_size = 'tiny'
     if model_size == 'tiny':
         return vmamba(
             depths=[2, 2, 8, 2], dims=96, drop_path_rate=0.2, 
