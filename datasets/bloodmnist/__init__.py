@@ -5,8 +5,11 @@ from medmnist import BloodMNIST
 def get(dataset_download_dir, test=False):
 
     # Set up path for the dataset 
-    if not os.path.isdir(dataset_download_dir):
-        os.mkdir(dataset_download_dir)
+    if dataset_download_dir:
+        if not os.path.isdir(dataset_download_dir):
+            os.mkdir(dataset_download_dir)
+    else:
+        dataset_download_dir = "~/.medmnist"
 
     # Get the dataset
     if not test:
