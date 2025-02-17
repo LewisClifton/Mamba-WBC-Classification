@@ -57,11 +57,8 @@ def evaluate_model(model, test_loader, device):
 
 def main(out_dir, model_config, dataset_config):
 
-    # Setup GPU network if required
+    # Setup GPU
     device = 'cuda'
-
-    # Train using specified dataset with/without k-fold cross validation
-    test_dataset = get_dataset(dataset_config, test=True)
 
     # Load model
     model, model_transforms = init_model(model_config['name'], dataset_config['num_classes'])
@@ -74,6 +71,7 @@ def main(out_dir, model_config, dataset_config):
     model.to(device)
 
     # Apply transforms
+    test_dataset = get_dataset(dataset_config, test=True)
     test_dataset = TransformedDataset(test_dataset, model_transforms['test'])
 
     # Create data loaders

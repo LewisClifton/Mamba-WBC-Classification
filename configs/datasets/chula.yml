@@ -1,6 +1,6 @@
-name: Chula 5000
-images_dir: [Path to WBC 5000 images directory]
-labels_path: [Path to labels.csv]
+name: chula
+images_dir: datasets/chula/data/WBC 5000
+labels_path: datasets/chula/data/labels.csv
 n_classes: 6
 classes:
 - "BNE"
