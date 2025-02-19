@@ -83,7 +83,7 @@ def train_model(model_config, dataset_config, train_dataset, val_dataset, device
         print('Training...')
 
     # Initialise model
-    model, model_transforms = init_model(model_config['name'], dataset_config['n_classes'])
+    model, model_transforms = init_model(model_config)
     model = model.to(device)
 
     # Apply transforms
@@ -130,7 +130,7 @@ def main(rank, world_size, using_dist, out_dir, model_config, dataset_config, da
         dataset = get_dataset(dataset_config, dataset_download_dir)
 
         # Train the model using k-fold cross validation and get the training metrics for each fold
-        trained, metrics = train_5folds(model_config, dataset_config, dataset, rank, using_dist, verbose)
+        trained, metrics = train_5folds(model_config, pretrained_path, dataset_config, dataset, rank, using_dist, verbose)
 
     elif dataset_config['name'] == 'bloodmnist':
         # Get dataset
@@ -163,6 +163,7 @@ if __name__ == '__main__':
     parser.add_argument('--out_dir', type=str, help='Path to directory where trained model and log will be saved (default=cwd)', default='.')
     parser.add_argument('--model_config_path', type=str, help='Path to model config .yml.', required=True)
     parser.add_argument('--dataset_config_path', type=str, help='Path to dataset config .yml.', required=True)
+    parser.add_argument('--pretrained_path', type=str, help='Path to pre-trained model.pth.')
     parser.add_argument('--using_windows', action=argparse.BooleanOptionalAction, help='If using Windows machine for training. Forces --num_gpus to 1')
     parser.add_argument('--num_gpus', type=int, help='Number of GPUs to be used for training. (default=2)', default=2)
     parser.add_argument('--verbose', action=argparse.BooleanOptionalAction, help='Whether to print per epoch metrics during training')
@@ -173,6 +174,7 @@ if __name__ == '__main__':
     out_dir = args.out_dir
     model_config_path = args.model_config_path
     dataset_config_path = args.dataset_config_path
+    pretrained_path = args.pretrained_path
     using_windows = args.using_windows
     num_gpus = args.num_gpus
     verbose = args.verbose
@@ -183,6 +185,10 @@ if __name__ == '__main__':
         model_config = yaml.safe_load(yml)
     with open(dataset_config_path, 'r') as yml:
         dataset_config = yaml.safe_load(yml)
+
+    # Add the pretrained model to the model config
+    if pretrained_path:
+        model_config['pretrained_model_path'] = pretrained_path
     
     # Multi GPU not supported for windows and trivially not for 1 GPU
     using_dist = True
@@ -191,6 +197,6 @@ if __name__ == '__main__':
 
     # Create process group if using multi gpus on Linux
     if using_dist:
-        mp.spawn(main, args=(num_gpus, True, out_dir, model_config, dataset_config, dataset_download_dir, verbose), nprocs=num_gpus)
+        mp.spawn(main, args=(num_gpus, True, out_dir, model_config, pretrained_path, dataset_config, dataset_download_dir, verbose), nprocs=num_gpus)
     else:
-        main(0, 1, False, out_dir, model_config, dataset_config, dataset_download_dir, verbose)
+        main(0, 1, False, out_dir, model_config, pretrained_path, dataset_config, dataset_download_dir, verbose)

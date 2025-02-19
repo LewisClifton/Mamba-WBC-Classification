@@ -61,10 +61,10 @@ def main(out_dir, model_config, dataset_config, dataset_download_dir):
     device = 'cuda'
 
     # Load model
-    model, model_transforms = init_model(model_config['name'], dataset_config['num_classes'])
+    model, model_transforms = init_model(model_config)
 
     # Load saved weights
-    model.load_state_dict(torch.load(model_config['path'], map_location=device))
+    model.load_state_dict(torch.load(model_config['trained_model_path'], map_location=device))
     model.eval()
 
     # Put on device
