@@ -3,3 +3,7 @@ out/
 *.pyc
 my_config/
 models/vim/causal-conv1d/
+datasets/chula/data/labels_clean.csv
+datasets/chula/data/labels_test.csv
+datasets/chula/data/labels_train_augmented.csv
+datasets/chula/data/labels_train.csv

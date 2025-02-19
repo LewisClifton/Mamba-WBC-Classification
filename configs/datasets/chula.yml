@@ -1,6 +1,7 @@
 name: chula
 images_dir: datasets/chula/data/WBC 5000
-labels_path: datasets/chula/data/labels.csv
+train_labels_path: datasets/chula/data/labels_train_augmented.csv
+test_labels_path: datasets/chula/data/labels_test.csv
 n_classes: 6
 classes:
 - "BNE"
