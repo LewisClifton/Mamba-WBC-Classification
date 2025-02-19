@@ -83,7 +83,7 @@ def train_model(model_config, dataset_config, train_dataset, val_dataset, device
         print('Training...')
 
     # Initialise model
-    model, model_transforms = init_model(model_config)
+    model, model_transforms = init_model(model_config, dataset_config['n_classes'])
     model = model.to(device)
 
     # Apply transforms

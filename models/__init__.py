@@ -1,6 +1,6 @@
 import torch
 
-def init_model(model_config):
+def init_model(model_config, num_classes):
     """
     Initialise fresh model prior to training
 
@@ -15,7 +15,6 @@ def init_model(model_config):
     # TO DO: ADD DOCSTRINGS TO EACH MODEL INIT
 
     model_type = model_config['name']
-    num_classes = model_config['num_classes']
 
     # Get the required model. Use inner imports to allow for different conda env / OS
     if model_type == 'swin':
