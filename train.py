@@ -130,7 +130,7 @@ def main(rank, world_size, using_dist, out_dir, model_config, dataset_config, da
         dataset = get_dataset(dataset_config, dataset_download_dir)
 
         # Train the model using k-fold cross validation and get the training metrics for each fold
-        trained, metrics = train_5folds(model_config, pretrained_path, dataset_config, dataset, rank, using_dist, verbose)
+        trained, metrics = train_5folds(model_config, dataset_config, dataset, rank, using_dist, verbose)
 
     elif dataset_config['name'] == 'bloodmnist':
         # Get dataset
@@ -197,6 +197,6 @@ if __name__ == '__main__':
 
     # Create process group if using multi gpus on Linux
     if using_dist:
-        mp.spawn(main, args=(num_gpus, True, out_dir, model_config, pretrained_path, dataset_config, dataset_download_dir, verbose), nprocs=num_gpus)
+        mp.spawn(main, args=(num_gpus, True, out_dir, model_config, dataset_config, dataset_download_dir, verbose), nprocs=num_gpus)
     else:
-        main(0, 1, False, out_dir, model_config, pretrained_path, dataset_config, dataset_download_dir, verbose)
+        main(0, 1, False, out_dir, model_config, dataset_config, dataset_download_dir, verbose)
