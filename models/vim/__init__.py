@@ -75,7 +75,7 @@ TRANSFORM_VIM = {
                                  std=torch.tensor([0.229, 0.224, 0.225]))
         ]),
         
-        'val': transforms.Compose([
+        'test': transforms.Compose([
             transforms.Resize(224, interpolation=3),
             transforms.ToTensor(),
             transforms.Normalize(mean=torch.tensor([0.485, 0.456, 0.406]), 

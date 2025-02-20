@@ -88,7 +88,7 @@ def train_model(model_config, dataset_config, train_dataset, val_dataset, device
 
     # Apply transforms
     train_dataset = TransformedDataset(train_dataset, model_transforms['train'])
-    val_dataset = TransformedDataset(val_dataset, model_transforms['val'])
+    val_dataset = TransformedDataset(val_dataset, model_transforms['test'])
 
     # Create data loaders and put model on device
     if using_dist:
