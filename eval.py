@@ -32,8 +32,8 @@ def evaluate_model(model, test_loader, device):
     
     print('Beginning evaluation...')
 
-    preds = []
-    labels = []
+    all_preds = []
+    all_labels = []
 
     # Get test set results
     with torch.no_grad():
@@ -43,15 +43,15 @@ def evaluate_model(model, test_loader, device):
             outputs = model(images)
             _, preds = torch.max(outputs, 1)
 
-            preds.extend(preds.cpu().numpy().tolist())
-            labels.extend(labels.cpu().numpy().tolist())
+            all_preds.extend(preds.cpu().numpy().tolist())
+            all_labels.extend(labels.cpu().numpy().tolist())
 
     # Return evaluation metrics
     return {
-        "Accuracy" : accuracy(preds, labels),
-        "Sensitivity" : sensitivity(preds, labels),
-        "F1-Score" : f1_score(preds, labels),
-        "Confusion matrix" : confusion_matrix(preds, labels)
+        "Accuracy" : accuracy(all_preds, all_labels),
+        "Sensitivity" : sensitivity(all_preds, all_labels),
+        "F1-Score" : f1_score(all_preds, all_labels),
+        "Confusion matrix" : confusion_matrix(all_preds, all_labels)
     }
 
 
