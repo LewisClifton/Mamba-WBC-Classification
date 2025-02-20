@@ -28,7 +28,7 @@ def save_log(out_dir, date, metrics, model_config, dataset_config):
             file.write(f'\nTraining metrics:\n')
             write_dict_to_file(file, metrics)
 
-        file.write(f'\Model configuration:\n')
+        file.write(f'\nModel configuration:\n')
         write_dict_to_file(file, model_config)
 
         file.write(f'\nDataset configuration:\n')
