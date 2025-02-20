@@ -6,11 +6,8 @@ def accuracy(preds, labels):
     preds = np.array(preds)
     labels = np.array(labels)
 
-    print(preds.shape)
-    print(labels.shape)
-
     correct = (preds == labels.squeeze(1)).sum().item()
-    total = labels.size(0)
+    total = labels.size
 
     return (correct / total) * 100
 
