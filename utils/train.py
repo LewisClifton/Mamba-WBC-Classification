@@ -72,7 +72,7 @@ def save(out_dir, metrics, trained, model_config, dataset_config):
     
     # Save models, log and config yml
     save_models(out_dir, trained, model_config['name'])
-    save_log(out_dir, date, metrics, dataset_config['name'])
+    save_log(out_dir, date, metrics, model_config, dataset_config)
     save_config(out_dir, model_config)
 
 
