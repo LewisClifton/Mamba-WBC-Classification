@@ -6,10 +6,10 @@ def accuracy(preds, labels):
     preds = np.array(preds)
     labels = np.array(labels)
 
-    correct_val += (preds == labels.squeeze(1)).sum().item()
-    total_val += labels.size(0)
+    correct = (preds == labels.squeeze(1)).sum().item()
+    total = labels.size(0)
 
-    return (correct_val / total_val) * 100
+    return (correct / total) * 100
 
 def sensitivity(preds, labels):
     """Computes sensitivity (recall) for each class"""
