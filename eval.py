@@ -1,10 +1,10 @@
 import argparse
 import yaml
 import os
-import datetime as datetime
+from datetime import datetime
+import time
 
 import torch
-
 from torch.utils.data import DataLoader
 
 from datasets import get_dataset, TransformedDataset
@@ -77,8 +77,14 @@ def main(out_dir, model_config, dataset_config, dataset_download_dir):
     # Create data loaders
     test_loader = DataLoader(test_dataset, batch_size=model_config['batch_size'])
 
+    # Track time
+    start_time = time.time()
+
     # Evaluate the model
     metrics = evaluate_model(model, test_loader, device)
+
+    # Get runtime
+    metrics['Time to evaluate'] = time.time() - start_time
 
     # Create output directory for log
     date = datetime.now().strftime('%Y_%m_%d_%p%I_%M')

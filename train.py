@@ -1,5 +1,6 @@
 import argparse
 import yaml
+import time
 
 import torch
 import torch.multiprocessing as mp
@@ -129,12 +130,18 @@ def main(rank, world_size, using_dist, out_dir, model_config, dataset_config, da
         # Get dataset
         dataset = get_dataset(dataset_config, dataset_download_dir)
 
+        # Track time
+        start_time = time.time()
+
         # Train the model using k-fold cross validation and get the training metrics for each fold
         trained, metrics = train_5folds(model_config, dataset_config, dataset, rank, using_dist, verbose)
 
     elif dataset_config['name'] == 'bloodmnist':
         # Get dataset
         train_dataset, val_dataset = get_dataset(dataset_config, dataset_download_dir)
+
+        # Track time
+        start_time = time.time()
 
         # Train model only once (i.e. without k-fold cross validation)
         trained, metrics = train_model(model_config, dataset_config, train_dataset, val_dataset, rank, using_dist, verbose)
@@ -143,6 +150,8 @@ def main(rank, world_size, using_dist, out_dir, model_config, dataset_config, da
     elif dataset_config['name'] == 'foo':
         pass
 
+    # Get runtime
+    metrics['Time to train'] = time.time() - start_time
 
     # Save model and log
     if dist.is_initialized():
