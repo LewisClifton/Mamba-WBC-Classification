@@ -51,7 +51,7 @@ def evaluate_model(model, test_loader, device):
         "Accuracy" : accuracy(all_preds, all_labels),
         "Sensitivity" : sensitivity(all_preds, all_labels),
         "F1-Score" : f1_score(all_preds, all_labels),
-        "Confusion matrix" : confusion_matrix(all_preds, all_labels)
+        "Confusion matrix\n" : confusion_matrix(all_preds, all_labels)
     }
 
 
