@@ -41,7 +41,7 @@ def evaluate_model(model, test_loader, device):
             images, labels = images.to(device), labels.to(device)
 
             outputs = model(images)
-            _, preds = torch.max(outputs, 1)
+            _, preds = outputs.max(1)
 
             all_preds.extend(preds.cpu().numpy().tolist())
             all_labels.extend(labels.cpu().numpy().tolist())

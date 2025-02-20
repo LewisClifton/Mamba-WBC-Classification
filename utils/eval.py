@@ -5,17 +5,21 @@ def accuracy(preds, labels):
     """Computes accuracy: (correct predictions / total predictions)"""
     preds = np.array(preds)
     labels = np.array(labels)
-    return np.mean(preds == labels)
+
+    correct_val += (preds == labels.squeeze(1)).sum().item()
+    total_val += labels.size(0)
+
+    return (correct_val / total_val) * 100
 
 def sensitivity(preds, labels):
     """Computes sensitivity (recall) for each class"""
     _, recall, _, _ = precision_recall_fscore_support(labels, preds, average=None, zero_division=0)
-    return recall  # Returns an array with recall for each class
+    return recall
 
 def f1_score(preds, labels):
     """Computes F1-score for each class"""
     _, _, f1, _ = precision_recall_fscore_support(labels, preds, average=None, zero_division=0)
-    return f1  # Returns an array with F1-score for each class
+    return f1
 
 def confusion_matrix(preds, labels):
     """Computes the confusion matrix"""
