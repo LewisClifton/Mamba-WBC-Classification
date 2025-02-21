@@ -1,5 +1,6 @@
 import torch.nn as nn
 from torchvision import transforms
+import torch
 
 
 TRANSFORM_SWIN = {
@@ -17,7 +18,7 @@ TRANSFORM_SWIN = {
 }
 
 
-def get(num_classes):
+def get(num_classes, pretrained_model_path):
 
     model_size = 'tiny'
     if model_size == 'tiny':
@@ -32,6 +33,11 @@ def get(num_classes):
         from torchvision.models import swin_b
         model = swin_b(weights='IMAGENET1K_V1')
 
-    model.head = nn.Linear(model.head.in_features, num_classes)
+
+    # Load pretrained weights if provided
+    if pretrained_model_path is not None:
+        model.load_state_dict(torch.load(pretrained_model_path, map_location="cpu"), strict=False)
+    
+    model.head = nn.Linear(model.model.head.in_features, num_classes)
     
     return model, TRANSFORM_SWIN

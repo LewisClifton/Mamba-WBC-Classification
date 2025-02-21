@@ -142,7 +142,7 @@ def build_model(model_size):
             use_middle_cls_token=True,
         )
 
-def get(num_classes):
+def get(num_classes, pretrained_model_path):
 
     # Get the correct URL
     model_size = "tiny"
@@ -156,11 +156,14 @@ def get(num_classes):
     # Build the model using the architecture specified
     model = build_model(model_size)
 
-    # Load the weights from the url
-    weights_path = torch.hub.load_state_dict_from_url(weights_url, model_dir="models/vim/pretrained/", file_name=weights_url.split('/')[-1])['model']
-    model.load_state_dict(weights_path)
 
-    # Edit final FC with correct number of classes
+    # Load pretrained weights if provided
+    if pretrained_model_path is not None:
+        model.load_state_dict(torch.load(pretrained_model_path, map_location="cpu"), strict=False)
+    else:
+        # Load the weights from the url
+        model.load_state_dict(torch.hub.load_state_dict_from_url(weights_url, model_dir="models/vim/pretrained/", file_name=weights_url.split('/')[-1])['model'])
+
     model.head = nn.Linear(model.head.in_features, num_classes)
 
     return model, TRANSFORM_VIM
