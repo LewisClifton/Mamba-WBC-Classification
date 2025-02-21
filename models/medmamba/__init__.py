@@ -20,7 +20,14 @@ TRANSFORM_MEDMAMBA = {
 
 def get(num_classes, pretrained_model_path):
 
-    model = MedMamba(num_classes=num_classes)
+    model_size = 'tiny'
+    if model_size == 'tiny':
+        model = MedMamba(depths=[2, 2, 4, 2], dims=[96,192,384,768], num_classes=6)
+    if model_size == 'small':
+        model = MedMamba(depths=[2, 2, 8, 2], dims=[96,192,384,768], num_classes=6)
+    if model_size == 'base':
+        model = MedMamba(depths=[2, 2, 12, 2], dims=[128,256,512,1024], num_classes=6)
+
 
     # Load pretrained weights if provided
     if pretrained_model_path is not None:
