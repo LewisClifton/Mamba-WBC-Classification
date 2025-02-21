@@ -11,7 +11,8 @@ class ChulaWBC5000(Dataset):
 
         self.images_path = images_path
 
-        self.labels = pd.read_csv(labels_path)
+        labels = pd.read_csv(labels_path)
+        self.labels = labels[labels['label'].isin(wbc_types)]
 
         self.wbc_types = wbc_types
 
