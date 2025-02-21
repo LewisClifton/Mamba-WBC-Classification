@@ -1,5 +1,5 @@
 name: vmamba
-learning_rate: 0.002
-optim_weight_decay: 2.e-4
-batch_size: 8
+learning_rate: 1.e-4
+optim_weight_decay: 0.05
+batch_size: 32
 epochs: 1
