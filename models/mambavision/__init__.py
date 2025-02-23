@@ -32,7 +32,7 @@ class MambaVisionWrapper(nn.Module):
 
 
     def forward(self, x):
-        return self.model(x)['logits']
+        return self.model(x)
 
 
 def get(num_classes, pretrained_model_path):
