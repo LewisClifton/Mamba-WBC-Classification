@@ -33,6 +33,6 @@ def get(num_classes, pretrained_model_path):
     if pretrained_model_path is not None:
         model.load_state_dict(torch.load(pretrained_model_path, map_location="cpu"), strict=False)
     
-    model.head = nn.Linear(model.model.head.in_features, num_classes)
+    model.head = nn.Linear(model.head.in_features, num_classes)
 
     return model, TRANSFORM_MEDMAMBA
