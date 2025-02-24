@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from datasets import get_dataset, TransformedDataset
 from models import init_model
 from utils.common import save_log
-from utils.eval import accuracy, sensitivity, f1_score, confusion_matrix
+from utils.eval import get_eval_metrics
 
 
 torch.backends.cudnn.enabled = True
@@ -47,12 +47,7 @@ def evaluate_model(model, test_loader, device):
             all_labels.extend(labels.cpu().numpy().tolist())
 
     # Return evaluation metrics
-    return {
-        "Accuracy" : accuracy(all_preds, all_labels),
-        "Sensitivity" : sensitivity(all_preds, all_labels),
-        "F1-Score" : f1_score(all_preds, all_labels),
-        "Confusion matrix\n" : confusion_matrix(all_preds, all_labels)
-    }
+    return get_eval_metrics(all_preds, all_labels)
 
 
 def main(out_dir, model_config, dataset_config, dataset_download_dir):

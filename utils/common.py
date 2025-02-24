@@ -25,7 +25,7 @@ def save_log(out_dir, date, metrics, model_config, dataset_config):
                 write_dict_to_file(file, fold_metrics)
         else:
             # Save metrics for the model
-            file.write(f'\nTraining metrics:\n')
+            file.write(f'\nMetrics:\n')
             write_dict_to_file(file, metrics)
 
         file.write(f'\nModel configuration:\n')
