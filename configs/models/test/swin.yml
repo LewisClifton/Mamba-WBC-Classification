@@ -1,3 +1,0 @@
-name: swin
-trained_model_path: [Path to trained swin.pth]
-batch_size: 8

@@ -1,3 +1,0 @@
-name: medmamba
-trained_model_path: [Path to trained medmamba.pth]
-batch_size: 8

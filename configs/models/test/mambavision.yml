@@ -1,3 +1,0 @@
-name: mambavision
-trained_model_path: [Path to trained mambavision.pth]
-batch_size: 8

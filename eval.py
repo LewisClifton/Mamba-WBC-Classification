@@ -96,20 +96,24 @@ if __name__ == "__main__":
     # Command line args
     parser = argparse.ArgumentParser()
     parser.add_argument('--out_dir', type=str, help='Path to directory where model evaluation log will be saved (default=cwd)', default='.')
-    parser.add_argument('--model_config_path', type=str, help='Path to model config .yml.', required=True)
-    parser.add_argument('--dataset_config_path', type=str, help='Name of dataset to evaluate model with', required=True)
+    parser.add_argument('--trained_model_path', type=str, help='Path to trained model .pth', required=True)
+    parser.add_argument('--model_type', type=str, help='Model type e.g. "swin", "vmamba" ', required=True)
+    parser.add_argument('--batch_size', type=int, help='Batch size when evaluating', default=32)
+    parser.add_argument('--dataset_config_path', type=str, help='Path to dataset .yml used for evaluation', required=True)
     parser.add_argument('--dataset_download_dir', type=str, help='Directory to download dataset to')
 
     # Parse command line args
     args = parser.parse_args()
     out_dir = args.out_dir
-    model_config_path = args.model_config_path
     dataset_config_path= args.dataset_config_path
     dataset_download_dir = args.dataset_download_dir
 
-    # Get the model and dataset configs
-    with open(model_config_path, 'r') as yml:
-        model_config = yaml.safe_load(yml)
+    # Get dataset configs
+    model_config = {
+        'trained_model_path' : args.trained_model_path,
+        'model_type' : args.model_type,
+        'batch_size' : args.batch_size,
+    }
     with open(dataset_config_path, 'r') as yml:
         dataset_config = yaml.safe_load(yml)
 

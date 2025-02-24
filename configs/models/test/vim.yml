@@ -1,3 +1,0 @@
-name: vim
-trained_model_path: [Path to trained vim.pth]
-batch_size: 8

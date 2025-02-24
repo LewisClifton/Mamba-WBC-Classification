@@ -1,3 +1,0 @@
-name: vmamba
-trained_model_path: [Path to trained vmamba.pth]
-batch_size: 8
