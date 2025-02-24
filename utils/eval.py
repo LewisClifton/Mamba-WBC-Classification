@@ -18,9 +18,9 @@ def get_eval_metrics(preds, labels):
     conf_matrix = sk_confusion_matrix(labels, preds)
 
     return {
-        "accuracy": accuracy,
-        "precision": precision,
-        "recall": sensitivity,
-        "f1_score": f1,
-        "confusion_matrix": conf_matrix
+        "Accuracy": accuracy,
+        "Precision": precision,
+        "Sensitivity": sensitivity,
+        "F1 Score": f1,
+        "Confusion Matrix": conf_matrix
     }
