@@ -1,12 +1,21 @@
 name: chula
-images_dir: datasets/chula/data/WBC 5000
-train_labels_path: datasets/chula/data/labels_train_augmented.csv
-test_labels_path: datasets/chula/data/labels_test.csv
-n_classes: 6
+images_dir: [Path to WBC 5000 dir]
+train_labels_path: [Path to labels_train.csv]
+test_labels_path: [Path to labels_test.csv]
+n_classes: 8 # Adjust to match the number of classes
 classes:
-- "BNE"
 - "SNE"
-- "Basophil"
-- "Eosinophil"
-- "Monocyte"
 - "Lymphocyte"
+- "Monocyte"
+- "BNE"
+- "Eosinophil"
+- "Myeloblast"
+- "Basophil"
+- "Metamyelocyte"
+# - "Myelocyte"
+# - "Atypical Lymphocyte"
+# - "Promyelocyte"
+# - "Monoblast"
+# - "Smudge Cell"    
+# - "Lymphoblast"
+# - "Giant Platelet"
