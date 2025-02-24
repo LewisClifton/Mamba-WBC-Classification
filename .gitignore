@@ -7,3 +7,6 @@ datasets/chula/data/labels_clean.csv
 datasets/chula/data/labels_test.csv
 datasets/chula/data/labels_train_augmented.csv
 datasets/chula/data/labels_train.csv
+*.pth
+jobs/
+*.sh

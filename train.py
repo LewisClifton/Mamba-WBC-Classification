@@ -185,7 +185,7 @@ if __name__ == '__main__':
     dataset_config_path = args.dataset_config_path
     pretrained_path = args.pretrained_path
     using_windows = args.using_windows
-    num_gpus = args.num_gpus
+    num_gpus = min(args.num_gpus, torch.cuda.device_count())
     verbose = args.verbose
     dataset_download_dir = args.dataset_download_dir
 
