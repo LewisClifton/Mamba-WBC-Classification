@@ -3,7 +3,7 @@ from torchvision import transforms
 import torch
 
 
-from .classification.lib.models import local_vim as LocalMamba
+from .classification.lib.models.local_vim import VisionMamba as LocalMamba
 from .classification.lib.models.mamba.multi_mamba import MultiMamba
 from timm.models.vision_transformer import _cfg
 
