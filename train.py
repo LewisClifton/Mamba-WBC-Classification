@@ -104,8 +104,14 @@ def train_model(model_config, dataset_config, train_dataset, val_dataset, device
         train_loader = DataLoader(train_dataset, batch_size=model_config['batch_size'], shuffle=True, num_workers=1)
         val_loader = DataLoader(val_dataset, batch_size=model_config['batch_size'], shuffle=False, num_workers=1)
     
-    # Create criterion and optimizer
-    criterion = nn.CrossEntropyLoss()
+    # Create criterion
+    
+    if 'class_weights' in model_config.keys():
+        criterion = nn.CrossEntropyLoss(weight=torch.tensor(model_config['class_weights']))
+    else:
+        criterion = nn.CrossEntropyLoss()
+
+    # Create optimizer
     optimizer = optim.AdamW(model.parameters(), lr=model_config['learning_rate'], weight_decay=model_config['optim_weight_decay'])
 
     # Train the model
