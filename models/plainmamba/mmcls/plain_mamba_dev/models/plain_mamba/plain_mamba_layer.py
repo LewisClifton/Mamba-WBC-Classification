@@ -12,7 +12,7 @@ from mmcv.cnn.bricks.transformer import build_dropout
 from mmcv.cnn.utils.weight_init import trunc_normal_
 
 from mamba_ssm.ops.selective_scan_interface import selective_scan_fn
-from mamba_ssm.ops.triton.layernorm import RMSNorm
+from mamba_ssm.ops.triton.layer_norm import RMSNorm
 
 
 class PlainMamba2D(nn.Module):

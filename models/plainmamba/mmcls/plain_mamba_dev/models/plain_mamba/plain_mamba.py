@@ -12,12 +12,13 @@ from mmcv.cnn import build_norm_layer
 from mmcv.cnn.utils.weight_init import trunc_normal_
 from mmcv.runner.base_module import ModuleList
 
-from mmcls.models.builder import BACKBONES
-from mmcls.models.utils import resize_pos_embed, to_2tuple
-from mmcls.models.backbones.base_backbone import BaseBackbone
 
-from mmcls.plain_mamba_dev.models.modules.patch_embed import ConvPatchEmbed
-from mmcls.plain_mamba_dev.models.plain_mamba.plain_mamba_layer import PlainMambaLayer
+from ....models.builder import BACKBONES
+from ....models.utils import resize_pos_embed, to_2tuple
+from ....models.backbones.base_backbone import BaseBackbone
+
+from ....plain_mamba_dev.models.modules.patch_embed import ConvPatchEmbed
+from ....plain_mamba_dev.models.plain_mamba.plain_mamba_layer import PlainMambaLayer
 
 
 @BACKBONES.register_module()
