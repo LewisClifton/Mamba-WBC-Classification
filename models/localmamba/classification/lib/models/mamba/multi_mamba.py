@@ -9,11 +9,7 @@ from torch import Tensor
 from einops import rearrange, repeat
 import logging
 
-
-try:
-    from ..mamba_ssm.ops.selective_scan_interface import mamba_inner_fn_no_out_proj
-except ImportError:
-    mamba_inner_fn_no_out_proj = None
+from ..mamba_ssm.ops.selective_scan_interface import mamba_inner_fn_no_out_proj
 
 from .local_scan import LocalScanTriton, LocalReverseTriton, local_scan, local_scan_bchw, local_reverse
 
