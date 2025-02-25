@@ -17,7 +17,7 @@ from .mamba.multi_mamba import MultiMamba
 
 from .mamba.rope import *
 
-from mamba_ssm.ops.triton.layernorm import RMSNorm, layer_norm_fn, rms_norm_fn
+from .mamba_ssm.ops.triton.layernorm import RMSNorm, layer_norm_fn, rms_norm_fn
 
 
 
