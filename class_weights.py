@@ -7,7 +7,7 @@ from .datasets import get_dataset
 
 # Calculate class weights for a given dataset and save them to the config file for use when training
 
-def compute_class_weights_from_dataset(dataset, num_classes=None):
+def get_class_weights(dataset, num_classes=None):
     labels = []
 
     for _, label in dataset:
@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     dataset = get_dataset(dataset_config, dataset_download_dir)
 
-    class_weights = compute_class_weights_from_dataset(dataset)
+    class_weights = get_class_weights(dataset)
 
     print(f'Class weights: {class_weights}')
 
