@@ -38,6 +38,14 @@ def init_model(model_config, num_classes):
         from .vim import get
         model, transform = get(num_classes=num_classes, pretrained_model_path=pretrained_model_path)
 
+    elif model_type == 'plainmamba':
+        from .plainmamba import get
+        model, transform = get(num_classes=num_classes, pretrained_model_path=pretrained_model_path)
+
+    elif model_type == 'localmamba':
+        from .localmamba import get
+        model, transform = get(num_classes=num_classes, pretrained_model_path=pretrained_model_path)
+
     # Add new models using elif
     elif model_type == 'foo':
         pass
