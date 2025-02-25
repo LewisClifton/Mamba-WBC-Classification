@@ -43,7 +43,7 @@ class RegNet(ResNet):
             in resblocks to let them behave as identity. Default: True.
 
     Example:
-        >>> from mmcls.models import RegNet
+        >>> from ...models import RegNet
         >>> import torch
         >>> inputs = torch.rand(1, 3, 32, 32)
         >>> # use str type 'arch'

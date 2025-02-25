@@ -95,7 +95,7 @@ class SEResNet(ResNet):
             in resblocks to let them behave as identity. Default: True.
 
     Example:
-        >>> from mmcls.models import SEResNet
+        >>> from ...models import SEResNet
         >>> import torch
         >>> self = SEResNet(depth=50)
         >>> self.eval()

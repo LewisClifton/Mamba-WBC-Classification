@@ -8,8 +8,8 @@ from mmcv.cnn import (ConvModule, build_activation_layer, build_conv_layer,
 from mmcv.cnn.bricks.transformer import PatchEmbed as _PatchEmbed
 from mmcv.runner import BaseModule, ModuleList, Sequential
 
-from mmcls.models.builder import BACKBONES
-from mmcls.models.utils import SELayer, to_2tuple
+from ...models.builder import BACKBONES
+from ...models.utils import SELayer, to_2tuple
 
 
 def fuse_bn(conv_or_fc, bn):

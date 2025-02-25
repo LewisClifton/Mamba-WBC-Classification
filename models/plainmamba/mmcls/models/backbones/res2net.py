@@ -258,7 +258,7 @@ class Res2Net(ResNet):
             Defaults to None.
 
     Example:
-        >>> from mmcls.models import Res2Net
+        >>> from ...models import Res2Net
         >>> import torch
         >>> model = Res2Net(depth=50,
         ...                 scales=4,

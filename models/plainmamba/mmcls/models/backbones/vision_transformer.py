@@ -9,7 +9,8 @@ from mmcv.cnn.bricks.transformer import FFN, PatchEmbed
 from mmcv.cnn.utils.weight_init import trunc_normal_
 from mmcv.runner.base_module import BaseModule, ModuleList
 
-from mmcls.utils import get_root_logger
+
+from ...utils import get_root_logger
 from ..builder import BACKBONES
 from ..utils import MultiheadAttention, resize_pos_embed, to_2tuple
 from .base_backbone import BaseBackbone

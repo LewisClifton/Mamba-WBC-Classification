@@ -437,7 +437,7 @@ class ResNet(BaseBackbone):
             in resblocks to let them behave as identity. Default: True.
 
     Example:
-        >>> from mmcls.models import ResNet
+        >>> from ...models import ResNet
         >>> import torch
         >>> self = ResNet(depth=18)
         >>> self.eval()

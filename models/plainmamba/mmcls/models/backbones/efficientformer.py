@@ -376,7 +376,7 @@ class EfficientFormer(BaseBackbone):
             Defaults to None.
 
         Example:
-            >>> from mmcls.models import EfficientFormer
+            >>> from ...models import EfficientFormer
             >>> import torch
             >>> inputs = torch.rand((1, 3, 224, 224))
             >>> # build EfficientFormer backbone for classification task

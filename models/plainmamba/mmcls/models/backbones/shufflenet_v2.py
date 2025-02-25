@@ -6,7 +6,7 @@ from mmcv.cnn import ConvModule, constant_init, normal_init
 from mmcv.runner import BaseModule
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmcls.models.utils import channel_shuffle
+from ...models.utils import channel_shuffle
 from ..builder import BACKBONES
 from .base_backbone import BaseBackbone
 

@@ -16,7 +16,7 @@ import torch.nn.functional as F
 import torch.utils.checkpoint as checkpoint
 from mmcv.cnn.bricks import DropPath
 
-from mmcls.models.builder import BACKBONES
+from ...models.builder import BACKBONES
 from ..utils import LayerScale
 from .base_backbone import BaseBackbone
 

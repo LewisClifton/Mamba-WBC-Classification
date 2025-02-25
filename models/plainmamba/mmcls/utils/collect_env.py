@@ -2,8 +2,7 @@
 from mmcv.utils import collect_env as collect_base_env
 from mmcv.utils import get_git_hash
 
-import mmcls
-
+from ... import mmcls
 
 def collect_env():
     """Collect the information of the running environments."""

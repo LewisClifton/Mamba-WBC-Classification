@@ -489,7 +489,7 @@ class MViT(BaseBackbone):
 
     Examples:
         >>> import torch
-        >>> from mmcls.models import build_backbone
+        >>> from ...models import build_backbone
         >>>
         >>> cfg = dict(type='MViT', arch='tiny', out_scales=[0, 1, 2, 3])
         >>> model = build_backbone(cfg)

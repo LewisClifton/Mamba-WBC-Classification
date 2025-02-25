@@ -288,7 +288,7 @@ class SwinTransformerV2(BaseBackbone):
             Defaults to None.
 
     Examples:
-        >>> from mmcls.models import SwinTransformerV2
+        >>> from ...models import SwinTransformerV2
         >>> import torch
         >>> extra_config = dict(
         >>>     arch='tiny',

@@ -278,8 +278,8 @@ class CSPNet(BaseModule):
         >>> from functools import partial
         >>> import torch
         >>> import torch.nn as nn
-        >>> from mmcls.models import CSPNet
-        >>> from mmcls.models.backbones.resnet import Bottleneck
+        >>> from ...models import CSPNet
+        >>> from ...models.backbones.resnet import Bottleneck
         >>>
         >>> # A simple example to build CSPNet.
         >>> arch = dict(
@@ -427,7 +427,7 @@ class CSPDarkNet(CSPNet):
             Default: None.
 
     Example:
-        >>> from mmcls.models import CSPDarkNet
+        >>> from ...models import CSPDarkNet
         >>> import torch
         >>> model = CSPDarkNet(depth=53, out_indices=(0, 1, 2, 3, 4))
         >>> model.eval()
@@ -523,7 +523,7 @@ class CSPResNet(CSPNet):
         init_cfg (dict or list[dict], optional): Initialization config dict.
             Default: None.
     Example:
-        >>> from mmcls.models import CSPResNet
+        >>> from ...models import CSPResNet
         >>> import torch
         >>> model = CSPResNet(depth=50, out_indices=(0, 1, 2, 3))
         >>> model.eval()
@@ -645,7 +645,7 @@ class CSPResNeXt(CSPResNet):
         init_cfg (dict or list[dict], optional): Initialization config dict.
             Default: None.
     Example:
-        >>> from mmcls.models import CSPResNeXt
+        >>> from ...models import CSPResNeXt
         >>> import torch
         >>> model = CSPResNeXt(depth=50, out_indices=(0, 1, 2, 3))
         >>> model.eval()

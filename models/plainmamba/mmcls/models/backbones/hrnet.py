@@ -232,7 +232,7 @@ class HRNet(BaseModule):
 
     Example:
         >>> import torch
-        >>> from mmcls.models import HRNet
+        >>> from ...models import HRNet
         >>> extra = dict(
         >>>     stage1=dict(
         >>>         num_modules=1,

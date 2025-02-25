@@ -9,8 +9,8 @@ import torch.utils.checkpoint as cp
 from mmcv.cnn.bricks import ConvModule, DropPath
 from mmcv.runner import BaseModule, Sequential
 
-from mmcls.models.backbones.base_backbone import BaseBackbone
-from mmcls.models.utils import InvertedResidual, SELayer, make_divisible
+from ...models.backbones.base_backbone import BaseBackbone
+from ...models.utils import InvertedResidual, SELayer, make_divisible
 from ..builder import BACKBONES
 
 

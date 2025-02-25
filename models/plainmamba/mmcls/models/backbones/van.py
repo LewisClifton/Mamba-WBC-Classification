@@ -293,7 +293,7 @@ class VAN(BaseBackbone):
             Defaults to None.
 
     Examples:
-        >>> from mmcls.models import VAN
+        >>> from ...models import VAN
         >>> import torch
         >>> model = VAN(arch='b0')
         >>> inputs = torch.rand(1, 3, 224, 224)

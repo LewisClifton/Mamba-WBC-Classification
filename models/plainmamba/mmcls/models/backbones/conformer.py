@@ -9,7 +9,8 @@ from mmcv.cnn.bricks.drop import DropPath
 from mmcv.cnn.bricks.transformer import AdaptivePadding
 from mmcv.cnn.utils.weight_init import trunc_normal_
 
-from mmcls.utils import get_root_logger
+
+from ...utils import get_root_logger
 from ..builder import BACKBONES
 from .base_backbone import BaseBackbone, BaseModule
 from .vision_transformer import TransformerEncoderLayer

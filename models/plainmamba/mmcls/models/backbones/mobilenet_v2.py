@@ -5,7 +5,7 @@ from mmcv.cnn import ConvModule
 from mmcv.runner import BaseModule
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmcls.models.utils import make_divisible
+from ...models.utils import make_divisible
 from ..builder import BACKBONES
 from .base_backbone import BaseBackbone
 

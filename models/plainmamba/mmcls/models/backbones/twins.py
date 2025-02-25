@@ -12,9 +12,9 @@ from mmcv.cnn.utils.weight_init import (constant_init, normal_init,
 from mmcv.runner import BaseModule, ModuleList
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmcls.models.builder import BACKBONES
-from mmcls.models.utils.attention import MultiheadAttention
-from mmcls.models.utils.position_encoding import ConditionalPositionEncoding
+from ...models.builder import BACKBONES
+from ...models.utils.attention import MultiheadAttention
+from ...models.utils.position_encoding import ConditionalPositionEncoding
 
 
 class GlobalSubsampledAttention(MultiheadAttention):
@@ -386,7 +386,7 @@ class PCPVT(BaseModule):
             Defaults to None.
 
     Examples:
-        >>> from mmcls.models import PCPVT
+        >>> from ...models import PCPVT
         >>> import torch
         >>> pcpvt_cfg = {'arch': "small",
         >>>              'norm_after_stage': [False, False, False, True]}
@@ -633,7 +633,7 @@ class SVT(PCPVT):
             Defaults to None.
 
     Examples:
-        >>> from mmcls.models import SVT
+        >>> from ...models import SVT
         >>> import torch
         >>> svt_cfg = {'arch': "small",
         >>>            'norm_after_stage': [False, False, False, True]}
