@@ -3,8 +3,9 @@ import yaml
 import numpy as np
 from sklearn.utils.class_weight import compute_class_weight
 
-from . import get_dataset
+from .datasets import get_dataset
 
+# Calculate class weights for a given dataset and save them to the config file for use when training
 
 def compute_class_weights_from_dataset(dataset, num_classes=None):
     labels = []
