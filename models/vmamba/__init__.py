@@ -24,7 +24,7 @@ TRANSFORM_VMAMBA = {
 }
 
 
-def build_model(model_size='tiny'):
+def __build_model(model_size='tiny'):
 
     if model_size == 'tiny':
         return vmamba(
@@ -76,7 +76,7 @@ def get(num_classes, pretrained_model_path):
         weights_url = "https://github.com/MzeroMiko/VMamba/releases/download/%23v2cls/vssm_base_0229_ckpt_epoch_237.pth"
 
     # Build the model using the architecture specified
-    model = build_model(model_size)
+    model = __build_model(model_size)
 
     # Load pretrained weights if provided
     if pretrained_model_path is not None:
@@ -84,9 +84,18 @@ def get(num_classes, pretrained_model_path):
     else:
         state_dict = torch.hub.load_state_dict_from_url(weights_url, model_dir='models/vmamba/pretrained/', file_name=weights_url.split('/')[-1])['model']
 
+    # Build the model from the pretrained
+    model.classifier = nn.Sequential(
+        OrderedDict([
+            ("norm", model.classifier.norm),
+            ("permute", model.classifier.permute),
+            ("avgpool", model.classifier.avgpool),
+            ("flatten", model.classifier.flatten),
+            ("head", nn.Linear(model.num_features, state_dict["classifier.head.weight"].shape[0])),
+    ]))
     model.load_state_dict(state_dict, strict=False)
 
-    # Edit final FC with correct number of classes
+    # Change model head
     model.classifier = nn.Sequential(
         OrderedDict([
             ("norm", model.classifier.norm),

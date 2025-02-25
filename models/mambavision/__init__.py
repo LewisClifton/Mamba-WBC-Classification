@@ -38,10 +38,17 @@ class MambaVisionWrapper(nn.Module):
 def get(num_classes, pretrained_model_path):
     model = MambaVisionWrapper()
 
-    # Load pretrained weights if provided
+    # Load pretrained weights first
     if pretrained_model_path is not None:
-        model.model.load_state_dict(torch.load(pretrained_model_path, map_location="cpu"), strict=False)
+        state_dict = torch.load(pretrained_model_path, map_location="cpu")
+
+        # Build the model from the pretrained
+        pretrained_num_classes = state_dict["head.weight"].shape[0]
+        
+        model.model.head = nn.Linear(model.model.head.in_features, pretrained_num_classes)
+        model.load_state_dict(state_dict, strict=False)
     
+    # Change model head
     model.model.head = nn.Linear(model.model.head.in_features, num_classes)
 
     return model, TRANSFORM_MAMBAVISION

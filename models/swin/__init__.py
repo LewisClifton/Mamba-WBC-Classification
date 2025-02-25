@@ -18,26 +18,37 @@ TRANSFORM_SWIN = {
 }
 
 
-def get(num_classes, pretrained_model_path):
+def __build_model():
 
     model_size = 'tiny'
     if model_size == 'tiny':
         from torchvision.models import swin_t
-        model = swin_t(weights='IMAGENET1K_V1')
+        return swin_t(weights='IMAGENET1K_V1')
 
     elif model_size == 'small':
         from torchvision.models import swin_s
-        model = swin_s(weights='IMAGENET1K_V1')
+        return swin_s(weights='IMAGENET1K_V1')
 
     elif model_size == 'base': 
         from torchvision.models import swin_b
-        model = swin_b(weights='IMAGENET1K_V1')
+        return swin_b(weights='IMAGENET1K_V1')
 
 
-    # Load pretrained weights if provided
+def get(num_classes, pretrained_model_path):
+
+    model = __build_model()
+
+    # Load pretrained weights first
     if pretrained_model_path is not None:
-        model.load_state_dict(torch.load(pretrained_model_path, map_location="cpu"), strict=False)
+        state_dict = torch.load(pretrained_model_path, map_location="cpu")
+
+        # Build the model from the pretrained
+        pretrained_num_classes = state_dict["head.weight"].shape[0]
+        
+        model.head = nn.Linear(model.head.in_features, pretrained_num_classes)
+        model.load_state_dict(state_dict, strict=False)
     
+    # Change model head
     model.head = nn.Linear(model.head.in_features, num_classes)
     
     return model, TRANSFORM_SWIN

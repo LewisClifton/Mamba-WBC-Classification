@@ -84,7 +84,7 @@ TRANSFORM_VIM = {
 }
 
 
-def build_model(model_size):
+def __build_model(model_size):
 
     # Build the model
     if model_size == "tiny":
@@ -142,6 +142,7 @@ def build_model(model_size):
             use_middle_cls_token=True,
         )
 
+
 def get(num_classes, pretrained_model_path):
 
     # Get the correct URL
@@ -152,18 +153,22 @@ def get(num_classes, pretrained_model_path):
         weights_url = "https://huggingface.co/hustvl/Vim-small-midclstok/resolve/main/vim_s_midclstok_80p5acc.pth"
     elif model_size == "base":
         weights_url = "https://huggingface.co/hustvl/Vim-base-midclstok/resolve/main/vim_b_midclstok_81p9acc.pth"
-
+    
     # Build the model using the architecture specified
-    model = build_model(model_size)
-
+    model = __build_model(model_size)
 
     # Load pretrained weights if provided
     if pretrained_model_path is not None:
-        model.load_state_dict(torch.load(pretrained_model_path, map_location="cpu"), strict=False)
+        state_dict = torch.load(pretrained_model_path, map_location="cpu")
     else:
-        # Load the weights from the url
-        model.load_state_dict(torch.hub.load_state_dict_from_url(weights_url, model_dir="models/vim/pretrained/", file_name=weights_url.split('/')[-1])['model'])
+        state_dict = torch.hub.load_state_dict_from_url(weights_url, model_dir="models/vim/pretrained/", file_name=weights_url.split('/')[-1])['model']
 
+    # Build the model from the pretrained
+    pretrained_num_classes = state_dict["head.weight"].shape[0]
+    model.head = nn.Linear(model.head.in_features, pretrained_num_classes)
+    model.load_state_dict(state_dict, strict=False)
+
+    # Change model head
     model.head = nn.Linear(model.head.in_features, num_classes)
-
+    
     return model, TRANSFORM_VIM
