@@ -43,7 +43,7 @@ def get(num_classes, pretrained_model_path):
         state_dict = torch.load(pretrained_model_path, map_location="cpu")
 
         # Build the model from the pretrained
-        pretrained_num_classes = state_dict["head.weight"].shape[0]
+        pretrained_num_classes = state_dict["model.head.weight"].shape[0]
         
         model.model.head = nn.Linear(model.model.head.in_features, pretrained_num_classes)
         model.load_state_dict(state_dict, strict=False)

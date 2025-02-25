@@ -61,7 +61,7 @@ class gray_scale(object):
 
 TRANSFORM_VIM = {
     'train': transforms.Compose([
-            transforms.Resize(224, interpolation=3),
+            transforms.Resize((224, 224)),
             transforms.RandomCrop(224, padding=4, padding_mode='reflect'),
             transforms.RandomHorizontalFlip(),
             transforms.RandomChoice([
@@ -76,7 +76,7 @@ TRANSFORM_VIM = {
         ]),
         
         'test': transforms.Compose([
-            transforms.Resize(224, interpolation=3),
+            transforms.Resize((224, 224)),
             transforms.ToTensor(),
             transforms.Normalize(mean=torch.tensor([0.485, 0.456, 0.406]), 
                                  std=torch.tensor([0.229, 0.224, 0.225]))
