@@ -11,7 +11,7 @@ import logging
 
 
 try:
-    from mamba_ssm.ops.selective_scan_interface import mamba_inner_fn_no_out_proj
+    from ..mamba_ssm.ops.selective_scan_interface import mamba_inner_fn_no_out_proj
 except ImportError:
     mamba_inner_fn_no_out_proj = None
 

@@ -6,9 +6,8 @@ from torch.cuda.amp import custom_bwd, custom_fwd
 
 from einops import rearrange, repeat
 
-from causal_conv1d import causal_conv1d_fn
-import causal_conv1d_cuda
-import selective_scan_cuda
+from ...causal_conv1d.causal_conv1d_interface import causal_conv1d_fn, causal_conv1d_cuda
+from .selective_scan_interface import selective_scan_cuda
 
 
 class SelectiveScanFn(torch.autograd.Function):

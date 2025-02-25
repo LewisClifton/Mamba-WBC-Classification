@@ -50,12 +50,7 @@ def __build_model(pretrained=False, **kwargs):
         patch_size=16, embed_dim=192, depth=20, rms_norm=True, residual_in_fp32=True, fused_add_norm=True, final_pool_type='mean', 
         if_abs_pos_embed=True, if_rope=True, if_rope_residual=True, bimamba_type="v2", directions=directions, mamba_cls=MultiMamba, **kwargs)
     model.default_cfg = _cfg()
-    if pretrained:
-        checkpoint = torch.hub.load_state_dict_from_url(
-            url="to.do",
-            map_location="cpu", check_hash=True
-        )
-        model.load_state_dict(checkpoint["model"])
+
     return model
 
 
@@ -67,7 +62,7 @@ def get(num_classes, pretrained_model_path):
     if pretrained_model_path is not None:
         state_dict = torch.load(pretrained_model_path, map_location="cpu")
     else:
-        state_dict = torch.hub.load_state_dict_from_url("https://github.com/hunto/LocalMamba/releases/download/v1.0.0/local_vim_tiny.ckpt", model_dir="models/localmamba/pretrained/", file_name='vim_tiny')
+        state_dict = torch.hub.load_state_dict_from_url("https://github.com/hunto/LocalMamba/releases/download/v1.0.0/local_vim_tiny.ckpt", model_dir="models/localmamba/pretrained/", file_name='vim_tiny')['state_dict']
 
     # Build the model from the pretrained
     pretrained_num_classes = state_dict["head.weight"].shape[0]
