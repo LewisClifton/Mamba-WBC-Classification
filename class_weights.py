@@ -8,7 +8,7 @@ from datasets import get_dataset
 # Calculate class weights for a given dataset and save them to the config file for use when training
 
 def get_class_weights(dataset, num_classes=None):
-    labels = []
+    labels = []    
 
     for _, label in dataset:
         if hasattr(label, 'item'):
@@ -40,7 +40,10 @@ if __name__ == '__main__':
     with open(dataset_config_path, 'r') as yml:
         dataset_config = yaml.safe_load(yml)
 
-    dataset = get_dataset(dataset_config, dataset_download_dir)
+    if dataset_config['name'] == 'bloodmnist':
+        dataset, _ = get_dataset(dataset_config, dataset_download_dir)
+    elif dataset_config['name'] == 'chula':
+        dataset = get_dataset(dataset_config, dataset_download_dir)
 
     class_weights = get_class_weights(dataset)
 
