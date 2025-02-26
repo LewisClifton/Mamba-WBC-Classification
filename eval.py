@@ -111,7 +111,7 @@ if __name__ == "__main__":
     # Get dataset configs
     model_config = {
         'trained_model_path' : args.trained_model_path,
-        'model_type' : args.model_type,
+        'name' : args.model_type,
         'batch_size' : args.batch_size,
     }
     with open(dataset_config_path, 'r') as yml:
