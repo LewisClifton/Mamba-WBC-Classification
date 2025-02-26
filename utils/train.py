@@ -18,19 +18,15 @@ def save_models(out_dir, trained, model_type):
     """
 
     # Create trained models directory if needed
-    model_dir = os.path.join(out_dir, 'trained/')
-    if not os.path.exists(model_dir):
-        os.makedirs(model_dir)
-
     if isinstance(trained, list):
         # Save trained models for each fold
         for idx, model in enumerate(trained):
-            model_path = os.path.join(model_dir, f'{model_type}_fold_{idx}.pth')
+            model_path = os.path.join(out_dir, f'{model_type}_fold_{idx}.pth')
             torch.save(model.state_dict(), model_path)
-        print(f'\n{len(trained)} trained models saved to {model_dir}')
+        print(f'\n{len(trained)} trained models saved to {out_dir}')
     else:
         # Save the model
-        model_path = os.path.join(model_dir, f'{model_type}.pth')
+        model_path = os.path.join(out_dir, f'{model_type}.pth')
         torch.save(trained.state_dict(), model_path)
         print(f'Saved trained model to {model_path}')
 
@@ -63,7 +59,7 @@ def save(out_dir, metrics, trained, model_config, dataset_config):
     """
 
     # Get date/time of saving
-    date = datetime.now().strftime('%Y_%m_%d_%p%I_%M')
+    date = datetime.now().strftime(f'%Y_%m_%d_%p%I_%M_{model_config['name']}')
 
     # Create output directory
     out_dir = os.path.join(out_dir, f'{date}/')
