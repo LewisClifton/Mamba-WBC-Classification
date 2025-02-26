@@ -82,7 +82,7 @@ def main(out_dir, model_config, dataset_config, dataset_download_dir):
     metrics['Time to evaluate'] = time.time() - start_time
 
     # Create output directory for log
-    date = datetime.now().strftime('%Y_%m_%d_%p%I_%M')
+    date = datetime.now().strftime(f'%Y_%m_%d_%p%I_%M_{model_config['name']}')
     out_dir = os.path.join(out_dir, f'{date}/')
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
