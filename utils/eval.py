@@ -12,7 +12,7 @@ def get_eval_metrics(preds, labels):
     accuracy = (correct / total) * 100
 
     # Precision, recall, F1-score
-    precision, sensitivity, f1, _ = precision_recall_fscore_support(labels, preds, average=None, zero_division=0)
+    precision, sensitivity, f1, _ = precision_recall_fscore_support(labels, preds, average='weighted', zero_division=0)
 
     # Confusion matrix
     conf_matrix = sk_confusion_matrix(labels, preds)
