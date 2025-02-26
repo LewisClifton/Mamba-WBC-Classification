@@ -271,7 +271,7 @@ class MMClsWandbHook(WandbLoggerHook):
 
     def _add_ground_truth(self):
         # Get image loading pipeline
-        from mmcls.datasets.pipelines import LoadImageFromFile
+        from ...datasets.pipelines import LoadImageFromFile
         img_loader = None
         for t in self.val_dataset.pipeline.transforms:
             if isinstance(t, LoadImageFromFile):

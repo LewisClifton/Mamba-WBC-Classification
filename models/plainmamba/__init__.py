@@ -23,15 +23,15 @@ TRANSFORM_PLAINMAMBA = {
 def __build_model():
     model_size = 'tiny'
     if model_size == 'tiny':
-        from plain_mamba_configs.plain_mamba_l1_in1k_300e import model as PlainMamba
+        from .plain_mamba_configs.plain_mamba_l1_in1k_300e import model as PlainMamba
         return build_classifier(PlainMamba)
         
     elif model_size == 'small':
-        from plain_mamba_configs.plain_mamba_l2_in1k_300e import model as PlainMamba
+        from .plain_mamba_configs.plain_mamba_l2_in1k_300e import model as PlainMamba
         return build_classifier(PlainMamba)
         
     elif model_size == 'base':
-        from plain_mamba_configs.plain_mamba_l3_in1k_300e import model as PlainMamba
+        from .plain_mamba_configs.plain_mamba_l3_in1k_300e import model as PlainMamba
         return build_classifier(PlainMamba)
         
 
@@ -43,7 +43,7 @@ def get(num_classes, pretrained_model_path):
     if pretrained_model_path is not None:
         state_dict = torch.load(pretrained_model_path, map_location="cpu")
     else:
-        state_dict = torch.hub.load_state_dict_from_url("https://huggingface.co/ChenhongyiYang/PlainMamba/resolve/main/l1.pth", model_dir="models/plainmamba/pretrained/", file_name='plainmamba_tiny')['model']
+        state_dict = torch.hub.load_state_dict_from_url("https://huggingface.co/ChenhongyiYang/PlainMamba/resolve/main/l1.pth", model_dir="models/plainmamba/pretrained/", file_name='plainmamba_tiny')
 
     # Build the model from the pretrained
     pretrained_num_classes = state_dict["head.weight"].shape[0]

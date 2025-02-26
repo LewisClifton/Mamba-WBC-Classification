@@ -4,7 +4,7 @@ import warnings
 import torch
 import torch.nn.functional as F
 
-from mmcls.models.losses import Accuracy
+from ...models.losses import Accuracy
 from ..builder import HEADS, build_loss
 from ..utils import is_tracing
 from .base_head import BaseHead

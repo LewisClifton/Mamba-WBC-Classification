@@ -1,8 +1,7 @@
 import torch
 import torch.nn as nn
 
-from mmcls.models.builder import NECKS
-
+from ....models.builder import NECKS
 
 @NECKS.register_module()
 class CustomAveragePooling(nn.Module):

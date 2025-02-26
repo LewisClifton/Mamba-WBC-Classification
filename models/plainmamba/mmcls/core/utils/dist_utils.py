@@ -8,8 +8,8 @@ from mmcv.runner import OptimizerHook, get_dist_info
 from torch._utils import (_flatten_dense_tensors, _take_tensors,
                           _unflatten_dense_tensors)
 
-from mmcls.utils import auto_select_device
-
+from ...utils import auto_select_device
+from ...utils import auto_select_device
 
 def _allreduce_coalesced(tensors, world_size, bucket_size_mb=-1):
     if bucket_size_mb > 0:

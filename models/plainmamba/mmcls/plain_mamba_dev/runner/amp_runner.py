@@ -19,7 +19,7 @@ from mmcv.runner.builder import RUNNERS
 from mmcv.runner.utils import get_host_info
 from mmcv.runner.hooks.optimizer import Fp16OptimizerHook, GradientCumulativeFp16OptimizerHook
 
-from mmcls.core.utils.dist_utils import DistOptimizerHook
+from ...core.utils.dist_utils import DistOptimizerHook
 
 from torch.optim import Adam
 

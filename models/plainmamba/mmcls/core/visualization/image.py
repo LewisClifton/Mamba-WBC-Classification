@@ -170,7 +170,7 @@ class ImshowInfosContextManager(BaseFigureContextManager):
 
     Examples:
         >>> import mmcv
-        >>> from mmcls.core import visualization as vis
+        >>> from ...core import visualization as vis
         >>> img1 = mmcv.imread("./1.png")
         >>> info1 = {'class': 'cat', 'label': 0}
         >>> img2 = mmcv.imread("./2.png")

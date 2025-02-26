@@ -501,7 +501,7 @@ class SwinTransformer(BaseBackbone):
 
         ckpt_pos_embed_shape = state_dict[name].shape
         if self.absolute_pos_embed.shape != ckpt_pos_embed_shape:
-            from mmcls.utils import get_root_logger
+            from ...utils import get_root_logger
             logger = get_root_logger()
             logger.info(
                 'Resize the absolute_pos_embed shape from '
@@ -536,7 +536,7 @@ class SwinTransformer(BaseBackbone):
                     new_rel_pos_bias = resize_relative_position_bias_table(
                         src_size, dst_size,
                         relative_position_bias_table_pretrained, nH1)
-                    from mmcls.utils import get_root_logger
+                    from ...utils import get_root_logger
                     logger = get_root_logger()
                     logger.info('Resize the relative_position_bias_table from '
                                 f'{state_dict[ckpt_key].shape} to '

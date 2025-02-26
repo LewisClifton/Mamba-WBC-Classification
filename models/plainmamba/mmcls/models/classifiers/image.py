@@ -60,7 +60,7 @@ class ImageClassifier(BaseClassifier):
 
             >>> import torch
             >>> from mmcv import Config
-            >>> from mmcls.models import build_classifier
+            >>> from ...models import build_classifier
             >>>
             >>> cfg = Config.fromfile('configs/resnet/resnet18_8xb32_in1k.py').model
             >>> cfg.backbone.out_indices = (0, 1, 2, 3)  # Output multi-scale feature maps
@@ -77,7 +77,7 @@ class ImageClassifier(BaseClassifier):
 
             >>> import torch
             >>> from mmcv import Config
-            >>> from mmcls.models import build_classifier
+            >>> from ...models import build_classifier
             >>>
             >>> cfg = Config.fromfile('configs/resnet/resnet18_8xb32_in1k.py').model
             >>> cfg.backbone.out_indices = (0, 1, 2, 3)  # Output multi-scale feature maps
@@ -95,7 +95,7 @@ class ImageClassifier(BaseClassifier):
 
             >>> import torch
             >>> from mmcv import Config
-            >>> from mmcls.models import build_classifier
+            >>> from ...models import build_classifier
             >>>
             >>> cfg = Config.fromfile('configs/vision_transformer/vit-base-p16_pt-64xb64_in1k-224.py').model
             >>> model = build_classifier(cfg)

@@ -5,7 +5,7 @@ import numpy as np
 import onnxruntime as ort
 import torch
 
-from mmcls.models.classifiers import BaseClassifier
+from ...models.classifiers import BaseClassifier
 
 
 class ONNXRuntimeClassifier(BaseClassifier):

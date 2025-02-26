@@ -13,9 +13,9 @@ from mmcv.runner import (DistSamplerSeedHook, Fp16OptimizerHook,
                          build_optimizer, build_runner, get_dist_info)
 import mmcv
 
-from mmcls.core import DistEvalHook, DistOptimizerHook, EvalHook
-from mmcls.datasets import build_dataloader, build_dataset
-from mmcls.utils import (auto_select_device, get_root_logger,
+from ...core import DistEvalHook, DistOptimizerHook, EvalHook
+from ...datasets import build_dataloader, build_dataset
+from ...utils import (auto_select_device, get_root_logger,
                          wrap_distributed_model, wrap_non_distributed_model)
 
 @no_type_check

@@ -2,7 +2,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
-from mmcls.utils import get_root_logger
+from ...utils import get_root_logger
 from ..builder import HEADS
 from .vision_transformer_head import VisionTransformerClsHead
 

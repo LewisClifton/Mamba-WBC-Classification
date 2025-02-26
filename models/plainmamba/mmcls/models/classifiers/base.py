@@ -8,7 +8,7 @@ import torch
 import torch.distributed as dist
 from mmcv.runner import BaseModule, auto_fp16
 
-from mmcls.core.visualization import imshow_infos
+from ...core.visualization import imshow_infos
 
 
 class BaseClassifier(BaseModule, metaclass=ABCMeta):

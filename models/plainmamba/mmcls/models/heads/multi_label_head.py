@@ -50,7 +50,7 @@ class MultiLabelClsHead(BaseHead):
         if isinstance(x, tuple):
             x = x[-1]
 
-        from mmcls.utils import get_root_logger
+        from ...utils import get_root_logger
         logger = get_root_logger()
         logger.warning(
             'The input of MultiLabelClsHead should be already logits. '
