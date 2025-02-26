@@ -114,11 +114,16 @@ def train_model(model_config, dataset_config, train_dataset, val_dataset, device
     # Create optimizer
     optimizer = optim.AdamW(model.parameters(), lr=model_config['learning_rate'], weight_decay=model_config['optim_weight_decay'])
 
+    start_time = time.time()
+
     # Train the model
     trained, metrics = train_loop(model, train_loader, val_loader, model_config['epochs'], criterion, optimizer, device, using_dist, verbose)
 
     if device in [0, 'cuda:0']:
         print('Done.')
+
+    # Get runtime
+    metrics['Time to train'] = time.time() - start_time
 
     if using_dist:
         return trained.module, metrics
@@ -136,9 +141,6 @@ def main(rank, world_size, using_dist, out_dir, model_config, dataset_config, da
         # Get dataset
         dataset = get_dataset(dataset_config, dataset_download_dir)
 
-        # Track time
-        start_time = time.time()
-
         # Train the model using k-fold cross validation and get the training metrics for each fold
         trained, metrics = train_5folds(model_config, dataset_config, dataset, rank, using_dist, verbose)
 
@@ -146,18 +148,12 @@ def main(rank, world_size, using_dist, out_dir, model_config, dataset_config, da
         # Get dataset
         train_dataset, val_dataset = get_dataset(dataset_config, dataset_download_dir)
 
-        # Track time
-        start_time = time.time()
-
         # Train model only once (i.e. without k-fold cross validation)
         trained, metrics = train_model(model_config, dataset_config, train_dataset, val_dataset, rank, using_dist, verbose)
 
     # Can add more datasets here..
     elif dataset_config['name'] == 'foo':
         pass
-
-    # Get runtime
-    metrics['Time to train'] = time.time() - start_time
 
     # Save model and log
     if dist.is_initialized():
