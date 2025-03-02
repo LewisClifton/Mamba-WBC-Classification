@@ -55,6 +55,7 @@ def evaluate_model(model, test_loader, device):
 # Two-tier model for neutrophils classification
 class CompleteClassifier(nn.Module):
     def __init__(self, model_config, dataset_config):
+        super().__init__()
 
         # Load the wbc classifier
         self.wbc_model, self.model_transforms = init_model(model_config, dataset_config['n_classes'])
