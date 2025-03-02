@@ -78,7 +78,7 @@ class CompleteClassifier(nn.Module):
         wbc_type = torch.argmax(wbc_out, dim=1)
 
          # Mask for images classified as neutrophils
-        neutrophil_mask = torch.isin(wbc_type, self.neutrophils_indices)
+        neutrophil_mask = torch.isin(wbc_type, self.neutrophils_indices.to(wbc_type.device))
 
         if neutrophil_mask.any():
             # Get indices of images classified as neutrophils
