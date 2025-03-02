@@ -20,7 +20,7 @@ from models import init_model
 torch.backends.cudnn.enabled = True
 
 
-def train_5folds(model_config, dataset_config, dataset, device, using_dist=True, verbose=False):
+def train_Kfolds(num_folds, model_config, dataset_config, dataset, device, using_dist=True, verbose=False):
     """
     Train a model with 5-fold cross-validation
 
@@ -44,7 +44,7 @@ def train_5folds(model_config, dataset_config, dataset, device, using_dist=True,
     all_trained = []
 
     # 5-Fold cross-validation setup
-    folds = KFold(n_splits=5, shuffle=True, random_state=42)
+    folds = KFold(n_splits=num_folds, shuffle=True, random_state=42)
 
     # Loop over each fold
     for fold, (train_idx, val_idx) in enumerate(folds.split(dataset)):
@@ -131,7 +131,7 @@ def train_model(model_config, dataset_config, train_dataset, val_dataset, device
     return trained, metrics
     
 
-def main(rank, world_size, using_dist, out_dir, model_config, dataset_config, dataset_download_dir, verbose=False):
+def main(rank, world_size, using_dist, out_dir, model_config, dataset_config, num_folds, dataset_download_dir, verbose=False):
 
     # Setup GPU network if required
     if using_dist: setup_dist(rank, world_size)
@@ -142,7 +142,7 @@ def main(rank, world_size, using_dist, out_dir, model_config, dataset_config, da
         dataset = get_dataset(dataset_config, dataset_download_dir)
 
         # Train the model using k-fold cross validation and get the training metrics for each fold
-        trained, metrics = train_5folds(model_config, dataset_config, dataset, rank, using_dist, verbose)
+        trained, metrics = train_Kfolds(num_folds, model_config, dataset_config, dataset, rank, using_dist, verbose)
 
     elif dataset_config['name'] == 'bloodmnist':
         # Get dataset
@@ -175,6 +175,7 @@ if __name__ == '__main__':
     parser.add_argument('--model_config_path', type=str, help='Path to model config .yml.', required=True)
     parser.add_argument('--dataset_config_path', type=str, help='Path to dataset config .yml.', required=True)
     parser.add_argument('--pretrained_path', type=str, help='Path to pre-trained model.pth.')
+    parser.add_argument('--num_folds', type=int, help='Number of folds for cross fold validation if desired. (default=1)', default=1)
     parser.add_argument('--using_windows', action=argparse.BooleanOptionalAction, help='If using Windows machine for training. Forces --num_gpus to 1')
     parser.add_argument('--num_gpus', type=int, help='Number of GPUs to be used for training. (default=2)', default=2)
     parser.add_argument('--verbose', action=argparse.BooleanOptionalAction, help='Whether to print per epoch metrics during training')
@@ -186,6 +187,7 @@ if __name__ == '__main__':
     model_config_path = args.model_config_path
     dataset_config_path = args.dataset_config_path
     pretrained_path = args.pretrained_path
+    num_folds = args.num_folds
     using_windows = args.using_windows
     num_gpus = min(args.num_gpus, torch.cuda.device_count())
     verbose = args.verbose
@@ -208,6 +210,6 @@ if __name__ == '__main__':
 
     # Create process group if using multi gpus on Linux
     if using_dist:
-        mp.spawn(main, args=(num_gpus, True, out_dir, model_config, dataset_config, dataset_download_dir, verbose), nprocs=num_gpus)
+        mp.spawn(main, args=(num_gpus, True, out_dir, model_config, dataset_config, num_folds, dataset_download_dir, verbose), nprocs=num_gpus)
     else:
-        main(0, 1, False, out_dir, model_config, dataset_config, dataset_download_dir, verbose)
+        main(0, 1, False, out_dir, model_config, dataset_config, num_folds, dataset_download_dir, verbose)
