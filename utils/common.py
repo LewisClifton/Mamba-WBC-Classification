@@ -21,7 +21,7 @@ def save_log(out_dir, date, metrics, model_config, dataset_config):
         if isinstance(metrics, list):
             # Save metrics for each fold
             for idx, fold_metrics in enumerate(metrics):
-                file.write(f'\nFold {idx} training metrics:\n')
+                file.write(f'\nFold {idx+1} training metrics:\n')
                 write_dict_to_file(file, fold_metrics)
         else:
             # Save metrics for the model
