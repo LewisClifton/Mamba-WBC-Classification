@@ -6,7 +6,7 @@ import pandas as pd
 import torch
 
 class ChulaWBC5000(Dataset):
-    def __init__(self, images_path, labels_path, wbc_types=['BNE', 'SNE', 'Basophil', 'Eosinophil', 'Monocyte', 'Lymphocyte'], test=False):
+    def __init__(self, images_path, labels_path, wbc_types=['BNE', 'SNE', 'Basophil', 'Eosinophil', 'Monocyte', 'Lymphocyte'], test=False, improvements=False):
         super(ChulaWBC5000, self).__init__()
 
         self.images_path = images_path

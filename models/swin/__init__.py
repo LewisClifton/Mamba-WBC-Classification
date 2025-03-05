@@ -47,8 +47,13 @@ def get(num_classes, pretrained_model_path):
         
         model.head = nn.Linear(model.head.in_features, pretrained_num_classes)
         model.load_state_dict(state_dict, strict=False)
-    
-    # Change model head
-    model.head = nn.Linear(model.head.in_features, num_classes)
+
+
+    if num_classes is None:
+        # Remove head if necessary
+        model.head = nn.Identity()
+    else:
+        # Change model head
+        model.head = nn.Linear(model.head.in_features, num_classes)
     
     return model, TRANSFORM_SWIN

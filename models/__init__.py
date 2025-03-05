@@ -1,5 +1,3 @@
-import torch
-
 def init_model(model_config, num_classes):
     """
     Initialise fresh model prior to training
@@ -49,5 +47,6 @@ def init_model(model_config, num_classes):
     # Add new models using elif
     elif model_type == 'foo':
         pass
+
 
     return model, transform

@@ -168,6 +168,13 @@ def get(num_classes, pretrained_model_path):
     model.head = nn.Linear(model.head.in_features, pretrained_num_classes)
     model.load_state_dict(state_dict, strict=False)
 
+    # Remove head if necessary
+    if num_classes is None:
+        # Change model head
+        model.classifier = nn.Identity()
+        
+        return model, TRANSFORM_VIM
+
     # Change model head
     model.head = nn.Linear(model.head.in_features, num_classes)
     

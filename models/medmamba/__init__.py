@@ -40,11 +40,22 @@ def get(num_classes, pretrained_model_path):
         model = __build_model(pretrained_num_classes)
 
         model.load_state_dict(state_dict, strict=False)
-        
-        # Change model head
-        model.head = nn.Linear(model.head.in_features, num_classes)
+
+        if num_classes is None:
+            # Remove head if necessary
+            model.head = nn.Identity()
+        else:
+            # Change model head
+            model.head = nn.Linear(model.head.in_features, num_classes)
         
     else:
-        model = __build_model(num_classes)
+
+        if num_classes is None:
+            model = __build_model(num_classes=2)
+
+            # Remove head if necessary
+            model.head = nn.Identity()
+        else:
+            model = __build_model(num_classes)
 
     return model, TRANSFORM_MEDMAMBA

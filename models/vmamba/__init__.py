@@ -94,15 +94,27 @@ def get(num_classes, pretrained_model_path):
             ("head", nn.Linear(model.num_features, state_dict["classifier.head.weight"].shape[0])),
     ]))
     model.load_state_dict(state_dict, strict=False)
+    
 
-    # Change model head
-    model.classifier = nn.Sequential(
-        OrderedDict([
-            ("norm", model.classifier.norm),
-            ("permute", model.classifier.permute),
-            ("avgpool", model.classifier.avgpool),
-            ("flatten", model.classifier.flatten),
-            ("head", nn.Linear(model.num_features, num_classes)),
-    ]))
+    if num_classes is None:
+        # Remove head if necessary
+        model.classifier = nn.Sequential(
+            OrderedDict([
+                ("norm", model.classifier.norm),
+                ("permute", model.classifier.permute),
+                ("avgpool", model.classifier.avgpool),
+                ("flatten", model.classifier.flatten),
+                ("head", nn.Identity()),
+        ]))
+    else:
+        # Change model head
+        model.classifier = nn.Sequential(
+            OrderedDict([
+                ("norm", model.classifier.norm),
+                ("permute", model.classifier.permute),
+                ("avgpool", model.classifier.avgpool),
+                ("flatten", model.classifier.flatten),
+                ("head", nn.Linear(model.num_features, num_classes)),
+        ]))
 
     return model, TRANSFORM_VMAMBA

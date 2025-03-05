@@ -2,7 +2,6 @@ import torch.nn as nn
 from torchvision import transforms
 import torch
 
-
 from .classification.lib.models.local_vim import VisionMamba as LocalMamba
 from .classification.lib.models.mamba.multi_mamba import MultiMamba
 from timm.models.vision_transformer import _cfg
@@ -70,7 +69,12 @@ def get(num_classes, pretrained_model_path):
     model.head = nn.Linear(model.head.in_features, pretrained_num_classes)
     model.load_state_dict(state_dict, strict=False)
 
-    # Change model head
-    model.head = nn.Linear(model.head.in_features, num_classes)
+
+    if num_classes is None:
+        # Remove head if necessary
+        model.head = nn.Identity()
+    else:
+        # Change model head
+        model.head = nn.Linear(model.head.in_features, num_classes)
     
     return model, TRANSFORM_LOCALMAMBA
