@@ -6,19 +6,22 @@ import pandas as pd
 import torch
 
 class ChulaWBC5000(Dataset):
-    def __init__(self, images_path, labels_path, wbc_types=['BNE', 'SNE', 'Basophil', 'Eosinophil', 'Monocyte', 'Lymphocyte']):
+    def __init__(self, images_path, labels_path, wbc_types=['BNE', 'SNE', 'Basophil', 'Eosinophil', 'Monocyte', 'Lymphocyte'], test=False):
         super(ChulaWBC5000, self).__init__()
 
         self.images_path = images_path
 
         labels = pd.read_csv(labels_path)
         self.labels = labels[labels['label'].isin(wbc_types)]
+        self.labels_path = labels_path
 
         self.wbc_types = wbc_types
 
         # wbc type is semantic, class is numerical classes used by the model
         self.wbc_type_to_class = {label: idx for idx, label in enumerate(wbc_types)}
         self.class_to_wbc_type = {idx: label for idx, label in enumerate(wbc_types)}
+
+        self.test = test
 
     def get_wbc_type_from_class(self, class_):
         '''
@@ -53,6 +56,9 @@ class ChulaWBC5000(Dataset):
         label = self.get_class_from_wbc_type(label)
 
         label = torch.tensor(label, dtype=torch.long).unsqueeze(0)
+
+        if self.test: 
+            return image, label, self.labels.iloc[idx]['name']
         
         return image, label
     
@@ -67,6 +73,6 @@ def get(dataset_config, test=False):
     else:
         labels_path = dataset_config['train_labels_path']
 
-    dataset = ChulaWBC5000(dataset_config['images_dir'], labels_path, wbc_types=dataset_config['classes'])
+    dataset = ChulaWBC5000(dataset_config['images_dir'], labels_path, wbc_types=dataset_config['classes'], test=test)
 
     return dataset

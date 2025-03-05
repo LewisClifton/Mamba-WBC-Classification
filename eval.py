@@ -17,7 +17,7 @@ from utils.eval import get_eval_metrics
 torch.backends.cudnn.enabled = True
 
 
-def evaluate_model(model, test_loader, device):
+def evaluate_model(model, test_loader, dataset_name, device):
     """
     Evaluate a trained model on a test dataset.
 
@@ -36,20 +36,40 @@ def evaluate_model(model, test_loader, device):
     all_preds = []
     all_labels = []
 
+    misclassified_bne = []
+    misclassified_sne = []
+
     # Get test set results
     with torch.no_grad():
-        for images, labels in test_loader:
+        for images, labels, image_names in test_loader:
             images, labels = images.to(device), labels.to(device)
 
             outputs = model(images)
             if not isinstance(model, CompleteClassifier):
                 outputs = torch.argmax(outputs, dim=1)
 
+            if dataset_name == "chula":
+                for i in range(images.size(0)):
+                    true_label = labels[i].item()
+                    predicted_label = outputs[i].item()
+                    image_name = image_names[i]
+
+                    # If the image is misclassified and the label is 0 or 3
+                    if true_label == 3 and predicted_label == 0:
+                        misclassified_sne.append(image_name)
+                    if true_label == 0 and predicted_label == 3:
+                        misclassified_bne.append(image_name)
+
             all_preds.extend(outputs.cpu().numpy().tolist())
             all_labels.extend(labels.cpu().numpy().tolist())
 
+    metrics = get_eval_metrics(all_preds, all_labels)
+    if dataset_name == "chula":
+        metrics['BNE images misclassified as SNE'] = misclassified_bne
+        metrics['SNE images misclassified as BNE'] = misclassified_sne
+
     # Return evaluation metrics
-    return get_eval_metrics(all_preds, all_labels)
+    return metrics
 
 
 # Two-tier model for neutrophils classification
@@ -89,7 +109,7 @@ class CompleteClassifier(nn.Module):
             neutrophil_type = torch.argmax(neutrophil_out, dim=1)
 
             # Map the neutrophils binary predictions to WBC classes
-            wbc_type[neutrophil_indices] = torch.where(neutrophil_type == 0, self.BNE_index, self.SNE_index)
+            wbc_type[neutrophil_indices] = torch.where(neutrophil_type == 1, self.BNE_index, self.SNE_index)
         
         return wbc_type
 
@@ -122,7 +142,7 @@ def main(out_dir, model_config, dataset_config, dataset_download_dir):
     start_time = time.time()
 
     # Evaluate the model
-    metrics = evaluate_model(model, test_loader, device)
+    metrics = evaluate_model(model, test_loader, dataset_config['name'], device)
 
     # Get runtime
     metrics['Time to evaluate'] = time.time() - start_time
