@@ -1,13 +1,18 @@
 from torch.utils.data import Dataset
 
 class TransformedDataset(Dataset):
-    def __init__(self, dataset, transform):
+    def __init__(self, dataset, transform, test=False):
         self.dataset = dataset
         self.transform = transform
+        self.test=test
 
     def __getitem__(self, idx):
-        image, label = self.dataset[idx]
+        if self.test: 
+            image, label, image_name = self.dataset[idx]
+            image = self.transform(image)
+            return image, label, image_name
 
+        image, label = self.dataset[idx]
         image = self.transform(image)
         
         return image, label

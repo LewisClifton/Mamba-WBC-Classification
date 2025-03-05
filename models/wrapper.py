@@ -70,9 +70,15 @@ def wrap_model(base_model, base_model_transform, num_classes, pretrained_model_p
     # Change model head
     model.head = nn.Linear(model.head.in_features, num_classes)
 
-    transform = transforms.Compose([
+    transform = {
+        'train': transforms.Compose([
+                transforms.Resize((224, 224)),
+                transforms.ToTensor()
+            ]),
+        'test': transforms.Compose([
                 transforms.Resize((224, 224)),
                 transforms.ToTensor()
             ])
+    }
     
     return model, transform
