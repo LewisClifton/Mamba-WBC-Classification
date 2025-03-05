@@ -17,9 +17,9 @@ class NucleusExtractor(nn.Module):
         return mask
 
 
-class WBC_Classifier(nn.Module):
+class Wrapper(nn.Module):
     def __init__(self, base_model, base_model_transform, num_classes=2):
-        super(WBC_Classifier, self).__init__()
+        super(Wrapper, self).__init__()
         
         self.base_model = base_model
         self.base_model_transform = base_model_transform
@@ -53,23 +53,11 @@ class WBC_Classifier(nn.Module):
         combined = torch.cat([img_features, morph_features], dim=1)
 
         return self.head(combined)
-
-WBC_CLASSIFIER_TRANSFORM = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor()
-])
-
-def get(model_config, num_classes):
-
-    from . import get
-
-    # Get base model
-    pretrained_model_path = model_config['pretrained_model_path'] if 'pretrained_model_path' in model_config.keys() else None
-    model_config.pop('pretrained_model_path')
-    base_model, base_model_transform = get(model_config, num_classes=None)
     
-    # Load the WBC Classifier
-    model = WBC_Classifier(base_model, base_model_transform, num_classes=num_classes)
+
+def wrap_model(base_model, base_model_transform, num_classes, pretrained_model_path):
+    # Load the WBC Classifier Wrapper
+    model = Wrapper(base_model=base_model, base_model_transform=base_model_transform, num_classes=num_classes)
 
     # Load pretrained weights if provided
     if pretrained_model_path is not None:
@@ -82,4 +70,9 @@ def get(model_config, num_classes):
     # Change model head
     model.head = nn.Linear(model.head.in_features, num_classes)
 
-    return model, WBC_CLASSIFIER_TRANSFORM
+    transform = transforms.Compose([
+                transforms.Resize((224, 224)),
+                transforms.ToTensor()
+            ])
+    
+    return model, transform

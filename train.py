@@ -175,6 +175,7 @@ if __name__ == '__main__':
     parser.add_argument('--model_config_path', type=str, help='Path to model config .yml.', required=True)
     parser.add_argument('--dataset_config_path', type=str, help='Path to dataset config .yml.', required=True)
     parser.add_argument('--pretrained_path', type=str, help='Path to pre-trained model.pth.')
+    parser.add_argument('--use_improvements', action=argparse.BooleanOptionalAction, help='Whether to use the proposed model improvements.')
     parser.add_argument('--num_folds', type=int, help='Number of folds for cross fold validation if desired. (default=1)', default=1)
     parser.add_argument('--using_windows', action=argparse.BooleanOptionalAction, help='If using Windows machine for training. Forces --num_gpus to 1')
     parser.add_argument('--num_gpus', type=int, help='Number of GPUs to be used for training. (default=2)', default=2)
@@ -187,6 +188,7 @@ if __name__ == '__main__':
     model_config_path = args.model_config_path
     dataset_config_path = args.dataset_config_path
     pretrained_path = args.pretrained_path
+    use_improvements = args.use_improvements
     num_folds = args.num_folds
     using_windows = args.using_windows
     num_gpus = min(args.num_gpus, torch.cuda.device_count())
@@ -202,6 +204,8 @@ if __name__ == '__main__':
     # Add the pretrained model to the model config
     if pretrained_path:
         model_config['pretrained_model_path'] = pretrained_path
+    if use_improvements:
+        model_config['use_improvements'] = use_improvements
     
     # Multi GPU not supported for windows and trivially not for 1 GPU
     using_dist = True
