@@ -35,13 +35,18 @@ class Wrapper(nn.Module):
         # Final classification layer (image features + morph features)
         self.head = nn.Linear(2048 + 128, num_classes)
 
+
     def forward(self, image):
         # Extract the nucleus mask
         mask = self.nucleus_extractor(image)  # [B, 1, H, W]
 
         # Apply the mask to the original image
         nucleus = image * mask  # Keeps only nucleus pixels
-        nucleus = self.base_model_transform(nucleus)
+
+        if self.training:
+            nucleus = self.base_model_transform['train'](nucleus)
+        else:
+            nucleus = self.base_model_transform['test'](nucleus)
 
         # Extract features from the nucleus
         img_features = self.base_model(nucleus)

@@ -53,8 +53,8 @@ def init_model(model_config, num_classes):
         model, transform = select_model(model_type, num_classes=None, pretrained_model_path=None)
 
         # Wrap the model
-        from wrapper import wrap_model
-        model, transform = wrap_model(base_model=model, base_model_transform=transform, num_classes=num_classes, pretrained_model_path=pretrained_model_path)
+        from .wrapper import wrap_model
+        model = wrap_model(base_model=model, base_model_transform=transform, num_classes=num_classes, pretrained_model_path=pretrained_model_path)
 
     else: 
         model, transform = select_model(model_type, num_classes, pretrained_model_path)
