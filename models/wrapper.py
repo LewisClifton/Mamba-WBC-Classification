@@ -22,7 +22,9 @@ class Wrapper(nn.Module):
         super(Wrapper, self).__init__()
         
         self.base_model = base_model
-        self.base_model_transform = base_model_transform
+        self.base_model_transform_train = base_model_transform['train']
+        self.base_model_transform_test = base_model_transform['test']
+
         self.nucleus_extractor = NucleusExtractor()
 
         self.morph_fc = nn.Sequential(
@@ -44,9 +46,9 @@ class Wrapper(nn.Module):
         nucleus = image * mask  # Keeps only nucleus pixels
 
         if self.training:
-            nucleus = self.base_model_transform['train'](nucleus)
+            nucleus = self.base_model_transform_train(nucleus)
         else:
-            nucleus = self.base_model_transform['test'](nucleus)
+            nucleus = self.base_model_transform_test(nucleus)
 
         # Extract features from the nucleus
         img_features = self.base_model(nucleus)
