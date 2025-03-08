@@ -94,6 +94,8 @@ def train_loop(model, model_config, train_loader, val_loader, criterion, optimiz
     val_accuracy_per_epoch = []
     val_loss_per_epoch = []
 
+    best_val_accuracy = 0
+
     for epoch in range(model_config['epochs']):
         model.train()
 
@@ -134,7 +136,6 @@ def train_loop(model, model_config, train_loader, val_loader, criterion, optimiz
         val_loss = 0.0
         correct_val = 0
         total_val = 0
-        best_val_accuracy = 0
 
         with torch.no_grad():
             for images, labels in val_loader:
