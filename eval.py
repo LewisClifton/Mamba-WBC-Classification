@@ -7,6 +7,7 @@ import time
 import torch
 from torch.utils.data import DataLoader
 import torch.nn as nn
+import torch.nn.functional as F
 
 from datasets import get_dataset, TransformedDataset
 from models import init_model
@@ -17,7 +18,7 @@ from utils.eval import get_eval_metrics
 torch.backends.cudnn.enabled = True
 
 
-def ensemble_prediction(models, images, device):
+def ensemble_prediction(models, images, num_classes, device):
 
     # Collect predictions from all models
     predictions = torch.zeros((len(models), num_classes)).to(device)
@@ -26,12 +27,10 @@ def ensemble_prediction(models, images, device):
         predictions[i] = F.softmax(outputs, dim=1)  # Convert logits to probabilities
 
     # Average the predictions across models
-    average_outputs= torch.mean(predictions, dim=0)
-
-    return outputs
+    return torch.mean(predictions, dim=0)
 
 
-def evaluate_model(models, test_loader, dataset_name, device):
+def evaluate_model(models, test_loader, dataset_name, num_classes, device):
     """
     Evaluate a trained model on a test dataset.
 
@@ -59,7 +58,7 @@ def evaluate_model(models, test_loader, dataset_name, device):
             images, labels = images.to(device), labels.to(device)
 
             if isinstance(trained_model_path, list):
-                outputs = ensemble_prediction(models, images, device)
+                outputs = ensemble_prediction(models, images, num_classes, device)
             else:
                 outputs = models(images)
 
@@ -132,37 +131,37 @@ class CompleteClassifier(nn.Module):
         return wbc_type
 
 
-def load_model(model_config):
+def load_model(model_config, device):
     # Load model
     if 'neutrophil_model_path' in model_config: 
         model = CompleteClassifier(model_config, dataset_config)
-        model_transforms = model.model_transforms
+        transforms = model.model_transforms
         model = model.to(device)
         model.eval()
     else: 
-        model, model_transforms = init_model(model_config, dataset_config['n_classes'], device)
+        model, transforms = init_model(model_config, dataset_config['n_classes'], device)
         model.load_state_dict(torch.load(model_config['trained_model_path'], map_location=device))
         model.eval()
 
-    return model
+    return model, transforms
 
 
-def main(out_dir, model_config, dataset_config, ensemble, dataset_download_dir):
+def main(out_dir, model_config, dataset_config, dataset_download_dir):
 
     # Setup GPU
     device = 'cuda'
 
-    if ensemble:
+    if isinstance(trained_model_path, list):
         models = []
         for trained_model_path, name in zip(model_config['trained_model_path'], model_config['name']):
-            model = load_model(model_config={'trained_model_path' : args.trained_model_path, 'name' : args.model_type})
-            models.append(model)
+            model, transforms = load_model(model_config={'trained_model_path' : trained_model_path, 'name' :  name}, device=device)
+            models.append(model, device) # (don't bother storing the transforms for each model, assume all the test transforms are the same)
     else:
-        models = load_model(model_config)
+        models, transforms = load_model(model_config, device)
 
     # Apply transforms
     test_dataset = get_dataset(dataset_config, dataset_download_dir, test=True)
-    test_dataset = TransformedDataset(test_dataset, model_transforms['test'], test=True)
+    test_dataset = TransformedDataset(test_dataset, transforms['test'], test=True)
 
     # Create data loaders
     test_loader = DataLoader(test_dataset, batch_size=model_config['batch_size'])
@@ -171,7 +170,7 @@ def main(out_dir, model_config, dataset_config, ensemble, dataset_download_dir):
     start_time = time.time()
 
     # Evaluate the model
-    metrics = evaluate_model(models, test_loader, dataset_config['name'], device)
+    metrics = evaluate_model(models, test_loader, dataset_config['name'], dataset_config['num_classes'], device)
 
     # Get runtime
     metrics['Time to evaluate'] = time.time() - start_time
@@ -224,4 +223,4 @@ if __name__ == "__main__":
     with open(dataset_config_path, 'r') as yml:
         dataset_config = yaml.safe_load(yml)
 
-    main(out_dir, model_config, batch_size, dataset_config, ensemble, dataset_download_dir)
+    main(out_dir, model_config, batch_size, dataset_config, dataset_download_dir)
