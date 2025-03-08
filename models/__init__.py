@@ -31,7 +31,7 @@ def select_model(model_type, num_classes, pretrained_model_path):
     return model, transform
 
 
-def init_model(model_config, num_classes):
+def init_model(model_config, num_classes, device):
     """
     Initialise fresh model prior to training
 
@@ -52,11 +52,17 @@ def init_model(model_config, num_classes):
         # Initialise base model with no classification head and not from a pretrained model
         model, transform = select_model(model_type, num_classes=None, pretrained_model_path=None)
 
+        model = model.to(device)
+
         # Wrap the model
         from .wrapper import wrap_model
         model = wrap_model(base_model=model, num_classes=num_classes, pretrained_model_path=pretrained_model_path)
 
+        model = model.to(device)
+
     else: 
         model, transform = select_model(model_type, num_classes, pretrained_model_path)
+
+        model = model.to(device)
         
     return model, transform

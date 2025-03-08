@@ -19,39 +19,66 @@ class NucleusExtractor(nn.Module):
 class Wrapper(nn.Module):
     def __init__(self, base_model, num_classes=2):
         super(Wrapper, self).__init__()
-        
+
         self.base_model = base_model
 
+        self.base_model_device = next(self.base_model.parameters()).device
         self.nucleus_extractor = NucleusExtractor()
 
-        self.morph_fc = nn.Sequential(
-            nn.Linear(128, 64),  # Morphological features input
+        # CNN for learning morphological features from the extracted nucleus
+        self.morph_cnn = nn.Sequential(
+            nn.Conv2d(3, 16, kernel_size=3, padding=1),  
             nn.ReLU(),
+            nn.MaxPool2d(2, 2),  # Reduce spatial size
+            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.AdaptiveAvgPool2d((1, 1))  # Output shape: [B, 64, 1, 1]
+        )
+
+        self.morph_fc = nn.Sequential(
             nn.Linear(64, 128),
             nn.ReLU()
         )
 
-        # Final classification layer (image features + morph features)
-        self.head = nn.Linear(2048 + 128, num_classes)
+        # **Dynamically determine base model output size**
+        self.base_out_features = self._get_base_output_size()
 
+        # Final classifier layer (base model features + morphological features)
+        self.head = nn.Linear(self.base_out_features + 128, num_classes)
+
+    def _get_base_output_size(self):
+        """Pass a dummy input to determine base model output size."""
+        with torch.no_grad():
+            dummy_input = torch.randn(1, 3, 224, 224).to(self.base_model_device)
+            base_output = self.base_model(dummy_input)
+            
+            return base_output.shape[1]  # Get feature size
 
     def forward(self, image):
-        # Extract the nucleus mask
+        # Extract nucleus mask
         mask = self.nucleus_extractor(image)  # [B, 1, H, W]
 
-        # Apply the mask to the original image
-        nucleus = image * mask  # Keeps only nucleus pixels
+        # Apply mask to extract nucleus
+        nucleus = image * mask  # [B, 3, H, W]
 
-        # Extract features from the nucleus
-        img_features = self.base_model(nucleus)
+        # Extract features from the nucleus image (Base Model)
+        img_features = self.base_model(nucleus)  # [B, 192]
+        
+        # Pass nucleus through CNN for morphological feature extraction
+        morph_features = self.morph_cnn(nucleus)  # [B, 64, 1, 1]
+        morph_features = morph_features.view(morph_features.size(0), -1)  # Flatten to [B, 64]
 
-        # Learn morphological features (e.g., shape, size, convexity)
-        morph_features = self.morph_fc(torch.flatten(nucleus, start_dim=1))
+        # Pass through FC layers
+        morph_features = self.morph_fc(morph_features)  # [B, 128]
 
-        # Combine image & morphological features
+        # Concatenate features
         combined = torch.cat([img_features, morph_features], dim=1)
 
         return self.head(combined)
+
     
 
 def wrap_model(base_model, num_classes, pretrained_model_path):

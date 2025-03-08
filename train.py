@@ -84,8 +84,7 @@ def train_model(model_config, dataset_config, train_dataset, val_dataset, device
         print('Training...')
 
     # Initialise model
-    model, model_transforms = init_model(model_config, dataset_config['n_classes'])
-    model = model.to(device)
+    model, model_transforms = init_model(model_config, dataset_config['n_classes'], device)
 
     # Apply transforms
     train_dataset = TransformedDataset(train_dataset, model_transforms['train'])

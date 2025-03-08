@@ -123,13 +123,11 @@ def main(out_dir, model_config, dataset_config, dataset_download_dir):
     if 'neutrophil_model_path' in model_config: 
         model = CompleteClassifier(model_config, dataset_config)
         model_transforms = model.model_transforms
+        model = model.to(device)
     else: 
-        model, model_transforms = init_model(model_config, dataset_config['n_classes'])
+        model, model_transforms = init_model(model_config, dataset_config['n_classes'], device)
         model.load_state_dict(torch.load(model_config['trained_model_path'], map_location=device))
         model.eval()
-
-    # Put on device
-    model.to(device)
 
     # Apply transforms
     test_dataset = get_dataset(dataset_config, dataset_download_dir, test=True)
