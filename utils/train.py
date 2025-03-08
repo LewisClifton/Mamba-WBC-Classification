@@ -7,7 +7,7 @@ import torch
 from .common import save_log, average_across_gpus
 
 
-def save_models(out_dir, trained, model_type, epochs):
+def save_models(out_dir, trained, model_type, epochs, accuracy=""):
     """
     Save trained model(s) to a given output directory
 
@@ -26,7 +26,7 @@ def save_models(out_dir, trained, model_type, epochs):
         print(f'\n{len(trained)} trained models saved to {out_dir}')
     else:
         # Save the model
-        model_path = os.path.join(out_dir, f'{model_type}_epoch_{epochs}.pth')
+        model_path = os.path.join(out_dir, f'{model_type}_epoch_{epochs}_acc_{accuracy}.pth')
         torch.save(trained.state_dict(), model_path)
         print(f'Saved trained model to {model_path}')
 
@@ -155,7 +155,7 @@ def train_loop(model, model_config, train_loader, val_loader, criterion, optimiz
 
         if val_accuracy > best_val_accuracy and val_accuracy > 91.5:
             best_val_accuracy = val_accuracy
-            save_models(out_dir, model, model_config['name'], epoch)
+            save_models(out_dir, model, model_config['name'], epoch, best_val_accuracy)
 
         # Store metrics for this epoch
         train_accuracy_per_epoch.append(train_accuracy)
