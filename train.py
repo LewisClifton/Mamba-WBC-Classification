@@ -1,6 +1,8 @@
 import argparse
 import yaml
 import time
+from datetime import datetime
+import os
 
 import torch
 import torch.multiprocessing as mp
@@ -205,6 +207,12 @@ if __name__ == '__main__':
         model_config['pretrained_model_path'] = pretrained_path
     if use_improvements:
         model_config['use_improvements'] = use_improvements
+
+    # Set up output directory
+    date = datetime.now().strftime(f'%Y_%m_%d_%p%I_%M_{model_config['name']}')
+    out_dir = os.path.join(out_dir, f'{date}/')
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
     
     # Multi GPU not supported for windows and trivially not for 1 GPU
     using_dist = True

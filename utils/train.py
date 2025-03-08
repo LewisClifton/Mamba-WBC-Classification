@@ -1,5 +1,4 @@
 import os
-from datetime import datetime
 import yaml
 
 import torch
@@ -57,14 +56,6 @@ def save(out_dir, metrics, trained, model_config, dataset_config):
         config(dict): Model config dictionary to be saved
         using_dist(bool): Whether multiple GPUs were used to train the model(s)
     """
-
-    # Get date/time of saving
-    date = datetime.now().strftime(f'%Y_%m_%d_%p%I_%M_{model_config['name']}')
-
-    # Create output directory
-    out_dir = os.path.join(out_dir, f'{date}/')
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
     
     # Save models, log and config yml
     save_models(out_dir, trained, model_config['name'], model_config['epochs'])
