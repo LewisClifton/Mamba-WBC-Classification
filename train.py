@@ -141,14 +141,14 @@ def main(rank, world_size, using_dist, out_dir, model_config, dataset_config, nu
         dataset = get_dataset(dataset_config, dataset_download_dir)
 
         # Train the model using k-fold cross validation and get the training metrics for each fold
-        trained, metrics = train_Kfolds(num_folds, model_config, dataset_config, dataset, rank, using_dist, verbose)
+        trained, metrics = train_Kfolds(num_folds, model_config, dataset_config, dataset, rank, out_dir, using_dist, verbose)
 
     elif dataset_config['name'] == 'bloodmnist':
         # Get dataset
         train_dataset, val_dataset = get_dataset(dataset_config, dataset_download_dir)
 
         # Train model only once (i.e. without k-fold cross validation)
-        trained, metrics = train_model(model_config, dataset_config, train_dataset, val_dataset, rank, using_dist, verbose, out_dir)
+        trained, metrics = train_model(model_config, dataset_config, train_dataset, val_dataset, rank, out_dir, using_dist, verbose, out_dir)
 
     # Can add more datasets here..
     elif dataset_config['name'] == 'foo':
