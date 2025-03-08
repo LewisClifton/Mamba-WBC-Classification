@@ -182,7 +182,7 @@ def main(out_dir, model_config, dataset_config, dataset_download_dir):
         os.makedirs(out_dir)
 
     # Save log
-    save_log(out_dir, date, metrics, model_config, dataset_config)
+    save_log(out_dir, metrics, model_config, dataset_config)
     
 
 if __name__ == "__main__":
