@@ -7,7 +7,7 @@ import torch
 from .common import save_log, average_across_gpus
 
 
-def save_models(out_dir, trained, model_type):
+def save_models(out_dir, trained, model_type, epochs):
     """
     Save trained model(s) to a given output directory
 
@@ -21,12 +21,12 @@ def save_models(out_dir, trained, model_type):
     if isinstance(trained, list):
         # Save trained models for each fold
         for idx, model in enumerate(trained):
-            model_path = os.path.join(out_dir, f'{model_type}_fold_{idx}.pth')
+            model_path = os.path.join(out_dir, f'{model_type}_fold_{idx}_epoch_{epochs}.pth')
             torch.save(model.state_dict(), model_path)
         print(f'\n{len(trained)} trained models saved to {out_dir}')
     else:
         # Save the model
-        model_path = os.path.join(out_dir, f'{model_type}.pth')
+        model_path = os.path.join(out_dir, f'{model_type}_epoch_{epochs}.pth')
         torch.save(trained.state_dict(), model_path)
         print(f'Saved trained model to {model_path}')
 
@@ -67,12 +67,12 @@ def save(out_dir, metrics, trained, model_config, dataset_config):
         os.makedirs(out_dir)
     
     # Save models, log and config yml
-    save_models(out_dir, trained, model_config['name'])
+    save_models(out_dir, trained, model_config['name'], model_config['epochs'])
     save_log(out_dir, date, metrics, model_config, dataset_config)
     save_config(out_dir, model_config)
 
 
-def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, device, using_dist, verbose=False):
+def train_loop(model, model_config, train_loader, val_loader, criterion, optimizer, device, using_dist, out_dir, verbose=False):
     """
     Training loop used for training a single model
 
@@ -94,7 +94,7 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
     val_accuracy_per_epoch = []
     val_loss_per_epoch = []
 
-    for epoch in range(n_epochs):
+    for epoch in range(model_config['epochs']):
         model.train()
 
         if using_dist:
@@ -134,6 +134,7 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
         val_loss = 0.0
         correct_val = 0
         total_val = 0
+        best_val_accuracy = 0
 
         with torch.no_grad():
             for images, labels in val_loader:
@@ -151,6 +152,10 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
         avg_val_loss = val_loss / len(val_loader)
         val_accuracy = (correct_val / total_val) * 100
 
+        if val_accuracy > best_val_accuracy and val_accuracy > 0.915:
+            best_val_accuracy = val_accuracy
+            save_models(out_dir, model, model_config['name'], epoch)
+
         # Store metrics for this epoch
         train_accuracy_per_epoch.append(train_accuracy)
         train_loss_per_epoch.append(avg_train_loss)
@@ -159,7 +164,7 @@ def train_loop(model, train_loader, val_loader, n_epochs, criterion, optimizer, 
 
         # Print epoch metrics
         if device in [0, 'cuda:0'] and verbose:
-            print(f'Epoch [{epoch + 1}/{n_epochs}]:')
+            print(f'Epoch [{epoch + 1}/{model_config['epochs']}]:')
             print(f'Train Accuracy: {train_accuracy:.4f}, Train Loss: {avg_train_loss:.4f}')
             print(f'Validation Accuracy: {val_accuracy:.4f}, Validation Loss: {avg_val_loss:.4f}')
 

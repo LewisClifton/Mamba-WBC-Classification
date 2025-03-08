@@ -20,7 +20,7 @@ from models import init_model
 torch.backends.cudnn.enabled = True
 
 
-def train_Kfolds(num_folds, model_config, dataset_config, dataset, device, using_dist=True, verbose=False):
+def train_Kfolds(num_folds, model_config, dataset_config, dataset, device, out_dir, using_dist=True, verbose=False):
     """
     Train a model with 5-fold cross-validation
 
@@ -56,7 +56,7 @@ def train_Kfolds(num_folds, model_config, dataset_config, dataset, device, using
         val_dataset = torch.utils.data.Subset(dataset, val_idx)
 
         # Train this fold
-        trained, metrics = train_model(model_config, dataset_config, train_dataset, val_dataset, device, using_dist, verbose)
+        trained, metrics = train_model(model_config, dataset_config, train_dataset, val_dataset, device, out_dir, using_dist, verbose)
 
         # Aggregate models and metrics from this fold
         all_trained.append(trained)
@@ -64,7 +64,7 @@ def train_Kfolds(num_folds, model_config, dataset_config, dataset, device, using
 
     return all_trained, all_metrics
 
-def train_model(model_config, dataset_config, train_dataset, val_dataset, device, using_dist=True, verbose=False):
+def train_model(model_config, dataset_config, train_dataset, val_dataset, device, out_dir, using_dist=True, verbose=False):
     """
     Train a single model
 
@@ -116,7 +116,7 @@ def train_model(model_config, dataset_config, train_dataset, val_dataset, device
     start_time = time.time()
 
     # Train the model
-    trained, metrics = train_loop(model, train_loader, val_loader, model_config['epochs'], criterion, optimizer, device, using_dist, verbose)
+    trained, metrics = train_loop(model, model_config, train_loader, val_loader, criterion, optimizer, device, using_dist, out_dir, verbose)
 
     if device in [0, 'cuda:0']:
         print('Done.')
@@ -148,7 +148,7 @@ def main(rank, world_size, using_dist, out_dir, model_config, dataset_config, nu
         train_dataset, val_dataset = get_dataset(dataset_config, dataset_download_dir)
 
         # Train model only once (i.e. without k-fold cross validation)
-        trained, metrics = train_model(model_config, dataset_config, train_dataset, val_dataset, rank, using_dist, verbose)
+        trained, metrics = train_model(model_config, dataset_config, train_dataset, val_dataset, rank, using_dist, verbose, out_dir)
 
     # Can add more datasets here..
     elif dataset_config['name'] == 'foo':
