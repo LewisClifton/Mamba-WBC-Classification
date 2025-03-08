@@ -152,7 +152,7 @@ def train_loop(model, model_config, train_loader, val_loader, criterion, optimiz
         avg_val_loss = val_loss / len(val_loader)
         val_accuracy = (correct_val / total_val) * 100
 
-        if val_accuracy > best_val_accuracy and val_accuracy > 0.915:
+        if val_accuracy > best_val_accuracy and val_accuracy > 91.5:
             best_val_accuracy = val_accuracy
             save_models(out_dir, model, model_config['name'], epoch)
 
