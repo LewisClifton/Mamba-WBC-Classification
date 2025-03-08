@@ -17,7 +17,21 @@ from utils.eval import get_eval_metrics
 torch.backends.cudnn.enabled = True
 
 
-def evaluate_model(model, test_loader, dataset_name, device):
+def ensemble_prediction(models, images, device):
+
+    # Collect predictions from all models
+    predictions = torch.zeros((len(models), num_classes)).to(device)
+    for i, model in enumerate(models):
+        outputs = model(images)  # Forward pass
+        predictions[i] = F.softmax(outputs, dim=1)  # Convert logits to probabilities
+
+    # Average the predictions across models
+    average_outputs= torch.mean(predictions, dim=0)
+
+    return outputs
+
+
+def evaluate_model(models, test_loader, dataset_name, device):
     """
     Evaluate a trained model on a test dataset.
 
@@ -44,9 +58,13 @@ def evaluate_model(model, test_loader, dataset_name, device):
         for images, labels, image_names in test_loader:
             images, labels = images.to(device), labels.to(device)
 
-            outputs = model(images)
-            if not isinstance(model, CompleteClassifier):
-                outputs = torch.argmax(outputs, dim=1)
+            if isinstance(trained_model_path, list):
+                outputs = ensemble_prediction(models, images, device)
+            else:
+                outputs = models(images)
+
+                if not isinstance(models, CompleteClassifier):
+                    outputs = torch.argmax(outputs, dim=1)
 
             if dataset_name == "chula":
                 for i in range(images.size(0)):
@@ -114,20 +132,33 @@ class CompleteClassifier(nn.Module):
         return wbc_type
 
 
-def main(out_dir, model_config, dataset_config, dataset_download_dir):
-
-    # Setup GPU
-    device = 'cuda'
-
+def load_model(model_config):
     # Load model
     if 'neutrophil_model_path' in model_config: 
         model = CompleteClassifier(model_config, dataset_config)
         model_transforms = model.model_transforms
         model = model.to(device)
+        model.eval()
     else: 
         model, model_transforms = init_model(model_config, dataset_config['n_classes'], device)
         model.load_state_dict(torch.load(model_config['trained_model_path'], map_location=device))
         model.eval()
+
+    return model
+
+
+def main(out_dir, model_config, dataset_config, ensemble, dataset_download_dir):
+
+    # Setup GPU
+    device = 'cuda'
+
+    if ensemble:
+        models = []
+        for trained_model_path, name in zip(model_config['trained_model_path'], model_config['name']):
+            model = load_model(model_config={'trained_model_path' : args.trained_model_path, 'name' : args.model_type})
+            models.append(model)
+    else:
+        models = load_model(model_config)
 
     # Apply transforms
     test_dataset = get_dataset(dataset_config, dataset_download_dir, test=True)
@@ -140,7 +171,7 @@ def main(out_dir, model_config, dataset_config, dataset_download_dir):
     start_time = time.time()
 
     # Evaluate the model
-    metrics = evaluate_model(model, test_loader, dataset_config['name'], device)
+    metrics = evaluate_model(models, test_loader, dataset_config['name'], device)
 
     # Get runtime
     metrics['Time to evaluate'] = time.time() - start_time
@@ -160,9 +191,9 @@ if __name__ == "__main__":
     # Command line args
     parser = argparse.ArgumentParser()
     parser.add_argument('--out_dir', type=str, help='Path to directory where model evaluation log will be saved (default=cwd)', default='.')
-    parser.add_argument('--trained_model_path', type=str, help='Path to trained model .pth', required=True)
+    parser.add_argument('--trained_model_path', nargs='+', type=str, help='Path to trained model .pth', required=True)
     parser.add_argument('--neutrophil_model_path', type=str, help='Path to trained neutrophil model .pth')
-    parser.add_argument('--model_type', type=str, help='Model type e.g. "swin", "vmamba" ', required=True)
+    parser.add_argument('--model_type', nargs='+', type=str, help='Model type e.g. "swin", "vmamba" ', required=True)
     parser.add_argument('--batch_size', type=int, help='Batch size when evaluating', default=32)
     parser.add_argument('--dataset_config_path', type=str, help='Path to dataset .yml used for evaluation', required=True)
     parser.add_argument('--dataset_download_dir', type=str, help='Directory to download dataset to')
@@ -170,18 +201,27 @@ if __name__ == "__main__":
     # Parse command line args
     args = parser.parse_args()
     out_dir = args.out_dir
+    trained_model_path = args.trained_model_path
+    model_type = args.model_type
+    batch_size = args.batch_size
     dataset_config_path= args.dataset_config_path
     dataset_download_dir = args.dataset_download_dir
 
-    # Get dataset configs
-    model_config = {
-        'trained_model_path' : args.trained_model_path,
-        'name' : args.model_type,
-        'batch_size' : args.batch_size,
-    }
+
+    if isinstance(trained_model_path, list):
+        model_config = {
+            'trained_model_path' : args.trained_model_path,
+            'name' : args.model_type,
+        }
+    else: 
+        model_config = {
+            'trained_model_path' : args.trained_model_path[0],
+            'name' : args.model_type[0],
+        }
+
     if args.neutrophil_model_path: model_config['neutrophil_model_path'] = args.neutrophil_model_path
 
     with open(dataset_config_path, 'r') as yml:
         dataset_config = yaml.safe_load(yml)
 
-    main(out_dir, model_config, dataset_config, dataset_download_dir)
+    main(out_dir, model_config, batch_size, dataset_config, ensemble, dataset_download_dir)
