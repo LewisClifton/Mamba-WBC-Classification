@@ -1,7 +1,6 @@
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
-from torchvision import transforms
 
 
 class NucleusExtractor(nn.Module):
@@ -18,12 +17,10 @@ class NucleusExtractor(nn.Module):
 
 
 class Wrapper(nn.Module):
-    def __init__(self, base_model, base_model_transform, num_classes=2):
+    def __init__(self, base_model, num_classes=2):
         super(Wrapper, self).__init__()
         
         self.base_model = base_model
-        self.base_model_transform_train = base_model_transform['train']
-        self.base_model_transform_test = base_model_transform['test']
 
         self.nucleus_extractor = NucleusExtractor()
 
@@ -45,16 +42,11 @@ class Wrapper(nn.Module):
         # Apply the mask to the original image
         nucleus = image * mask  # Keeps only nucleus pixels
 
-        if self.training:
-            nucleus = self.base_model_transform_train(nucleus)
-        else:
-            nucleus = self.base_model_transform_test(nucleus)
-
         # Extract features from the nucleus
         img_features = self.base_model(nucleus)
 
         # Learn morphological features (e.g., shape, size, convexity)
-        morph_features = self.morph_fc(torch.flatten(mask, start_dim=1))
+        morph_features = self.morph_fc(torch.flatten(nucleus, start_dim=1))
 
         # Combine image & morphological features
         combined = torch.cat([img_features, morph_features], dim=1)
@@ -62,9 +54,9 @@ class Wrapper(nn.Module):
         return self.head(combined)
     
 
-def wrap_model(base_model, base_model_transform, num_classes, pretrained_model_path):
+def wrap_model(base_model, num_classes, pretrained_model_path):
     # Load the WBC Classifier Wrapper
-    model = Wrapper(base_model=base_model, base_model_transform=base_model_transform, num_classes=num_classes)
+    model = Wrapper(base_model=base_model, num_classes=num_classes)
 
     # Load pretrained weights if provided
     if pretrained_model_path is not None:
@@ -76,16 +68,5 @@ def wrap_model(base_model, base_model_transform, num_classes, pretrained_model_p
 
     # Change model head
     model.head = nn.Linear(model.head.in_features, num_classes)
-
-    transform = {
-        'train': transforms.Compose([
-                transforms.Resize((224, 224)),
-                transforms.ToTensor()
-            ]),
-        'test': transforms.Compose([
-                transforms.Resize((224, 224)),
-                transforms.ToTensor()
-            ])
-    }
     
-    return model, transform
+    return model
