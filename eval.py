@@ -56,9 +56,9 @@ def evaluate_model(model, test_loader, dataset_name, device):
 
                     # If the image is misclassified and the label is 0 or 3
                     if true_label == 3 and predicted_label == 0:
-                        misclassified_sne.append(image_name)
-                    if true_label == 0 and predicted_label == 3:
                         misclassified_bne.append(image_name)
+                    if true_label == 0 and predicted_label == 3:
+                        misclassified_sne.append(image_name)
 
             all_preds.extend(outputs.cpu().numpy().tolist())
             all_labels.extend(labels.cpu().numpy().tolist())
