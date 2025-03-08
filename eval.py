@@ -57,7 +57,7 @@ def evaluate_model(models, test_loader, dataset_name, num_classes, device):
         for images, labels, image_names in test_loader:
             images, labels = images.to(device), labels.to(device)
 
-            if isinstance(trained_model_path, list):
+            if isinstance(models, list):
                 outputs = ensemble_prediction(models, images, num_classes, device)
             else:
                 outputs = models(images)
@@ -146,12 +146,12 @@ def load_model(model_config, device):
     return model, transforms
 
 
-def main(out_dir, model_config, dataset_config, dataset_download_dir):
+def main(out_dir, model_config, batch_size, dataset_config, dataset_download_dir):
 
     # Setup GPU
     device = 'cuda'
 
-    if isinstance(trained_model_path, list):
+    if isinstance(model_config, list):
         models = []
         for trained_model_path, name in zip(model_config['trained_model_path'], model_config['name']):
             model, transforms = load_model(model_config={'trained_model_path' : trained_model_path, 'name' :  name}, device=device)
@@ -164,7 +164,7 @@ def main(out_dir, model_config, dataset_config, dataset_download_dir):
     test_dataset = TransformedDataset(test_dataset, transforms['test'], test=True)
 
     # Create data loaders
-    test_loader = DataLoader(test_dataset, batch_size=model_config['batch_size'])
+    test_loader = DataLoader(test_dataset, batch_size=batch_size)
 
     # Track time
     start_time = time.time()
@@ -182,7 +182,7 @@ def main(out_dir, model_config, dataset_config, dataset_download_dir):
         os.makedirs(out_dir)
 
     # Save log
-    save_log(out_dir, metrics, model_config, dataset_config)
+    save_log(out_dir, date, metrics, model_config, dataset_config)
     
 
 if __name__ == "__main__":
