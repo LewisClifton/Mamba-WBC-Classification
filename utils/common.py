@@ -29,10 +29,7 @@ def save_log(out_dir, metrics, model_config, dataset_config):
             file.write(f'\nMetrics:\n')
             write_dict_to_file(file, metrics)
 
-        if isinstance(model_config['name'], list):
-            file.write(f'\nModel ensemble configuration:\n')
-        else:
-            file.write(f'\nModel configuration:\n')
+        file.write(f'\nModel configuration:\n')
         write_dict_to_file(file, model_config)
 
         file.write(f'\nDataset configuration:\n')

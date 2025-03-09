@@ -15,7 +15,7 @@ from sklearn.model_selection import KFold
 
 from datasets import get_dataset, TransformedDataset
 from utils.common import setup_dist
-from utils.train import train_loop, save
+from utils.train import train_loop, save, save_models
 from models import init_model
 
 
@@ -59,7 +59,8 @@ def train_Kfolds(num_folds, model_config, dataset_config, dataset, device, out_d
 
         # Train this fold
         trained, metrics = train_model(model_config, dataset_config, train_dataset, val_dataset, device, out_dir, using_dist, verbose)
-
+        save_models(out_dir, trained, model_config['name'], metrics, fold=fold+1)
+    
         # Aggregate models and metrics from this fold
         all_trained.append(trained)
         all_metrics.append(metrics)
@@ -151,6 +152,7 @@ def main(rank, world_size, using_dist, out_dir, model_config, dataset_config, nu
 
         # Train model only once (i.e. without k-fold cross validation)
         trained, metrics = train_model(model_config, dataset_config, train_dataset, val_dataset, rank, out_dir, using_dist, verbose, out_dir)
+        save_models(out_dir, trained, model_config['name'], metrics, 2)
 
     # Can add more datasets here..
     elif dataset_config['name'] == 'foo':
@@ -209,7 +211,10 @@ if __name__ == '__main__':
         model_config['use_improvements'] = use_improvements
 
     # Set up output directory
-    date = datetime.now().strftime(f'%Y_%m_%d_%p%I_%M_{model_config['name']}')
+    if use_improvements:
+        date = datetime.now().strftime(f'%Y_%m_%d_%p%I_%M_{model_config['name']}_improved')
+    else:
+        date = datetime.now().strftime(f'%Y_%m_%d_%p%I_%M_{model_config['name']}')
     out_dir = os.path.join(out_dir, f'{date}/')
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)

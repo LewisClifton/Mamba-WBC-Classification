@@ -6,7 +6,7 @@ import torch
 from .common import save_log, average_across_gpus
 
 
-def save_models(out_dir, trained, model_type, epochs, accuracy=""):
+def save_models(out_dir, trained, model_type, metrics, fold=None):
     """
     Save trained model(s) to a given output directory
 
@@ -16,18 +16,26 @@ def save_models(out_dir, trained, model_type, epochs, accuracy=""):
         using_dist(bool): Whether multiple GPUs were used to train the model(s)
     """
 
-    # Create trained models directory if needed
-    if isinstance(trained, list):
-        # Save trained models for each fold
-        for idx, model in enumerate(trained):
-            model_path = os.path.join(out_dir, f'{model_type}_fold_{idx}_epoch_{epochs}.pth')
-            torch.save(model.state_dict(), model_path)
-        print(f'\n{len(trained)} trained models saved to {out_dir}')
+    if fold is not None:
+        model_path = os.path.join(out_dir, f'{model_type}_fold_{fold}_acc_{metrics['Best validation accuracy during training']}.pth')
     else:
-        # Save the model
-        model_path = os.path.join(out_dir, f'{model_type}_epoch_{epochs}_acc_{accuracy}.pth')
-        torch.save(trained.state_dict(), model_path)
-        print(f'Saved trained model to {model_path}')
+        model_path = os.path.join(out_dir, f'{model_type}_acc_{metrics['Best validation accuracy during training']}.pth')
+
+    torch.save(trained.state_dict(), model_path)
+    print(f'Saved trained model to {model_path}')
+
+    # # Create trained models directory if needed
+    # if isinstance(trained, list):
+    #     # Save trained models for each fold
+    #     for idx, model in enumerate(trained):
+    #         model_path = os.path.join(out_dir, f'{model_type}_fold_{idx}_acc_{metrics[idx]['Best validation accuracy during training']}.pth')
+    #         torch.save(model.state_dict(), model_path)
+    #     print(f'\n{len(trained)} trained models saved to {out_dir}')
+    # else:
+    #     # Save the model
+    #     model_path = os.path.join(out_dir, f'{model_type}_acc_{metrics['Best validation accuracy during training']}.pth')
+    #     torch.save(trained.state_dict(), model_path)
+    #     print(f'Saved trained model to {model_path}')
 
 
 def save_config(out_dir, config):
@@ -58,7 +66,7 @@ def save(out_dir, metrics, trained, model_config, dataset_config):
     """
     
     # Save models, log and config yml
-    save_models(out_dir, trained, model_config['name'], model_config['epochs'])
+    # save_models(out_dir, trained, model_config['name'], model_config['epochs'], metrics)
     save_log(out_dir, metrics, model_config, dataset_config)
     save_config(out_dir, model_config)
 
@@ -86,6 +94,7 @@ def train_loop(model, model_config, train_loader, val_loader, criterion, optimiz
     val_loss_per_epoch = []
 
     best_val_accuracy = 0
+    best_model = model
 
     for epoch in range(model_config['epochs']):
         model.train()
@@ -144,10 +153,6 @@ def train_loop(model, model_config, train_loader, val_loader, criterion, optimiz
         avg_val_loss = val_loss / len(val_loader)
         val_accuracy = (correct_val / total_val) * 100
 
-        if val_accuracy > best_val_accuracy and val_accuracy > 91.5:
-            best_val_accuracy = val_accuracy
-            save_models(out_dir, model, model_config['name'], epoch, best_val_accuracy)
-
         # Store metrics for this epoch
         train_accuracy_per_epoch.append(train_accuracy)
         train_loss_per_epoch.append(avg_train_loss)
@@ -160,20 +165,33 @@ def train_loop(model, model_config, train_loader, val_loader, criterion, optimiz
             print(f'Train Accuracy: {train_accuracy:.4f}, Train Loss: {avg_train_loss:.4f}')
             print(f'Validation Accuracy: {val_accuracy:.4f}, Validation Loss: {avg_val_loss:.4f}')
 
+        if val_accuracy > best_val_accuracy:
+            best_val_accuracy = val_accuracy
+            if val_accuracy > 91.5:
+                #
+                best_model = model
+
 
     # Return final metrics
     if using_dist:
-        # Average per epoch metrics across over all GPUs
-        return model, {
+
+        metrics = {
             'Average train Accuracy per epoch': average_across_gpus(train_accuracy_per_epoch, device),
             'Average train Loss per epoch': average_across_gpus(train_loss_per_epoch, device),
             'Average validation Accuracy per epoch': average_across_gpus(val_accuracy_per_epoch, device),
             'Average validation Loss per epoch': average_across_gpus(val_loss_per_epoch, device),
+            'Best validation accuracy during training' : average_across_gpus(best_val_accuracy),
         }
+
+        # Average per epoch metrics across over all GPUs
+        return best_model, metrics
     
-    return model, {
+    metrics = {
         'Train Accuracy per epoch': train_accuracy_per_epoch,
         'Train Loss per epoch': train_loss_per_epoch,
         'Validation Accuracy per epoch': val_accuracy_per_epoch,
         'Validation Loss per epoch': val_loss_per_epoch,
+        'Best validation accuracy during training' : best_val_accuracy,
     }
+
+    return best_model, metrics

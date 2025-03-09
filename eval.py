@@ -48,7 +48,7 @@ def ensemble_prediction_average(models, images, num_classes, device):
     return torch.argmax(predictions, dim=1)
 
 
-def ensemble_prediction_majority(models, images, num_classes, device):
+def ensemble_prediction_majority(models, images, device):
 
     # Collect predictions from all models
     predictions = torch.zeros((len(models), images.shape[0])).to(device)
@@ -181,10 +181,10 @@ def main(out_dir, model_config, batch_size, dataset_config, dataset_download_dir
     # Setup GPU
     device = 'cuda'
 
-    if isinstance(model_config['trained_model_path'], list):
+    if isinstance(model_config['name'], list):
         models = []
         for trained_model_path, name in zip(model_config['trained_model_path'], model_config['name']):
-            model, transforms = load_model(model_config={'trained_model_path' : trained_model_path, 'name' :  name}, device=device)
+            model, transforms = load_model(model_config={'trained_model_path' : trained_model_path, 'name' :  name, 'use_improvements' : model_config['use_improvements']}, device=device)
             models.append(model) # (don't bother storing the transforms for each model, assume all the test transforms are the same)
     else:
         models, transforms = load_model(model_config, device)
@@ -225,6 +225,7 @@ if __name__ == "__main__":
     parser.add_argument('--out_dir', type=str, help='Path to directory where model evaluation log will be saved (default=cwd)', default='.')
     parser.add_argument('--trained_model_path', nargs='+', type=str, help='Path to trained model .pth', required=True)
     parser.add_argument('--neutrophil_model_path', type=str, help='Path to trained neutrophil model .pth')
+    parser.add_argument('--use_improvements', action=argparse.BooleanOptionalAction, help='Whether to use the proposed model improvements.')
     parser.add_argument('--model_type', nargs='+', type=str, help='Model type e.g. "swin", "vmamba" ', required=True)
     parser.add_argument('--batch_size', type=int, help='Batch size when evaluating', default=32)
     parser.add_argument('--dataset_config_path', type=str, help='Path to dataset .yml used for evaluation', required=True)
@@ -239,8 +240,6 @@ if __name__ == "__main__":
     dataset_config_path= args.dataset_config_path
     dataset_download_dir = args.dataset_download_dir
 
-    print(len(trained_model_path))
-
     if len(trained_model_path) != 1:
         model_config = {
             'trained_model_path' : args.trained_model_path,
@@ -253,6 +252,7 @@ if __name__ == "__main__":
         }
 
     if args.neutrophil_model_path: model_config['neutrophil_model_path'] = args.neutrophil_model_path
+    if args.use_improvements: model_config['use_improvements'] = args.use_improvements
 
     with open(dataset_config_path, 'r') as yml:
         dataset_config = yaml.safe_load(yml)
