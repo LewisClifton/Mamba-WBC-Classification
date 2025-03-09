@@ -44,7 +44,7 @@ def init_model(model_config, num_classes, device):
         dict: Dictionary containing the required data transforms. Use "train"/"val" keys to access training/validation data transforms
     """
     # TO DO: ADD DOCSTRINGS TO EACH MODEL INIT
-
+    
     model_type = model_config['name']
     pretrained_model_path = model_config['pretrained_model_path'] if 'pretrained_model_path' in model_config.keys() else None
 

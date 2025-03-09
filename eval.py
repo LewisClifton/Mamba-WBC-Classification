@@ -18,16 +18,46 @@ from utils.eval import get_eval_metrics
 torch.backends.cudnn.enabled = True
 
 
-def ensemble_prediction(models, images, num_classes, device):
+def ensemble_prediction_weighted_average(models, images, num_classes, device):
+    weights = torch.tensor([91.32706374085684, 91.53605015673982, 93.10344827586206, 91.43155694879833, 92.99895506792059], dtype=torch.float32, device=device) # "localmamba mambavision swin vim vmamba"
+    weights /= weights.sum()  # Normalize weights to sum to 1
 
     # Collect predictions from all models
-    predictions = torch.zeros((len(models), num_classes)).to(device)
+    predictions = torch.zeros((len(models), images.shape[0], num_classes), device=device)
+    
+    for i, model in enumerate(models):
+        outputs = model(images)  # Forward pass
+        predictions[i] = F.softmax(outputs, dim=1) * weights[i]  # Apply weight to probabilities
+
+    # Weighted sum of predictions
+    weighted_predictions = torch.sum(predictions, dim=0)  # Shape: (batch_size, num_classes)
+    
+    return torch.argmax(weighted_predictions, dim=1)  # Get final class predictions
+
+
+def ensemble_prediction_average(models, images, num_classes, device):
+
+    # Collect predictions from all models
+    predictions = torch.zeros((len(models), images.shape[0], num_classes)).to(device)
     for i, model in enumerate(models):
         outputs = model(images)  # Forward pass
         predictions[i] = F.softmax(outputs, dim=1)  # Convert logits to probabilities
 
     # Average the predictions across models
-    return torch.mean(predictions, dim=0)
+    predictions = torch.mean(predictions, dim=0)
+    return torch.argmax(predictions, dim=1)
+
+
+def ensemble_prediction_majority(models, images, num_classes, device):
+
+    # Collect predictions from all models
+    predictions = torch.zeros((len(models), images.shape[0])).to(device)
+    for i, model in enumerate(models):
+        outputs = model(images)  # Forward pass
+        predictions[i] = torch.argmax(outputs, dim=1)
+
+    # Average the predictions across models
+    return torch.mode(predictions, dim=0).values
 
 
 def evaluate_model(models, test_loader, dataset_name, num_classes, device):
@@ -58,7 +88,7 @@ def evaluate_model(models, test_loader, dataset_name, num_classes, device):
             images, labels = images.to(device), labels.to(device)
 
             if isinstance(models, list):
-                outputs = ensemble_prediction(models, images, num_classes, device)
+                outputs = ensemble_prediction_weighted_average(models, images, num_classes, device)
             else:
                 outputs = models(images)
 
@@ -151,11 +181,11 @@ def main(out_dir, model_config, batch_size, dataset_config, dataset_download_dir
     # Setup GPU
     device = 'cuda'
 
-    if isinstance(model_config, list):
+    if isinstance(model_config['trained_model_path'], list):
         models = []
         for trained_model_path, name in zip(model_config['trained_model_path'], model_config['name']):
             model, transforms = load_model(model_config={'trained_model_path' : trained_model_path, 'name' :  name}, device=device)
-            models.append(model, device) # (don't bother storing the transforms for each model, assume all the test transforms are the same)
+            models.append(model) # (don't bother storing the transforms for each model, assume all the test transforms are the same)
     else:
         models, transforms = load_model(model_config, device)
 
@@ -170,19 +200,22 @@ def main(out_dir, model_config, batch_size, dataset_config, dataset_download_dir
     start_time = time.time()
 
     # Evaluate the model
-    metrics = evaluate_model(models, test_loader, dataset_config['name'], dataset_config['num_classes'], device)
+    metrics = evaluate_model(models, test_loader, dataset_config['name'], dataset_config['n_classes'], device)
 
     # Get runtime
     metrics['Time to evaluate'] = time.time() - start_time
 
     # Create output directory for log
-    date = datetime.now().strftime(f'%Y_%m_%d_%p%I_%M_{model_config['name']}')
+    if isinstance(model_config['name'], list):
+        date = datetime.now().strftime(f'%Y_%m_%d_%p%I_%M_ensemble')
+    else:
+        date = datetime.now().strftime(f'%Y_%m_%d_%p%I_%M_{model_config['name']}')
     out_dir = os.path.join(out_dir, f'{date}/')
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
     # Save log
-    save_log(out_dir, date, metrics, model_config, dataset_config)
+    save_log(out_dir, metrics, model_config, dataset_config)
     
 
 if __name__ == "__main__":
@@ -206,8 +239,9 @@ if __name__ == "__main__":
     dataset_config_path= args.dataset_config_path
     dataset_download_dir = args.dataset_download_dir
 
+    print(len(trained_model_path))
 
-    if isinstance(trained_model_path, list):
+    if len(trained_model_path) != 1:
         model_config = {
             'trained_model_path' : args.trained_model_path,
             'name' : args.model_type,
