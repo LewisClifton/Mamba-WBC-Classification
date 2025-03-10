@@ -4,16 +4,15 @@ import torch.nn.functional as F
 from utils.eval import get_eval_metrics
 
 
-def ensemble_prediction_weighted_average(models, images, num_classes, device):
+def ensemble_prediction_weighted_average(outputs, num_images, num_classes, device):
     weights = torch.tensor([91.32706374085684, 91.53605015673982, 93.10344827586206, 91.43155694879833, 92.99895506792059], dtype=torch.float32, device=device) # "localmamba mambavision swin vim vmamba"
     weights /= weights.sum()  # Normalize weights to sum to 1
 
     # Collect predictions from all models
-    predictions = torch.zeros((len(models), images.shape[0], num_classes), device=device)
+    predictions = torch.zeros((len(outputs), num_images, num_classes), device=device)
     
-    for i, model in enumerate(models):
-        outputs = model(images)  # Forward pass
-        predictions[i] = F.softmax(outputs, dim=1) * weights[i]  # Apply weight to probabilities
+    for i, output in enumerate(outputs):
+        predictions[i] = F.softmax(output, dim=1) * weights[i]  # Apply weight to probabilities
 
     # Weighted sum of predictions
     weighted_predictions = torch.sum(predictions, dim=0)  # Shape: (batch_size, num_classes)
@@ -21,26 +20,25 @@ def ensemble_prediction_weighted_average(models, images, num_classes, device):
     return torch.argmax(weighted_predictions, dim=1)  # Get final class predictions
 
 
-def ensemble_prediction_average(models, images, num_classes, device):
+def ensemble_prediction_average(outputs, num_images, num_classes, device):
 
     # Collect predictions from all models
-    predictions = torch.zeros((len(models), images.shape[0], num_classes)).to(device)
-    for i, model in enumerate(models):
-        outputs = model(images)  # Forward pass
-        predictions[i] = F.softmax(outputs, dim=1)  # Convert logits to probabilities
+    predictions = torch.zeros((len(outputs), num_images, num_classes)).to(device)
+    for i, output in enumerate(outputs):
+        predictions[i] = F.softmax(output, dim=1)  # Convert logits to probabilities
 
     # Average the predictions across models
     predictions = torch.mean(predictions, dim=0)
     return torch.argmax(predictions, dim=1)
 
 
-def ensemble_prediction_majority(models, images, device):
+def ensemble_prediction_majority(outputs, num_images, device):
 
     # Collect predictions from all models
-    predictions = torch.zeros((len(models), images.shape[0])).to(device)
-    for i, model in enumerate(models):
-        outputs = model(images)  # Forward pass
-        predictions[i] = torch.argmax(outputs, dim=1)
+    predictions = torch.zeros((len(outputs), num_images)).to(device)
+
+    for i, output in enumerate(outputs):
+        predictions[i] = torch.argmax(output, dim=1)
 
     # Average the predictions across models
     return torch.mode(predictions, dim=0).values
@@ -77,27 +75,40 @@ def evaluate_model(ensemble_mode, base_models, test_loader, dataset_name, device
     with torch.no_grad():
         for images, labels, image_names in test_loader:
             torch.cuda.reset_peak_memory_stats(device)  # Reset memory tracking
-            images, labels = images.to(device), labels.to(device)
+            labels = labels.to(device)
 
-            # Get outputs from the base models
-            base_model_outputs = torch.stack([base_model(image) for base_model, image in zip(base_models, images)], dim=1)
+            base_models_outputs = []
+            for base_model, image in zip(base_models, images):
+                image = image.to(device)
+                base_model.to(device)
+
+                with torch.no_grad():
+                    base_model_output = base_model(image)
+                base_model.to('cpu')
+
+                base_models_outputs.append(base_model_output.cpu())
+
+            # For each base model, compute the output for the entire batch of images.
+            base_models_outputs = torch.cat(base_models_outputs, dim=1) 
+            base_models_outputs = base_models_outputs.to(device)
 
             # Get the predictions based on ensemble mode
             if ensemble_mode == 'stacking':
-                outputs = stacking_model(base_model_outputs)
+                stacking_model = stacking_model.to(device)
+                outputs = stacking_model(base_models_outputs)
                 outputs = torch.argmax(outputs, dim=1)
 
             elif ensemble_mode == 'average':
-                outputs = ensemble_prediction_average
+                outputs = ensemble_prediction_average(base_models_outputs, images.shape[0], device)
 
             elif ensemble_mode == 'majority':
-                outputs = ensemble_prediction_majority
+                outputs = ensemble_prediction_majority(base_models_outputs, images.shape[0], device)
 
             elif ensemble_mode == 'weighted_average':
-                outputs = ensemble_prediction_weighted_average
+                outputs = ensemble_prediction_weighted_average(base_models_outputs, images.shape[0], device)
 
             if dataset_name == "chula":
-                for i in range(images.size(0)):
+                for i in range(labels.size(0)):
                     true_label = labels[i].item()
                     predicted_label = outputs[i].item()
                     image_name = image_names[i]

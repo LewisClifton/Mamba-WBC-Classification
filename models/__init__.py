@@ -58,11 +58,7 @@ def init_model(model_config, num_classes, device):
         from .wrapper import wrap_model
         model = wrap_model(base_model=model, num_classes=num_classes, pretrained_model_path=pretrained_model_path)
 
-        model = model.to(device)
-
     else: 
         model, transform = select_model(model_type, num_classes, pretrained_model_path)
-
-        model = model.to(device)
         
     return model, transform

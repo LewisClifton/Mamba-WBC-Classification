@@ -22,7 +22,7 @@ class TransformedDataset(Dataset):
     
 
 class EnsembleDataset(Dataset):
-    def __init__(self, dataset, base_model_transforms):
+    def __init__(self, dataset, base_model_transforms, test=False):
         """
         Args:
             image_paths (list): List of image file paths.
@@ -30,15 +30,20 @@ class EnsembleDataset(Dataset):
         """
         self.dataset = dataset
         self.base_model_transforms = base_model_transforms  # Different transforms for each model
+        self.test = test
 
     def __len__(self):
         return len(self.dataset)
 
     def __getitem__(self, idx):
-        image = self.dataset[idx]
+        if self.test: 
+            images, label, image_name = self.dataset[idx]
+            transformed_images = [transform(images) for transform in self.base_model_transforms]
+            return transformed_images, label, image_name
 
-        transformed_images = [transform(image) for transform in self.base_model_transforms]
-        return transformed_images
+        images, label = self.dataset[idx]
+        transformed_images = [transform(images) for transform in self.base_model_transforms]
+        return transformed_images, labels
     
     
 

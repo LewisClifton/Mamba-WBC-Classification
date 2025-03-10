@@ -23,11 +23,11 @@ def main(out_dir, ensemble_config, dataset_config, dataset_download_dir):
     device = 'cuda'
 
     # Initialise model
-    model, base_models, base_models_transforms = get_ensemble(ensemble_config, dataset_config['n_classes'], device)
+    stacking_model, base_models, base_models_transforms = get_ensemble(ensemble_config, dataset_config['n_classes'], device)
 
     # Initialise data loader
     test_dataset = get_dataset(dataset_config, dataset_download_dir, test=True)
-    test_dataset = EnsembleDataset(test_dataset, [transform['test'] for transform in base_models_transforms])
+    test_dataset = EnsembleDataset(test_dataset, [transform['test'] for transform in base_models_transforms], test=True)
 
     # Create data loaders
     test_loader = DataLoader(test_dataset, batch_size=ensemble_config['batch_size'], shuffle=False, num_workers=1)
@@ -36,7 +36,7 @@ def main(out_dir, ensemble_config, dataset_config, dataset_download_dir):
     start_time = time.time()
 
     # Evaluate the model
-    metrics = evaluate_model(model, base_models, test_loader, dataset_config['name'], device)
+    metrics = evaluate_model(ensemble_config['ensemble_mode'], base_models, test_loader, dataset_config['name'], device, stacking_model=stacking_model)
 
     # Get runtime
     metrics['Time to evaluate'] = time.time() - start_time
@@ -57,7 +57,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--out_dir', type=str, help='Path to directory where model evaluation log will be saved (default=cwd)', default='.')
     parser.add_argument('--ensemble_config_path', type=str, help='Path to ensemble config .yml', required=True)
-    parser.add_argument('--ensemble_mode', type=str, help='Path to ensemble config .yml. (stacking requires a stacking model to be provided with --stacking_model_path)', required=True, choices=['stacking', 'average', 'majority', 'weighted_average'])
     parser.add_argument('--stacking_model_path', type=str, help='Path to the trained stacking ensemble .pth to be evaluated', required=True)
     parser.add_argument('--dataset_config_path', type=str, help='Path to dataset .yml used for evaluation', required=True)
     parser.add_argument('--dataset_download_dir', type=str, help='Directory to download dataset to')
@@ -66,8 +65,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     out_dir = args.out_dir
     ensemble_config_path = args.ensemble_config_path
-    ensemble_mode = args.ensemble_mode
-    batch_size = args.batch_size
     dataset_config_path= args.dataset_config_path
     dataset_download_dir = args.dataset_download_dir
 
@@ -76,6 +73,7 @@ if __name__ == "__main__":
     with open(dataset_config_path, 'r') as yml:
         dataset_config = yaml.safe_load(yml)
 
-    ensemble_config['pretrained_model_path'] = args.ensemble_config_path
+    if ensemble_config['ensemble_mode'] == 'stacking':
+        ensemble_config['stacking_model_path'] = args.stacking_model_path
 
-    main(out_dir, ensemble_config, ensemble_mode, batch_size, dataset_config, dataset_download_dir)
+    main(out_dir, ensemble_config, dataset_config, dataset_download_dir)

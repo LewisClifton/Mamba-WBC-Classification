@@ -40,6 +40,7 @@ def main(model_config, batch_size, dataset_config, dataset_download_dir):
     device = 'cuda'
 
     model, transforms = load_model(model_config, device)
+    model = model.to(device)
 
     # Apply transforms
     test_dataset = get_dataset(dataset_config, dataset_download_dir, test=True)
