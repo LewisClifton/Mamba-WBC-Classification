@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+import yaml
 
 import torch
 import torch.distributed as dist
@@ -66,18 +67,66 @@ def setup_dist(rank, world_size):
     dist.init_process_group('gloo', rank=rank, world_size=world_size)
 
 
-def average_across_gpus(list_, device):
+def save_models(out_dir, trained, model_type, metrics, fold=None):
     """
-    # Average the items in a list across all GPUs used in the process group
+    Save trained model(s) to a given output directory
 
     Args:
-        list_(list[object]): List of objects to be averaged over each GPU
-        device(torch.cuda.device): Id of the device used to call this function
-
-    Returns:
-        list[object]: List averaged over each GPU
+        out_dir(string): Path to directory to save the model(s) to
+        trained(torch.nn.Module or list[torch.nn.Module]): Model or list of models to be saved
+        using_dist(bool): Whether multiple GPUs were used to train the model(s)
     """
-    tensor = torch.tensor(list_).to(device)
-    dist.all_reduce(tensor, op=dist.ReduceOp.SUM) # GLOO doesn't support AVG :(
-    tensor /= dist.get_world_size()
-    return tensor.tolist()
+
+    if fold is not None:
+        model_path = os.path.join(out_dir, f'{model_type}_fold_{fold}_acc_{metrics['Best validation accuracy during training']}.pth')
+    else:
+        model_path = os.path.join(out_dir, f'{model_type}_acc_{metrics['Best validation accuracy during training']}.pth')
+
+    torch.save(trained.state_dict(), model_path)
+    print(f'Saved trained model to {model_path}')
+
+    # # Create trained models directory if needed
+    # if isinstance(trained, list):
+    #     # Save trained models for each fold
+    #     for idx, model in enumerate(trained):
+    #         model_path = os.path.join(out_dir, f'{model_type}_fold_{idx}_acc_{metrics[idx]['Best validation accuracy during training']}.pth')
+    #         torch.save(model.state_dict(), model_path)
+    #     print(f'\n{len(trained)} trained models saved to {out_dir}')
+    # else:
+    #     # Save the model
+    #     model_path = os.path.join(out_dir, f'{model_type}_acc_{metrics['Best validation accuracy during training']}.pth')
+    #     torch.save(trained.state_dict(), model_path)
+    #     print(f'Saved trained model to {model_path}')
+
+
+def save_config(out_dir, config):
+    """
+    # Save model config file
+
+    Args:
+        out_dir(string): Path to directory to save the config file to
+        config(dict): Training config dictionary to be saved
+    """
+
+    # Save model configuration
+    config_path = os.path.join(out_dir, 'config.yml')
+    with open(config_path, "w") as file:
+        yaml.dump(config, file, default_flow_style=False)
+
+
+def save(out_dir, metrics, trained, model_config, dataset_config):
+    """
+    Save trained models, training log and model configuration file
+
+    Args:
+        out_dir(string): Path to directory to save the log, models and config file to
+        metrics(dict or list[dict]): Model or list of metrics dictionarys to be saved
+        trained(torch.nn.Module or list[torch.nn.Module]): Model or list of models to be saved
+        config(dict): Model config dictionary to be saved
+        using_dist(bool): Whether multiple GPUs were used to train the model(s)
+    """
+    
+    # Save models, log and config yml
+    # save_models(out_dir, trained, model_config['name'], model_config['epochs'], metrics)
+    save_log(out_dir, metrics, model_config, dataset_config)
+    save_config(out_dir, model_config)

@@ -3,6 +3,8 @@ import torch
 import torch.nn.functional as F
 
 
+# A wrapper for models to try and improve results
+
 class NucleusExtractor(nn.Module):
     def __init__(self):
         super(NucleusExtractor, self).__init__()

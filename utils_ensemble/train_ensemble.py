@@ -1,25 +1,7 @@
 import torch
-import torch.distributed as dist
 
 
-def average_across_gpus(list_, device):
-    """
-    # Average the items in a list across all GPUs used in the process group
-
-    Args:
-        list_(list[object]): List of objects to be averaged over each GPU
-        device(torch.cuda.device): Id of the device used to call this function
-
-    Returns:
-        list[object]: List averaged over each GPU
-    """
-    tensor = torch.tensor(list_).to(device)
-    dist.all_reduce(tensor, op=dist.ReduceOp.SUM) # GLOO doesn't support AVG :(
-    tensor /= dist.get_world_size()
-    return tensor.tolist()
-
-
-def train_loop(model, model_config, train_loader, val_loader, criterion, optimizer, device, using_dist, verbose=False):
+def train_loop_ensemble(model, base_models, model_config, train_loader, val_loader, criterion, optimizer, device, verbose=False):
     """
     Training loop used for training a single model
 
@@ -47,9 +29,6 @@ def train_loop(model, model_config, train_loader, val_loader, criterion, optimiz
     for epoch in range(model_config['epochs']):
         model.train()
 
-        if using_dist:
-            train_loader.sampler.set_epoch(epoch)
-
         train_loss = 0.0
         correct_train = 0
         total_train = 0
@@ -57,8 +36,11 @@ def train_loop(model, model_config, train_loader, val_loader, criterion, optimiz
         for images, labels in train_loader:
             images, labels = images.to(device), labels.to(device)
 
-            # Forward pass
-            outputs = model(images)
+            # Get outputs from the base models
+            base_model_outputs = torch.stack([base_model(image) for base_model, image in zip(base_models, images)], dim=1)
+
+            # Stacking output
+            outputs = model(base_model_outputs)
             
             # Calculate loss
             loss = criterion(outputs, labels.squeeze(1))
@@ -89,7 +71,12 @@ def train_loop(model, model_config, train_loader, val_loader, criterion, optimiz
             for images, labels in val_loader:
                 images, labels = images.to(device), labels.to(device)
 
-                outputs = model(images)
+                # Get outputs from the base models
+                base_model_outputs = torch.stack([base_model(image) for base_model, image in zip(base_models, images)], dim=1)
+
+                # Stacking output
+                outputs = model(base_model_outputs)
+
                 loss = criterion(outputs, labels.squeeze(dim=1))
 
                 val_loss += loss.item()
@@ -116,23 +103,8 @@ def train_loop(model, model_config, train_loader, val_loader, criterion, optimiz
         if val_accuracy > best_val_accuracy:
             best_val_accuracy = val_accuracy
             if val_accuracy > 91.5:
-                #
                 best_model = model
 
-
-    # Return final metrics
-    if using_dist:
-
-        metrics = {
-            'Average train Accuracy per epoch': average_across_gpus(train_accuracy_per_epoch, device),
-            'Average train Loss per epoch': average_across_gpus(train_loss_per_epoch, device),
-            'Average validation Accuracy per epoch': average_across_gpus(val_accuracy_per_epoch, device),
-            'Average validation Loss per epoch': average_across_gpus(val_loss_per_epoch, device),
-            'Best validation accuracy during training' : average_across_gpus(best_val_accuracy),
-        }
-
-        # Average per epoch metrics across over all GPUs
-        return best_model, metrics
     
     metrics = {
         'Train Accuracy per epoch': train_accuracy_per_epoch,

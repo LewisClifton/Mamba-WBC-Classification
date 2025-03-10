@@ -21,6 +21,27 @@ class TransformedDataset(Dataset):
         return len(self.dataset)
     
 
+class EnsembleDataset(Dataset):
+    def __init__(self, dataset, base_model_transforms):
+        """
+        Args:
+            image_paths (list): List of image file paths.
+            transforms_list (list): List of transformations (one per model).
+        """
+        self.dataset = dataset
+        self.base_model_transforms = base_model_transforms  # Different transforms for each model
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, idx):
+        image = self.dataset[idx]
+
+        transformed_images = [transform(image) for transform in self.base_model_transforms]
+        return transformed_images
+    
+    
+
 def get_dataset(dataset_config, dataset_download_dir, test=False):
     """
     Initialise fresh model prior to training

@@ -1,35 +1,52 @@
-import numpy as np
-from sklearn.metrics import confusion_matrix as sk_confusion_matrix, precision_recall_fscore_support
-
 import torch
+import torch.nn.functional as F
+
+from utils.eval import get_eval_metrics
 
 
-def get_eval_metrics(preds, labels):
-    """Gets accuracy, precision, sensitivity, F1-score, and confusion matrix."""
-    preds = np.array(preds)
-    labels = np.array(labels)
+def ensemble_prediction_weighted_average(models, images, num_classes, device):
+    weights = torch.tensor([91.32706374085684, 91.53605015673982, 93.10344827586206, 91.43155694879833, 92.99895506792059], dtype=torch.float32, device=device) # "localmamba mambavision swin vim vmamba"
+    weights /= weights.sum()  # Normalize weights to sum to 1
 
-    # Accuracy
-    correct = (preds == labels.squeeze(1)).sum().item()
-    total = labels.size
-    accuracy = (correct / total) * 100
+    # Collect predictions from all models
+    predictions = torch.zeros((len(models), images.shape[0], num_classes), device=device)
+    
+    for i, model in enumerate(models):
+        outputs = model(images)  # Forward pass
+        predictions[i] = F.softmax(outputs, dim=1) * weights[i]  # Apply weight to probabilities
 
-    # Precision, recall, F1-score
-    precision, sensitivity, f1, _ = precision_recall_fscore_support(labels, preds, average='weighted', zero_division=0)
-
-    # Confusion matrix
-    conf_matrix = sk_confusion_matrix(labels, preds)
-
-    return {
-        "Accuracy": accuracy,
-        "Precision": precision,
-        "Sensitivity": sensitivity,
-        "F1 Score": f1,
-        "Confusion Matrix": conf_matrix
-    }
+    # Weighted sum of predictions
+    weighted_predictions = torch.sum(predictions, dim=0)  # Shape: (batch_size, num_classes)
+    
+    return torch.argmax(weighted_predictions, dim=1)  # Get final class predictions
 
 
-def evaluate_model(models, test_loader, dataset_name, device):
+def ensemble_prediction_average(models, images, num_classes, device):
+
+    # Collect predictions from all models
+    predictions = torch.zeros((len(models), images.shape[0], num_classes)).to(device)
+    for i, model in enumerate(models):
+        outputs = model(images)  # Forward pass
+        predictions[i] = F.softmax(outputs, dim=1)  # Convert logits to probabilities
+
+    # Average the predictions across models
+    predictions = torch.mean(predictions, dim=0)
+    return torch.argmax(predictions, dim=1)
+
+
+def ensemble_prediction_majority(models, images, device):
+
+    # Collect predictions from all models
+    predictions = torch.zeros((len(models), images.shape[0])).to(device)
+    for i, model in enumerate(models):
+        outputs = model(images)  # Forward pass
+        predictions[i] = torch.argmax(outputs, dim=1)
+
+    # Average the predictions across models
+    return torch.mode(predictions, dim=0).values
+
+
+def evaluate_model(ensemble_mode, base_models, test_loader, dataset_name, device, stacking_model=None):
     """
     Evaluate a trained model on a test dataset and report detailed memory metrics.
 
@@ -62,10 +79,22 @@ def evaluate_model(models, test_loader, dataset_name, device):
             torch.cuda.reset_peak_memory_stats(device)  # Reset memory tracking
             images, labels = images.to(device), labels.to(device)
 
-            outputs = models(images)
+            # Get outputs from the base models
+            base_model_outputs = torch.stack([base_model(image) for base_model, image in zip(base_models, images)], dim=1)
 
-            if not isinstance(models, CompleteClassifier):
+            # Get the predictions based on ensemble mode
+            if ensemble_mode == 'stacking':
+                outputs = stacking_model(base_model_outputs)
                 outputs = torch.argmax(outputs, dim=1)
+
+            elif ensemble_mode == 'average':
+                outputs = ensemble_prediction_average
+
+            elif ensemble_mode == 'majority':
+                outputs = ensemble_prediction_majority
+
+            elif ensemble_mode == 'weighted_average':
+                outputs = ensemble_prediction_weighted_average
 
             if dataset_name == "chula":
                 for i in range(images.size(0)):
