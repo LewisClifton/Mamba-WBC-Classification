@@ -36,6 +36,20 @@ def clean_labels(labels_path):
         return labels
 
 
+def train_val_test_split(dataset, test_frac=0.2, val_frac=0.1):
+    # First, sample the test set
+    test = dataset.sample(frac=test_frac, random_state=41)
+    remain = dataset.drop(test.index)
+
+    # Compute validation fraction relative to the remaining data
+    val_relative_frac = val_frac / (1 - test_frac)
+    val = remain.sample(frac=val_relative_frac, random_state=41)
+    train = remain.drop(val.index)
+
+    return train, val, test
+
+
+
 def train_test_split(dataset, frac=0.2):
     test = dataset.sample(frac=frac, random_state=41)  # 20% of the data
     train = dataset.drop(test.index)
@@ -119,15 +133,19 @@ if __name__ == '__main__':
     labels_dir = args.labels_dir
 
     # Clean labels and save
-    labels_path = os.path.join(labels_dir, 'labels.csv')
-    labels = clean_labels(labels_path)
-    labels.to_csv(os.path.join(labels_dir, 'labels_clean.csv'), index=False)
+    # labels_path = os.path.join(labels_dir, 'labels.csv')
+    # labels = clean_labels(labels_path)
+    # labels.to_csv(os.path.join(labels_dir, 'labels_clean.csv'), index=False)
 
     # Split labels into train and test set save
+    # chula_train, chula_test = train_test_split(labels)
+    # chula_train.to_csv(os.path.join(labels_dir, 'labels_train.csv'), index=False)
+    # chula_test.to_csv(os.path.join(labels_dir, 'labels_test.csv'), index=False)
+    labels = pd.read_csv('/user/work/js21767/Project/data/labels_train_augmented.csv')
     chula_train, chula_test = train_test_split(labels)
-    chula_train.to_csv(os.path.join(labels_dir, 'labels_train.csv'), index=False)
-    chula_test.to_csv(os.path.join(labels_dir, 'labels_test.csv'), index=False)
+    chula_train.to_csv('/user/work/js21767/Project/data/labels_ensemble_train.csv', index=False)
+    chula_test.to_csv('/user/work/js21767/Project/data/labels_ensemble_val.csv', index=False)
 
     # Apply augmentations to training data to reduce imbalance and save their labels
-    chula_augmented_train = augment(images_dir)
-    chula_augmented_train.to_csv(os.path.join(labels_dir, 'labels_train_augmented.csv'), index=False)
+    # chula_augmented_train = augment(images_dir)
+    # chula_augmented_train.to_csv(os.path.join(labels_dir, 'labels_train_augmented.csv'), index=False)
