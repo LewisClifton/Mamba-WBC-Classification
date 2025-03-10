@@ -34,7 +34,7 @@ def load_model(model_config, device):
     return model, transforms
 
 
-def main(out_dir, model_config, batch_size, dataset_config, dataset_download_dir):
+def main(model_config, batch_size, dataset_config, dataset_download_dir):
 
     # Setup GPU
     device = 'cuda'
@@ -57,21 +57,16 @@ def main(out_dir, model_config, batch_size, dataset_config, dataset_download_dir
     # Get runtime
     metrics['Time to evaluate'] = time.time() - start_time
 
-    # Create output directory for log
-    date = datetime.now().strftime(f'%Y_%m_%d_%p%I_%M_{model_config['name']}')
-    out_dir = os.path.join(out_dir, f'{date}/')
+    # Save log
+    out_dir = f'{model_config['trained_model_path'].removesuffix(".pth")}_eval'
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
-
-    # Save log
     save_log(out_dir, metrics, model_config, dataset_config)
     
-
 if __name__ == "__main__":
 
     # Command line args
     parser = argparse.ArgumentParser()
-    parser.add_argument('--out_dir', type=str, help='Path to directory where model evaluation log will be saved (default=cwd)', default='.')
     parser.add_argument('--trained_model_path', type=str, help='Path to trained model .pth', required=True)
     parser.add_argument('--neutrophil_model_path', type=str, help='Path to trained neutrophil model .pth')
     parser.add_argument('--use_improvements', action=argparse.BooleanOptionalAction, help='Whether to use the proposed model improvements.')
@@ -82,7 +77,6 @@ if __name__ == "__main__":
 
     # Parse command line args
     args = parser.parse_args()
-    out_dir = args.out_dir
     trained_model_path = args.trained_model_path
     model_type = args.model_type
     batch_size = args.batch_size
@@ -100,4 +94,4 @@ if __name__ == "__main__":
     with open(dataset_config_path, 'r') as yml:
         dataset_config = yaml.safe_load(yml)
 
-    main(out_dir, model_config, batch_size, dataset_config, dataset_download_dir)
+    main(model_config, batch_size, dataset_config, dataset_download_dir)

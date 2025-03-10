@@ -3,6 +3,8 @@ from sklearn.metrics import confusion_matrix as sk_confusion_matrix, precision_r
 
 import torch
 
+from models.complete import CompleteClassifier
+
 
 def get_eval_metrics(preds, labels):
     """Gets accuracy, precision, sensitivity, F1-score, and confusion matrix."""
@@ -29,7 +31,7 @@ def get_eval_metrics(preds, labels):
     }
 
 
-def evaluate_model(models, test_loader, dataset_name, device):
+def evaluate_model(model, test_loader, dataset_name, device):
     """
     Evaluate a trained model on a test dataset and report detailed memory metrics.
 
@@ -62,9 +64,9 @@ def evaluate_model(models, test_loader, dataset_name, device):
             torch.cuda.reset_peak_memory_stats(device)  # Reset memory tracking
             images, labels = images.to(device), labels.to(device)
 
-            outputs = models(images)
+            outputs = model(images)
 
-            if not isinstance(models, CompleteClassifier):
+            if not isinstance(model, CompleteClassifier):
                 outputs = torch.argmax(outputs, dim=1)
 
             if dataset_name == "chula":

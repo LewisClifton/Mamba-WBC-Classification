@@ -14,8 +14,8 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from sklearn.model_selection import KFold
 
 from datasets import get_dataset, TransformedDataset
-from utils.common import setup_dist
-from utils.train import train_loop, save, save_models
+from utils.common import setup_dist, save, save_models
+from utils.train import train_loop
 from models import init_model
 
 
@@ -119,7 +119,7 @@ def train_model(model_config, dataset_config, train_dataset, val_dataset, device
     start_time = time.time()
 
     # Train the model
-    trained, metrics = train_loop(model, model_config, train_loader, val_loader, criterion, optimizer, device, using_dist, out_dir, verbose)
+    trained, metrics = train_loop(model, model_config, train_loader, val_loader, criterion, optimizer, device, using_dist, verbose)
 
     if device in [0, 'cuda:0']:
         print('Done.')

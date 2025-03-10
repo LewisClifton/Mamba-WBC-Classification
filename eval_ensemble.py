@@ -42,10 +42,7 @@ def main(out_dir, ensemble_config, dataset_config, dataset_download_dir):
     metrics['Time to evaluate'] = time.time() - start_time
 
     # Create output directory for log
-    if isinstance(ensemble_config['name'], list):
-        date = datetime.now().strftime(f'%Y_%m_%d_%p%I_%M_ensemble')
-    else:
-        date = datetime.now().strftime(f'%Y_%m_%d_%p%I_%M_{ensemble_config['name']}')
+    date = datetime.now().strftime(f'%Y_%m_%d_%p%I_%M_ensemble')
     out_dir = os.path.join(out_dir, f'{date}/')
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
