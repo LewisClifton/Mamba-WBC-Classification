@@ -40,7 +40,6 @@ def ensemble_prediction_majority(outputs, num_images, device):
     for i, output in enumerate(outputs):
         predictions[i] = torch.argmax(output, dim=1)
 
-    # Average the predictions across models
     return torch.mode(predictions, dim=0).values
 
 
@@ -77,35 +76,41 @@ def evaluate_model(ensemble_mode, base_models, test_loader, dataset_name, device
             torch.cuda.reset_peak_memory_stats(device)  # Reset memory tracking
             labels = labels.to(device)
 
-            base_models_outputs = []
-            for base_model, image in zip(base_models, images):
-                image = image.to(device)
-                base_model.to(device)
+            # base_models_outputs = []
+            # for base_model, image in zip(base_models, images):
+            #     image = image.to(device)
+            #     base_model.to(device)
 
-                with torch.no_grad():
-                    base_model_output = base_model(image)
-                base_model.to('cpu')
+            #     with torch.no_grad():
+            #         base_model_output = base_model(image)
+            #     base_model.to('cpu')
 
-                base_models_outputs.append(base_model_output.cpu())
+            #     base_models_outputs.append(base_model_output.cpu())
 
-            # For each base model, compute the output for the entire batch of images.
-            base_models_outputs = torch.cat(base_models_outputs, dim=1) 
-            base_models_outputs = base_models_outputs.to(device)
+            # print(len(base_models_outputs))
 
-            # Get the predictions based on ensemble mode
-            if ensemble_mode == 'stacking':
-                stacking_model = stacking_model.to(device)
-                outputs = stacking_model(base_models_outputs)
-                outputs = torch.argmax(outputs, dim=1)
+            # # Get the predictions based on ensemble mode
+            # if ensemble_mode == 'stacking':
+            #     # For each base model, compute the output for the entire batch of images.
+            #     base_models_outputs = torch.cat(base_models_outputs, dim=1) 
+            #     base_models_outputs = base_models_outputs.to(device)
 
-            elif ensemble_mode == 'average':
-                outputs = ensemble_prediction_average(base_models_outputs, images.shape[0], device)
+            #     stacking_model = stacking_model.to(device)
+            #     outputs = stacking_model(base_models_outputs)
+            #     outputs = torch.argmax(outputs, dim=1)
 
-            elif ensemble_mode == 'majority':
-                outputs = ensemble_prediction_majority(base_models_outputs, images.shape[0], device)
+            # elif ensemble_mode == 'average':
+            #     outputs = ensemble_prediction_average(base_models_outputs, labels.shape[0], device)
 
-            elif ensemble_mode == 'weighted_average':
-                outputs = ensemble_prediction_weighted_average(base_models_outputs, images.shape[0], device)
+            # elif ensemble_mode == 'majority':
+            #     outputs = ensemble_prediction_majority(base_models_outputs, labels.shape[0], device)
+
+            # elif ensemble_mode == 'weighted_average':
+            #     outputs = ensemble_prediction_weighted_average(base_models_outputs, labels.shape[0], device)
+            images = images.to(device)
+            model = base_models[0].to(device)
+            outputs = model(images)
+            outputs = torch.argmax(outputs, dim=1)
 
             if dataset_name == "chula":
                 for i in range(labels.size(0)):

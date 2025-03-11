@@ -7,7 +7,7 @@ import time
 import torch
 from torch.utils.data import DataLoader
 
-from datasets import get_dataset, EnsembleDataset
+from datasets import get_dataset, EnsembleDataset, TransformedDataset
 from utils.common import save_log
 
 from utils_ensemble.common import get_ensemble
@@ -27,7 +27,8 @@ def main(out_dir, ensemble_config, dataset_config, dataset_download_dir):
 
     # Initialise data loader
     test_dataset = get_dataset(dataset_config, dataset_download_dir, test=True)
-    test_dataset = EnsembleDataset(test_dataset, [transform['test'] for transform in base_models_transforms], test=True)
+    test_dataset = TransformedDataset(test_dataset, base_models_transforms[0]['test'], test=True)
+    # test_dataset = EnsembleDataset(test_dataset, [transform['test'] for transform in base_models_transforms], test=True)
 
     # Create data loaders
     test_loader = DataLoader(test_dataset, batch_size=ensemble_config['batch_size'], shuffle=False, num_workers=1)
@@ -57,7 +58,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--out_dir', type=str, help='Path to directory where model evaluation log will be saved (default=cwd)', default='.')
     parser.add_argument('--ensemble_config_path', type=str, help='Path to ensemble config .yml', required=True)
-    parser.add_argument('--stacking_model_path', type=str, help='Path to the trained stacking ensemble .pth to be evaluated', required=True)
+    parser.add_argument('--stacking_model_path', type=str, help='Path to the trained stacking ensemble .pth to be evaluated')
     parser.add_argument('--dataset_config_path', type=str, help='Path to dataset .yml used for evaluation', required=True)
     parser.add_argument('--dataset_download_dir', type=str, help='Directory to download dataset to')
 

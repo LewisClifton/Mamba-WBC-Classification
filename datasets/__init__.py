@@ -43,7 +43,7 @@ class EnsembleDataset(Dataset):
 
         images, label = self.dataset[idx]
         transformed_images = [transform(images) for transform in self.base_model_transforms]
-        return transformed_images, labels
+        return transformed_images, label
     
     
 
