@@ -17,13 +17,15 @@ def get_eval_metrics(preds, labels):
     accuracy = (correct / total) * 100
 
     # Precision, recall, F1-score
-    precision, sensitivity, f1, _ = precision_recall_fscore_support(labels, preds, average='weighted', zero_division=0)
+    precision, sensitivity, f1, _ = precision_recall_fscore_support(labels, preds, average='macro', zero_division=0)
 
     # Confusion matrix
-    conf_matrix = sk_confusion_matrix(labels, preds)
+    class_accuracies = conf_matrix.diagonal() / conf_matrix.sum(axis=1)
+    macro_accuracy = np.nanmean(class_accuracies) * 100  # Handle NaNs if any class has zero samples
 
     return {
         "Accuracy": accuracy,
+        "Macro Accuracy": macro_accuracy,
         "Precision": precision,
         "Sensitivity": sensitivity,
         "F1 Score": f1,
@@ -60,7 +62,7 @@ def evaluate_model(model, test_loader, dataset_name, device):
 
     # Get test set results
     with torch.no_grad():
-        for images, labels, image_names in test_loader:
+        for images, labels in test_loader:
             torch.cuda.reset_peak_memory_stats(device)  # Reset memory tracking
             images, labels = images.to(device), labels.to(device)
 
@@ -69,16 +71,16 @@ def evaluate_model(model, test_loader, dataset_name, device):
             if not isinstance(model, CompleteClassifier):
                 outputs = torch.argmax(outputs, dim=1)
 
-            if dataset_name == "chula":
-                for i in range(images.size(0)):
-                    true_label = labels[i].item()
-                    predicted_label = outputs[i].item()
-                    image_name = image_names[i]
+            # if dataset_name == "chula":
+            #     for i in range(images.size(0)):
+            #         true_label = labels[i].item()
+            #         predicted_label = outputs[i].item()
+            #         image_name = image_names[i]
 
-                    if true_label == 3 and predicted_label == 0:
-                        misclassified_bne.append(image_name)
-                    if true_label == 0 and predicted_label == 3:
-                        misclassified_sne.append(image_name)
+            #         if true_label == 3 and predicted_label == 0:
+            #             misclassified_bne.append(image_name)
+            #         if true_label == 0 and predicted_label == 3:
+            #             misclassified_sne.append(image_name)
 
             all_preds.extend(outputs.cpu().numpy().tolist())
             all_labels.extend(labels.cpu().numpy().tolist())

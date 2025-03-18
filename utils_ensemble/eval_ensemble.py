@@ -72,7 +72,7 @@ def evaluate_model(ensemble_mode, base_models, test_loader, dataset_name, device
 
     # Get test set results
     with torch.no_grad():
-        for images, labels, image_names in test_loader:
+        for images, labels in test_loader:
             torch.cuda.reset_peak_memory_stats(device)  # Reset memory tracking
             labels = labels.to(device)
 
@@ -106,16 +106,16 @@ def evaluate_model(ensemble_mode, base_models, test_loader, dataset_name, device
             elif ensemble_mode == 'weighted_average':
                 outputs = ensemble_prediction_weighted_average(base_models_outputs, labels.shape[0], device)
 
-            if dataset_name == "chula":
-                for i in range(labels.size(0)):
-                    true_label = labels[i].item()
-                    predicted_label = outputs[i].item()
-                    image_name = image_names[i]
+            # if dataset_name == "chula":
+            #     for i in range(labels.size(0)):
+            #         true_label = labels[i].item()
+            #         predicted_label = outputs[i].item()
+            #         image_name = image_names[i]
 
-                    if true_label == 3 and predicted_label == 0:
-                        misclassified_bne.append(image_name)
-                    if true_label == 0 and predicted_label == 3:
-                        misclassified_sne.append(image_name)
+            #         if true_label == 3 and predicted_label == 0:
+            #             misclassified_bne.append(image_name)
+            #         if true_label == 0 and predicted_label == 3:
+            #             misclassified_sne.append(image_name)
 
             all_preds.extend(outputs.cpu().numpy().tolist())
             all_labels.extend(labels.cpu().numpy().tolist())

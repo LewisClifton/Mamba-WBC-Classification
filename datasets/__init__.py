@@ -7,10 +7,10 @@ class TransformedDataset(Dataset):
         self.test=test
 
     def __getitem__(self, idx):
-        if self.test: 
-            image, label, image_name = self.dataset[idx]
-            image = self.transform(image)
-            return image, label, image_name
+        # if self.test: 
+        #     image, label, image_name = self.dataset[idx]
+        #     image = self.transform(image)
+        #     return image, label, image_name
 
         image, label = self.dataset[idx]
         image = self.transform(image)
@@ -73,10 +73,10 @@ def get_dataset(dataset_config, dataset_download_dir, test=False):
 
         # BloodMNIST has predefined train/val/test splits
         if test:
-            test_dataset = get(dataset_download_dir, test)
+            test_dataset = get(dataset_config, dataset_download_dir, test)
             return test_dataset
         else:
-            train_dataset, val_dataset = get(dataset_download_dir, test)
+            train_dataset, val_dataset = get(dataset_config, dataset_download_dir, test)
             return train_dataset, val_dataset 
 
     elif dataset_name == 'foo':

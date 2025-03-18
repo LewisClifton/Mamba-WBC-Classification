@@ -57,8 +57,8 @@ class ChulaWBC5000(Dataset):
 
         label = torch.tensor(label, dtype=torch.long).unsqueeze(0)
 
-        if self.test: 
-            return image, label, self.labels.iloc[idx]['name']
+        # if self.test: 
+        #     return image, label, self.labels.iloc[idx]['name']
         
         return image, label
     

@@ -9,7 +9,7 @@ import torch.multiprocessing as mp
 import torch.nn as nn
 import torch.optim as optim
 import torch.distributed as dist
-from torch.utils.data import DataLoader, DistributedSampler
+from torch.utils.data import ConcatDataset, DataLoader, DistributedSampler, random_split
 from torch.nn.parallel import DistributedDataParallel as DDP
 from sklearn.model_selection import KFold
 
@@ -151,8 +151,13 @@ def main(rank, world_size, using_dist, out_dir, model_config, dataset_config, nu
         # Get dataset
         train_dataset, val_dataset = get_dataset(dataset_config, dataset_download_dir)
 
+        train_size = int(0.8 * len(train_dataset))
+        val_size = len(train_dataset) - train_size
+        generator = torch.Generator().manual_seed(42)
+        train_dataset, val_dataset = random_split(train_dataset, [train_size, val_size], generator=generator)
+
         # Train model only once (i.e. without k-fold cross validation)
-        trained, metrics = train_model(model_config, dataset_config, train_dataset, val_dataset, rank, out_dir, using_dist, verbose, out_dir)
+        trained, metrics = train_model(model_config, dataset_config, train_dataset, val_dataset, rank, out_dir, using_dist, verbose)
         save_models(out_dir, trained, model_config['name'], metrics, 2)
 
     # Can add more datasets here..

@@ -24,10 +24,11 @@ def main(out_dir, ensemble_config, dataset_config, dataset_download_dir):
 
     # Initialise model
     stacking_model, base_models, base_models_transforms = get_ensemble(ensemble_config, dataset_config['n_classes'], device)
+    stacking_model.eval()
 
     # Initialise data loader
     test_dataset = get_dataset(dataset_config, dataset_download_dir, test=True)
-    test_dataset = EnsembleDataset(test_dataset, [transform['test'] for transform in base_models_transforms], test=True)
+    test_dataset = EnsembleDataset(test_dataset, [transform['test'] for transform in base_models_transforms], test=False) # True
 
     # Create data loaders
     test_loader = DataLoader(test_dataset, batch_size=ensemble_config['batch_size'], shuffle=False, num_workers=1)

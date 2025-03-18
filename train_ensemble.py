@@ -7,7 +7,7 @@ import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split, ConcatDataset
 from sklearn.model_selection import KFold
 
 from datasets import get_dataset, EnsembleDataset
@@ -125,6 +125,11 @@ def main(device, out_dir, ensemble, dataset_config, num_folds, dataset_download_
     elif dataset_config['name'] == 'bloodmnist':
         # Get dataset
         train_dataset, val_dataset = get_dataset(dataset_config, dataset_download_dir)
+
+        train_size = int(0.8 * len(val_dataset))
+        val_size = len(val_dataset) - train_size
+        generator = torch.Generator().manual_seed(42)
+        train_dataset, val_dataset = random_split(val_dataset, [train_size, val_size], generator=generator)
 
         # Train ensemble only once (i.e. without k-fold cross validation)
         trained, metrics = train_ensemble(ensemble, dataset_config, train_dataset, val_dataset, device, out_dir, verbose)

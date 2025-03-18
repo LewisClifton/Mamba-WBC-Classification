@@ -9,7 +9,7 @@ def get_ensemble(ensemble_config, num_classes, device):
     base_models = []
     base_models_transforms = []
 
-    stacking = ensemble_config['ensemble_mode'] == 'stacking'
+    stacking = False#ensemble_config['ensemble_mode'] == 'stacking'
 
     for base_model_config in ensemble_config['models']:
 
