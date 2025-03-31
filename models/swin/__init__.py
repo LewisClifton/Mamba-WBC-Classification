@@ -36,9 +36,10 @@ def __build_model():
 
 def get(num_classes, pretrained_model_path):
 
+    # Load model
     model = __build_model()
 
-    # Load pretrained weights first
+    # Load pretrained weights
     if pretrained_model_path is not None:
         state_dict = torch.load(pretrained_model_path, map_location="cpu")
 
@@ -48,12 +49,12 @@ def get(num_classes, pretrained_model_path):
         model.head = nn.Linear(model.head.in_features, pretrained_num_classes)
         model.load_state_dict(state_dict, strict=False)
 
-
     if num_classes is None:
         # Remove head if necessary
         model.head = nn.Identity()
     else:
         # Change model head
-        model.head = nn.Linear(model.head.in_features, num_classes)
+        if num_classes != pretrained_num_classes:
+            model.head = nn.Linear(model.head.in_features, num_classes)
     
     return model, TRANSFORM_SWIN

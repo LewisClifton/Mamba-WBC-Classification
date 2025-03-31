@@ -75,27 +75,28 @@ def get(num_classes, pretrained_model_path):
     elif model_size == 'base':
         weights_url = "https://github.com/MzeroMiko/VMamba/releases/download/%23v2cls/vssm_base_0229_ckpt_epoch_237.pth"
 
-    # Build the model using the architecture specified
+    # Build the model
     model = __build_model(model_size)
 
-    # Load pretrained weights if provided
+    # Load pretrained weights
     if pretrained_model_path is not None:
         state_dict = torch.load(pretrained_model_path, map_location="cpu")
     else:
         state_dict = torch.hub.load_state_dict_from_url(weights_url, model_dir='models/vmamba/pretrained/', file_name=weights_url.split('/')[-1])['model']
 
     # Build the model from the pretrained
+    pretrained_num_classes = state_dict["classifier.head.weight"].shape[0]
     model.classifier = nn.Sequential(
         OrderedDict([
             ("norm", model.classifier.norm),
             ("permute", model.classifier.permute),
             ("avgpool", model.classifier.avgpool),
             ("flatten", model.classifier.flatten),
-            ("head", nn.Linear(model.num_features, state_dict["classifier.head.weight"].shape[0])),
+            ("head", nn.Linear(model.num_features, pretrained_num_classes)),
     ]))
     model.load_state_dict(state_dict, strict=False)
     
-
+    # Adjust model head
     if num_classes is None:
         # Remove head if necessary
         model.classifier = nn.Sequential(
@@ -108,13 +109,14 @@ def get(num_classes, pretrained_model_path):
         ]))
     else:
         # Change model head
-        model.classifier = nn.Sequential(
-            OrderedDict([
-                ("norm", model.classifier.norm),
-                ("permute", model.classifier.permute),
-                ("avgpool", model.classifier.avgpool),
-                ("flatten", model.classifier.flatten),
-                ("head", nn.Linear(model.num_features, num_classes)),
-        ]))
+        if num_classes != pretrained_num_classes:
+            model.classifier = nn.Sequential(
+                OrderedDict([
+                    ("norm", model.classifier.norm),
+                    ("permute", model.classifier.permute),
+                    ("avgpool", model.classifier.avgpool),
+                    ("flatten", model.classifier.flatten),
+                    ("head", nn.Linear(model.num_features, num_classes)),
+            ]))
 
     return model, TRANSFORM_VMAMBA

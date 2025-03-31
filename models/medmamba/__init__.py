@@ -18,8 +18,7 @@ TRANSFORM_MEDMAMBA = {
 }
 
 
-def __build_model(num_classes):
-    model_size = 'tiny'
+def __build_model(model_size, num_classes):
     if model_size == 'tiny':
         return MedMamba(depths=[2, 2, 4, 2], dims=[96,192,384,768], num_classes=num_classes)
     if model_size == 'small':
@@ -29,33 +28,24 @@ def __build_model(num_classes):
 
 def get(num_classes, pretrained_model_path):
 
-    
-
-    # Load pretrained weights first
+    # Load pretrained weights
     if pretrained_model_path is not None:
         state_dict = torch.load(pretrained_model_path, map_location="cpu")
-
-        # Build the model from the pretrained
-        pretrained_num_classes = state_dict["head.weight"].shape[0]
-        model = __build_model(pretrained_num_classes)
-
-        model.load_state_dict(state_dict, strict=False)
-
-        if num_classes is None:
-            # Remove head if necessary
-            model.head = nn.Identity()
-        else:
-            # Change model head
-            model.head = nn.Linear(model.head.in_features, num_classes)
-        
     else:
+        state_dict = torch.hub.load_state_dict_from_url("https://huggingface.co/LewisClifton/MedMamba/resolve/main/Medmamba.pth", model_dir="models/medmamba/pretrained/", file_name=weights_url.split('/')[-1])['model']
 
-        if num_classes is None:
-            model = __build_model(num_classes=2)
+    # Load the model
+    pretrained_num_classes = state_dict["head.weight"].shape[0]
+    model = __build_model(model_size, pretrained_num_classes)
+    model.load_state_dict(state_dict, strict=False)
 
-            # Remove head if necessary
-            model.head = nn.Identity()
-        else:
-            model = __build_model(num_classes)
+    # Adjust model head
+    if num_classes is None:
+        # Remove head if necessary
+        model.head = nn.Identity()
+    else:
+        # Change model head
+        if num_classes != pretrained_num_classes:
+            model.head = nn.Linear(model.head.in_features, num_classes)
 
     return model, TRANSFORM_MEDMAMBA

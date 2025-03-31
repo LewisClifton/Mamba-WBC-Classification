@@ -26,7 +26,7 @@ class MambaVisionWrapper(nn.Module):
         super().__init__()
         
         # Load the pretrained model
-        model = AutoModelForImageClassification.from_pretrained("nvidia/MambaVision-B-1K", trust_remote_code=True).model
+        model = AutoModelForImageClassification.from_pretrained("nvidia/MambaVision-T-1K", trust_remote_code=True).model
 
         self.model = model
 
@@ -36,9 +36,12 @@ class MambaVisionWrapper(nn.Module):
 
 
 def get(num_classes, pretrained_model_path):
+    
+    # Load the model
     model = MambaVisionWrapper()
+    pretrained_num_classes = model.model.head.num_classes
 
-    # Load pretrained weights first
+    # Load pretrained weights
     if pretrained_model_path is not None:
         state_dict = torch.load(pretrained_model_path, map_location="cpu")
 
@@ -47,13 +50,14 @@ def get(num_classes, pretrained_model_path):
         
         model.model.head = nn.Linear(model.model.head.in_features, pretrained_num_classes)
         model.load_state_dict(state_dict, strict=False)
-    
-    
+
+    # Adjust model head
     if num_classes is None:
         # Remove head if necessary
         model.model.head = nn.Identity()
     else:
-         # Change model head
-        model.model.head = nn.Linear(model.model.head.in_features, num_classes)
+        # Change model head
+        if num_classes != pretrained_num_classes:
+            model.model.head = nn.Linear(model.model.head.in_features, num_classes)
 
     return model, TRANSFORM_MAMBAVISION

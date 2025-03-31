@@ -172,10 +172,9 @@ def get(num_classes, pretrained_model_path):
     if num_classes is None:
         # Change model head
         model.classifier = nn.Identity()
-        
-        return model, TRANSFORM_VIM
-
-    # Change model head
-    model.head = nn.Linear(model.head.in_features, num_classes)
+    else:
+        # Change model head
+        if num_classes != pretrained_num_classes:
+            model.head = nn.Linear(model.head.in_features, num_classes)
     
     return model, TRANSFORM_VIM
