@@ -1,5 +1,9 @@
-def select_model(model_type, num_classes, pretrained_model_path):
+def select_model(model_config, num_classes, device):
     # Get the required model. Use inner imports to allow for different conda env / OS
+
+    model_type = model_config['name']
+    pretrained_model_path = model_config['pretrained_model_path'] if 'pretrained_model_path' in model_config.keys() else None
+
     if model_type == 'swin':
         from .swin import get
         model, transform = get(num_classes=num_classes, pretrained_model_path=pretrained_model_path)
@@ -24,9 +28,21 @@ def select_model(model_type, num_classes, pretrained_model_path):
         from .localmamba import get
         model, transform = get(num_classes=num_classes, pretrained_model_path=pretrained_model_path)
 
+    elif model_type == 'complete':
+        from .neutrophils import get
+    
+        print(model_config)
+        base_model_config = model_config['base_model_config']
+        base_model_config['num_classes'] = None # so head is removed
+        base_model, transform = select_model(base_model_config, None, device)
+
+        model = get(base_model=base_model, num_classes=num_classes, pretrained_model_path=pretrained_model_path)
+        
     # Add new models using elif
     elif model_type == 'foo':
         pass
+
+    model = model.to(device)
 
     return model, transform
 
@@ -45,20 +61,11 @@ def init_model(model_config, num_classes, device):
     """
     # TO DO: ADD DOCSTRINGS TO EACH MODEL INIT
     
-    model_type = model_config['name']
-    pretrained_model_path = model_config['pretrained_model_path'] if 'pretrained_model_path' in model_config.keys() else None
-
     if 'use_improvements' in model_config.keys():
-        # Initialise base model with no classification head and not from a pretrained model
-        model, transform = select_model(model_type, num_classes=None, pretrained_model_path=None)
-
-        model = model.to(device)
-
-        # Wrap the model
-        from .wrapper import wrap_model
-        model = wrap_model(base_model=model, num_classes=num_classes, pretrained_model_path=pretrained_model_path)
-
+        pass
     else: 
-        model, transform = select_model(model_type, num_classes, pretrained_model_path)
-        
+        model, transform = select_model(model_config, num_classes, device)
+    
+    model = model.to(device)
+
     return model, transform

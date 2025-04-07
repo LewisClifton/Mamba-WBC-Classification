@@ -1,9 +1,12 @@
 import os
-
-from torch.utils.data import Dataset
 from PIL import Image
 import pandas as pd
 import torch
+import cv2
+import numpy as np
+
+from torch.utils.data import Dataset
+
 
 class ChulaWBC5000(Dataset):
     def __init__(self, images_path, labels_path, wbc_types=['BNE', 'SNE', 'Basophil', 'Eosinophil', 'Monocyte', 'Lymphocyte'], test=False):
@@ -59,12 +62,15 @@ class ChulaWBC5000(Dataset):
 
         # if self.test: 
         #     return image, label, self.labels.iloc[idx]['name']
+
+        if len(self.wbc_types) == 2:
+            label = label.float().unsqueeze(1)
         
         return image, label
     
     def __len__(self):
         return len(self.labels)
-    
+
 
 def get(dataset_config, test=False):
 

@@ -67,7 +67,7 @@ class Wrapper(nn.Module):
         nucleus = image * mask  # [B, 3, H, W]
 
         # Extract features from the nucleus image (Base Model)
-        img_features = self.base_model(nucleus)  # [B, 192]
+        img_features = self.base_model(image)  # [B, 192]
         
         # Pass nucleus through CNN for morphological feature extraction
         morph_features = self.morph_cnn(nucleus)  # [B, 64, 1, 1]

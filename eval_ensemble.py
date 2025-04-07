@@ -33,14 +33,8 @@ def main(out_dir, ensemble_config, dataset_config, dataset_download_dir):
     # Create data loaders
     test_loader = DataLoader(test_dataset, batch_size=ensemble_config['batch_size'], shuffle=False, num_workers=1)
 
-    # Track time
-    start_time = time.time()
-
     # Evaluate the model
     metrics = evaluate_model(ensemble_config['ensemble_mode'], base_models, test_loader, dataset_config['name'], device, stacking_model=stacking_model)
-
-    # Get runtime
-    metrics['Time to evaluate'] = time.time() - start_time
 
     # Create output directory for log
     date = datetime.now().strftime(f'%Y_%m_%d_%p%I_%M_ensemble')

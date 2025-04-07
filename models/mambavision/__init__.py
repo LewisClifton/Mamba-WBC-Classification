@@ -39,7 +39,7 @@ def get(num_classes, pretrained_model_path):
     
     # Load the model
     model = MambaVisionWrapper()
-    pretrained_num_classes = model.model.head.num_classes
+    pretrained_num_classes = model.model.head.out_features
 
     # Load pretrained weights
     if pretrained_model_path is not None:

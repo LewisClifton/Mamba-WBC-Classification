@@ -10,3 +10,4 @@ datasets/chula/data/labels_train.csv
 *.pth
 jobs/
 *.sh
+my_configs/

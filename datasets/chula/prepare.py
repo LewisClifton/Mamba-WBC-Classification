@@ -7,6 +7,26 @@ import argparse
 
 # Execute script from project root
 
+def center_crop(image, crop_size=(175, 175)):
+    # Crop image at center
+    width, height = image.size
+    left = (width - crop_size[0]) // 2
+    top = (height - crop_size[1]) // 2
+    right = left + crop_size[0]
+    bottom = top + crop_size[1]
+    return image.crop((left, top, right, bottom))
+
+
+def center_crop_all(images_dir):
+    files = os.listdir(images_dir)
+
+    for file in files:
+        if file == 'augmented': continue
+        file = os.path.join(images_dir, file)
+        image = Image.open(file)
+        cropped_image = center_crop(image)
+        cropped_image.save(file)
+
 
 def clean_labels(labels_path):
         # Read labels
@@ -58,52 +78,59 @@ def train_test_split(dataset, frac=0.2):
 
 
 def augment(images_dir):
-    
     # Augmentation transform
     transform = transforms.Compose([
-        transforms.RandomRotation(degrees=360),        
+        transforms.RandomRotation(degrees=360),
         transforms.RandomAffine(
-            degrees=0,                              
-            translate=(0.1, 0.1),                    
-            scale=(0.9, 1.1),                   
-            shear=5                               
+            degrees=0,
+            translate=(0.1, 0.1),
+            scale=(0.9, 1.1),
+            shear=5
         ),
         transforms.RandomHorizontalFlip(p=0.5),
-        transforms.RandomHorizontalFlip(p=0.5),                
+        transforms.RandomVerticalFlip(p=0.5),                
         transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.05, hue=0.02), 
         transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 1.0)),
     ])
 
-
     # Create augmented directory
     augmented_dir = os.path.join(images_dir, 'augmented/')
-    if not os.path.exists(augmented_dir):
-        os.makedirs(augmented_dir)
-    else:
-        for file in os.listdir(augmented_dir):
-            os.remove(os.path.join(augmented_dir, file))
-        
+    os.makedirs(augmented_dir, exist_ok=True)
+
+    # Ensure existing augmented images are cleared
+    for file in os.listdir(augmented_dir):
+        os.remove(os.path.join(augmented_dir, file))
+
     counter = 5001
     augmented_rows = []
 
     for label, count in chula_train['label'].value_counts().items():
-        diff = 500 - count
-        if diff < 0: continue
+        diff = 500 - count  # How many new samples we need
+        if diff <= 0: 
+            continue
+
+        # Get all images of this label
+        label_images = chula_train[chula_train['label'] == label]['name'].tolist()
+        num_images = len(label_images)
 
         for i in range(diff):
-            # Get random image of this label
-            random_image = chula_train[chula_train['label'] == label].sample(n=1, random_state=None).iloc[0]['name']
-            image = Image.open(os.path.join(images_dir, random_image))
+            
+            image_name = label_images[i % num_images] 
+            image_path = os.path.join(images_dir, image_name)
+            print(image_name)
 
-            # Apply transformation
+            # Open and center crop the original image
+            image = Image.open(image_path)
+
+            # Apply augmentation
             augmented_image = transform(image)
 
-            # Save to the augmented subdirectory
-            augmented_image_name = f'{(6-len(str(counter)))*"0"}{counter}.jpg'
+            # Save augmented image
+            augmented_image_name = f'{str(counter).zfill(6)}.jpg'
             augmented_image.save(os.path.join(augmented_dir, augmented_image_name))
-            
+
             # Add name and label to dataframe
-            augmented_rows.append({'name' : f'augmented/{augmented_image_name}', 'label' : label})
+            augmented_rows.append({'name': f'augmented/{augmented_image_name}', 'label': label})
 
             counter += 1
 
@@ -113,7 +140,7 @@ def augment(images_dir):
 
     print(chula_augmented_train['label'].value_counts())
 
-    # Save names and labels dataframe
+    # Shuffle dataset
     chula_augmented_train = chula_augmented_train.sample(frac=1, random_state=42).reset_index(drop=True)
 
     return chula_augmented_train
@@ -133,19 +160,23 @@ if __name__ == '__main__':
     labels_dir = args.labels_dir
 
     # Clean labels and save
-    # labels_path = os.path.join(labels_dir, 'labels.csv')
-    # labels = clean_labels(labels_path)
-    # labels.to_csv(os.path.join(labels_dir, 'labels_clean.csv'), index=False)
+    labels_path = os.path.join(labels_dir, 'labels.csv')
+    labels = clean_labels(labels_path)
+    labels.to_csv(os.path.join(labels_dir, 'labels_clean.csv'), index=False)
+
+    # Center crop images
+    center_crop_all(images_dir)
 
     # Split labels into train and test set save
-    # chula_train, chula_test = train_test_split(labels)
-    # chula_train.to_csv(os.path.join(labels_dir, 'labels_train.csv'), index=False)
-    # chula_test.to_csv(os.path.join(labels_dir, 'labels_test.csv'), index=False)
-    labels = pd.read_csv('/user/work/js21767/Project/data/labels_train_augmented.csv')
     chula_train, chula_test = train_test_split(labels)
-    chula_train.to_csv('/user/work/js21767/Project/data/labels_ensemble_train.csv', index=False)
-    chula_test.to_csv('/user/work/js21767/Project/data/labels_ensemble_val.csv', index=False)
+    chula_train.to_csv(os.path.join(labels_dir, 'labels_train.csv'), index=False)
+    chula_test.to_csv(os.path.join(labels_dir, 'labels_test.csv'), index=False)
 
     # Apply augmentations to training data to reduce imbalance and save their labels
-    # chula_augmented_train = augment(images_dir)
-    # chula_augmented_train.to_csv(os.path.join(labels_dir, 'labels_train_augmented.csv'), index=False)
+    chula_augmented_train = augment(images_dir)
+    chula_augmented_train.to_csv(os.path.join(labels_dir, 'labels_train_augmented.csv'), index=False)
+
+    # Ensemble training data
+    chula_train, chula_test = train_test_split(chula_augmented_train)
+    chula_train.to_csv('/user/work/js21767/Project/data/labels_ensemble_train.csv', index=False)
+    chula_test.to_csv('/user/work/js21767/Project/data/labels_ensemble_val.csv', index=False)

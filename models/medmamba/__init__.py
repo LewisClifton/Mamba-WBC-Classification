@@ -31,13 +31,14 @@ def get(num_classes, pretrained_model_path):
     # Load pretrained weights
     if pretrained_model_path is not None:
         state_dict = torch.load(pretrained_model_path, map_location="cpu")
+    
+        # Load the model
+        pretrained_num_classes = state_dict["head.weight"].shape[0]
+        model = __build_model('tiny', pretrained_num_classes)
+        model.load_state_dict(state_dict, strict=False)
+    
     else:
-        state_dict = torch.hub.load_state_dict_from_url("https://huggingface.co/LewisClifton/MedMamba/resolve/main/Medmamba.pth", model_dir="models/medmamba/pretrained/", file_name=weights_url.split('/')[-1])['model']
-
-    # Load the model
-    pretrained_num_classes = state_dict["head.weight"].shape[0]
-    model = __build_model(model_size, pretrained_num_classes)
-    model.load_state_dict(state_dict, strict=False)
+        model = __build_model('tiny', num_classes)
 
     # Adjust model head
     if num_classes is None:
@@ -45,6 +46,7 @@ def get(num_classes, pretrained_model_path):
         model.head = nn.Identity()
     else:
         # Change model head
+        pretrained_num_classes = model.head.out_features
         if num_classes != pretrained_num_classes:
             model.head = nn.Linear(model.head.in_features, num_classes)
 

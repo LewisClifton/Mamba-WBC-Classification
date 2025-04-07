@@ -41,6 +41,13 @@ def main(model_config, num_classes, out_dir):
     if model_config['name'] == 'mambavision':
         target_layers = [model.model.levels[2].downsample]
 
+    if model_config['name'] == 'localmamba':
+        target_layers = [model.layers[-1].mixer.in_proj]  # Choose the last convolution layer
+
+    if model_config['name'] == 'swin':
+        target_layers = [model.features[-1][-1].norm1]
+        # target_layers = [model.layers[-1].blocks[-1].norm1]
+
     # Data
     images_path = "/tmp/js21767/WBC 5000/"  # Update with your image directory
     labels_path = "/tmp/js21767/labels_test.csv" 
@@ -57,8 +64,11 @@ def main(model_config, num_classes, out_dir):
     output_dir = "./out"
     os.makedirs(output_dir, exist_ok=True)
 
-    images_processes 
+    images_processed = 0
 
+    correct = True
+    incorrect = True
+    count = 0
     for image_name, label in zip(images_names, image_labels):
         image_path = os.path.join(images_path, image_name)
         output_path = os.path.join(output_dir, f"gradcam_{image_name}")
@@ -77,19 +87,59 @@ def main(model_config, num_classes, out_dir):
         # Get label
         target = [ClassifierOutputTarget(labels_convert.index(label))]
 
-        with GradCAM(model=model, target_layers=target_layers) as cam:
+        
 
-            grayscale_cam = cam(input_tensor=input_tensor, targets=target, aug_smooth=True)
+        import math
 
-            if target[0].category == torch.argmax(cam.outputs, dim=1).cpu().item(): continue
+        def swin_reshape_transform(tensor, height=7, width=7):
+            # Reshape the tensor to match a spatial layout (BATCH_SIZE, HEIGHT, WIDTH, CHANNELS)
+            result = tensor.reshape(tensor.size(0), height, width, 768)  # Reshaping to (BATCH, 7, 7, 768)
+            
+            # Bring channels to the first dimension (CNN style), like (BATCH, CHANNELS, HEIGHT, WIDTH)
+            result = result.transpose(2, 3).transpose(1, 2)
+            return result
+
+
+        def localmamba_reshape_transform(tensor):
+            """
+            Reshape activations from (B, SeqLen, C) to (B, C, H, W)
+            where H x W = SeqLen.
+            """
+            B, SeqLen, C = tensor.shape  # Expecting (B, SeqLen, 384)
+            
+            # Compute the spatial dimensions
+            height = width = int(math.sqrt(SeqLen))
+            assert height * width == SeqLen, "SeqLen must be a perfect square!"
+
+            # Reshape into (B, H, W, C)
+            result = tensor.view(B, height, width, C)
+
+            # Rearrange to (B, C, H, W)
+            result = result.permute(0, 3, 1, 2)  # Move channels to first dimension
+            
+            return result
+
+
+        with GradCAM(model=model, target_layers=target_layers, reshape_transform=swin_reshape_transform) as cam:
+
+            grayscale_cam = cam(input_tensor=input_tensor, targets=target)
+
+            
 
             grayscale_cam = grayscale_cam[0, :]
             
             visualization = show_cam_on_image(image, grayscale_cam, use_rgb=False)
 
             print(f'Target: {target[0].category}. Output:{torch.argmax(cam.outputs, dim=1).cpu().item()}')
-
-            cv2.imwrite(os.path.join(out_dir, f"{model_config['name']}_{image_name}_grad-cam.jpg"), visualization)
+            if target[0].category == torch.argmax(cam.outputs, dim=1).cpu().item():
+                cv2.imwrite(os.path.join(out_dir, f"{model_config['name']}_{image_name}_correct_grad-cam.jpg"), visualization)
+                correct = False
+            
+            if target[0].category != torch.argmax(cam.outputs, dim=1).cpu().item():
+                cv2.imwrite(os.path.join(out_dir, f"{model_config['name']}_{image_name}_incorrect_grad-cam.jpg"), visualization)
+                incorrect = False
+            count+= 1
+            
 
 
 if __name__ == "__main__":

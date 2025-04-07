@@ -53,6 +53,7 @@ def get(num_classes, pretrained_model_path):
         # Remove head if necessary
         model.head = nn.Identity()
     else:
+        pretrained_num_classes = model.head.out_features
         # Change model head
         if num_classes != pretrained_num_classes:
             model.head = nn.Linear(model.head.in_features, num_classes)

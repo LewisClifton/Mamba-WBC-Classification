@@ -161,7 +161,7 @@ def get(num_classes, pretrained_model_path):
     if pretrained_model_path is not None:
         state_dict = torch.load(pretrained_model_path, map_location="cpu")
     else:
-        state_dict = torch.hub.load_state_dict_from_url(weights_url, model_dir="models/vim/pretrained/", file_name=weights_url.split('/')[-1])['model']
+        state_dict = torch.hub.load_state_dict_from_url(weights_url, model_dir='/user/work/js21767/Project/models/localmamba/', file_name=weights_url.split('/')[-1])['model']
 
     # Build the model from the pretrained
     pretrained_num_classes = state_dict["head.weight"].shape[0]

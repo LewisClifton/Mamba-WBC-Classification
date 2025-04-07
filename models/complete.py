@@ -2,9 +2,10 @@ from . import init_model
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
 
 # Two-tier model making use of a bespoke neutrophils classifier to try to improve results
-
 class CompleteClassifier(nn.Module):
     def __init__(self, model_config, dataset_config):
         super().__init__()

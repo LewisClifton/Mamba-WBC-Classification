@@ -59,7 +59,7 @@ def get(num_classes, pretrained_model_path):
     if pretrained_model_path is not None:
         state_dict = torch.load(pretrained_model_path, map_location="cpu")
     else:
-        state_dict = torch.hub.load_state_dict_from_url("https://github.com/hunto/LocalMamba/releases/download/v1.0.0/local_vim_tiny.ckpt", model_dir="models/localmamba/pretrained/", file_name='vim_tiny')['state_dict']
+        state_dict = torch.hub.load_state_dict_from_url("https://github.com/hunto/LocalMamba/releases/download/v1.0.0/local_vim_tiny.ckpt", model_dir='/user/work/js21767/Project/models/localmamba/', file_name='vim_tiny')['state_dict']
 
     # Load the model
     pretrained_num_classes = state_dict["head.weight"].shape[0]

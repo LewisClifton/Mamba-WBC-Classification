@@ -109,10 +109,13 @@ def train_model(model_config, dataset_config, train_dataset, val_dataset, device
     
     # Create criterion
     
-    if 'class_weights' in model_config.keys():
-        criterion = nn.CrossEntropyLoss(weight=torch.tensor(model_config['class_weights']))
+    if model_config['name'] == 'neutrophils':
+        criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(dataset_config['class_weights']))
     else:
-        criterion = nn.CrossEntropyLoss()
+        if 'class_weights' in model_config.keys():
+            criterion = nn.CrossEntropyLoss(weight=torch.tensor(dataset_config['class_weights']))
+        else:
+            criterion = nn.CrossEntropyLoss()
 
     # Create optimizer
     optimizer = optim.AdamW(model.parameters(), lr=model_config['learning_rate'], weight_decay=model_config['optim_weight_decay'])

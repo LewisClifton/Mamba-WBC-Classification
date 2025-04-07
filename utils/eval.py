@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn.metrics import confusion_matrix as sk_confusion_matrix, precision_recall_fscore_support
+import time
 
 import torch
 
@@ -17,11 +18,15 @@ def get_eval_metrics(preds, labels):
     accuracy = (correct / total) * 100
 
     # Precision, recall, F1-score
-    precision, sensitivity, f1, _ = precision_recall_fscore_support(labels, preds, average='macro', zero_division=0)
+    precision, sensitivity, f1, _ = precision_recall_fscore_support(labels, preds, average='weighted', zero_division=0)
+    conf_matrix = sk_confusion_matrix(labels, preds)
 
-    # Confusion matrix
-    class_accuracies = conf_matrix.diagonal() / conf_matrix.sum(axis=1)
-    macro_accuracy = np.nanmean(class_accuracies) * 100  # Handle NaNs if any class has zero samples
+    # Compute per-class accuracy and macro accuracy
+    class_accuracies = np.where(conf_matrix.sum(axis=1) != 0,
+                                conf_matrix.diagonal() / conf_matrix.sum(axis=1),
+                                0)
+    macro_accuracy = np.nanmean(class_accuracies) * 100  # Fair metric across classes
+
 
     return {
         "Accuracy": accuracy,
@@ -60,6 +65,9 @@ def evaluate_model(model, test_loader, dataset_name, device):
     total_memory = 0  # Track cumulative memory usage
     num_batches = 0   # Count number of batches
 
+    # Track time
+    start_time = time.time()
+    
     # Get test set results
     with torch.no_grad():
         for images, labels in test_loader:
@@ -91,12 +99,18 @@ def evaluate_model(model, test_loader, dataset_name, device):
             total_memory += batch_memory  # Accumulate total memory
             num_batches += 1  # Increment batch count
 
+    # Runtime
+    runtime = time.time() - start_time
+
     # Compute additional memory metrics
     avg_memory = total_memory / num_batches if num_batches > 0 else 0  # Average memory per batch
     num_images = len(all_labels)  # Total test images
     memory_per_image = max_memory / num_images if num_images > 0 else 0  # Memory per image
 
     metrics = get_eval_metrics(all_preds, all_labels)
+    # Get runtime
+    metrics['Time to evaluate'] = runtime
+    metrics['Throughput'] = num_images / runtime
     metrics['Peak GPU Memory Usage (MB)'] = max_memory
     metrics['Average GPU Memory Usage per Batch (MB)'] = avg_memory
     metrics['Memory Usage per Image (MB)'] = memory_per_image

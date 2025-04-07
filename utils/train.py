@@ -1,5 +1,6 @@
 import torch
 import torch.distributed as dist
+import torch.nn as nn
 
 
 def average_across_gpus(list_, device):
@@ -54,13 +55,15 @@ def train_loop(model, model_config, train_loader, val_loader, criterion, optimiz
         correct_train = 0
         total_train = 0
 
+        counter = 0
+
         for images, labels in train_loader:
             images, labels = images.to(device), labels.to(device)
 
             # Forward pass
             outputs = model(images)
-            
-            # Calculate loss
+
+            # Calculate loss    
             loss = criterion(outputs, labels.squeeze(1))
 
             # Backward pass and optimization
@@ -68,11 +71,16 @@ def train_loop(model, model_config, train_loader, val_loader, criterion, optimiz
             loss.backward()
             optimizer.step()
 
-            # Track metrics
+            # Track loss
             train_loss += loss.item()
-            _, preds = outputs.max(1)
+            
+            # Track accuracy
+            if isinstance(criterion, nn.BCEWithLogitsLoss):
+                preds = (torch.sigmoid(outputs) > 0.5).long()  
+            else:
+                _, preds = outputs.max(1)
+        
             correct_train += (preds == labels.squeeze(1)).sum().item()
-
             total_train += labels.size(0)
 
         # Calculate training metrics
@@ -89,11 +97,21 @@ def train_loop(model, model_config, train_loader, val_loader, criterion, optimiz
             for images, labels in val_loader:
                 images, labels = images.to(device), labels.to(device)
 
+                # Forward pass
                 outputs = model(images)
+
+                # Calculate loss
                 loss = criterion(outputs, labels.squeeze(dim=1))
 
+                # Track loss
                 val_loss += loss.item()
-                _, preds = outputs.max(1)
+
+                # Track accuracy
+                if isinstance(criterion, nn.BCEWithLogitsLoss):
+                    preds = (torch.sigmoid(outputs) > 0.5).long()  
+                else:
+                    _, preds = outputs.max(1)
+    
                 correct_val += (preds == labels.squeeze(1)).sum().item()
                 total_val += labels.size(0)
                 
