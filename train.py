@@ -15,7 +15,7 @@ from sklearn.model_selection import KFold
 
 from datasets import get_dataset, TransformedDataset
 from utils.common import setup_dist, save, save_models
-from utils.train import train_loop
+from utils.train import train_loop, val_epoch as get_val_outputs
 from models import init_model
 
 
@@ -67,7 +67,8 @@ def train_Kfolds(num_folds, model_config, dataset_config, dataset, device, out_d
         trained, metrics = train_model(model_config, dataset_config, train_dataset, val_dataset, device, out_dir, using_dist, verbose, save_val_outputs)
         
         # Save the model
-        save_models(out_dir, trained, model_config['name'], metrics, fold=fold+1)
+        if not save_val_outputs:
+            save_models(out_dir, trained, model_config['name'], metrics, fold=fold+1)
 
         # Aggregate models and metrics from this fold
         all_trained.append(trained)
@@ -99,8 +100,9 @@ def train_model(model_config, dataset_config, train_dataset, val_dataset, device
     model = model.to(device)
 
     # Apply transforms
-    train_dataset = TransformedDataset(train_dataset, model_transforms['train'])
-    val_dataset = TransformedDataset(val_dataset, model_transforms['test']) if val_dataset else None
+    if model_transforms:
+        train_dataset = TransformedDataset(train_dataset, model_transforms['train'])
+        val_dataset = TransformedDataset(val_dataset, model_transforms['test']) if val_dataset else None
 
     # Create data loaders and put model on device
     if using_dist:
@@ -141,7 +143,7 @@ def train_model(model_config, dataset_config, train_dataset, val_dataset, device
 
     # Save outputs on this validation set for stacking ensemble training
     if save_val_outputs:
-        val_epoch(model, val_loader, criterion, device, save_output=True, model_name=model_config['name'], out_dir=out_dir)
+        get_val_outputs(model, val_loader, criterion, device, save_output=True, model_name=model_config['name'], out_dir=out_dir)
 
     if using_dist:
         return trained.module, metrics
@@ -154,12 +156,15 @@ def main(rank, world_size, using_dist, out_dir, model_config, dataset_config, nu
     # Setup GPU network if required
     if using_dist: setup_dist(rank, world_size)
 
+    print('start')
+
     # Train using specified dataset with/without k-fold cross validation
     if dataset_config['name'] == 'chula':
         # Get dataset
         dataset = get_dataset(dataset_config, dataset_download_dir)
 
         if num_folds == 1:
+            print('start1')
             trained, metrics = train_model(model_config, dataset_config, train_dataset, None, rank, out_dir, using_dist, verbose)
         else:
             # Train the model using k-fold cross validation and get the training metrics for each fold

@@ -1,11 +1,11 @@
 import os
 from PIL import Image
 import pandas as pd
-import torch
 import cv2
 import numpy as np
 
 from torch.utils.data import Dataset
+import torch
 
 
 class ChulaWBC5000(Dataset):

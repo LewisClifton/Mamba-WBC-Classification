@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.metrics import confusion_matrix
+import os
 
 import torch
 import torch.distributed as dist
@@ -71,11 +72,11 @@ def val_epoch(model, val_loader, criterion, device, save_output=False, model_nam
     all_preds = []
     all_labels = []
 
-    all_image_names = []
-    all_outputs = []
+    all_image_names = None
+    all_outputs = None
 
     with torch.no_grad():
-        for images, labels, image_name in val_loader:
+        for images, labels, image_names in val_loader:
             images, labels = images.to(device), labels.to(device)
 
             # Forward pass
@@ -100,15 +101,23 @@ def val_epoch(model, val_loader, criterion, device, save_output=False, model_nam
             all_labels.extend(labels.squeeze(1).cpu().numpy())
 
             if save_output:
-                all_outputs.append(outputs.cpu().numpy())
-                all_image_names.append(image_name)
+
+                if all_outputs is None:
+                    all_outputs = outputs.cpu().numpy()
+                else:
+                    all_outputs = np.concatenate([all_outputs, outputs.cpu().numpy()], axis=0)
+
+                if all_image_names is None:
+                    all_image_names = np.array(image_names)
+                else:
+                    all_image_names = np.concatenate([all_image_names, image_names], axis=0)
 
 
     # Save output if doing stacking ensemble training
     if save_output:
 
         # Create dataframe with image name and outputs
-        outputs_df = pd.DataFrame(all_outputs, columns=[f'{model_name}_{i}' for i in range(len(all_outputs[0]))])
+        outputs_df = pd.DataFrame(all_outputs, columns=[f'{model_name}_{i}' for i in range(all_outputs.shape[1])])
         outputs_df.insert(0, 'name', all_image_names)
 
         # Get output path
@@ -121,6 +130,8 @@ def val_epoch(model, val_loader, criterion, device, save_output=False, model_nam
 
         # Save outputs to csv
         outputs_df.to_csv(csv_path, index=False)
+
+        print(f'Saved fold validation outputs to {csv_path}')
 
         return
 
@@ -175,26 +186,30 @@ def train_loop(model, model_config, train_loader, val_loader, criterion, optimiz
             train_loader.sampler.set_epoch(epoch)
         model, avg_train_loss, train_accuracy = train_epoch(model, train_loader, criterion, optimizer, device)
 
-        # Validation loop
-        model.eval()
-        val_accuracy, avg_val_loss, macro_accuracy  = val_epoch(model, val_loader, criterion, device)
-
-        # Store metrics for this epoch
         train_accuracy_per_epoch.append(train_accuracy)
         train_loss_per_epoch.append(avg_train_loss)
-        val_accuracy_per_epoch.append(val_accuracy)
-        val_loss_per_epoch.append(avg_val_loss)
 
         # Print epoch metrics
         if device in [0, 'cuda:0'] and verbose:
             print(f'Epoch [{epoch + 1}/{model_config['epochs']}]:')
             print(f'Train Accuracy: {train_accuracy:.4f}, Train Loss: {avg_train_loss:.4f}')
-            print(f'Validation Accuracy: {val_accuracy:.4f}, Validation Loss: {avg_val_loss:.4f}, Macro accuracy: {macro_accuracy:.4f}')
 
-        if macro_accuracy > best_val_accuracy:
-            best_val_accuracy = macro_accuracy
-            if macro_accuracy > 91.5:
-                best_model = model
+        # Validation loop
+        if val_loader is not None:
+            model.eval()
+            val_accuracy, avg_val_loss, macro_accuracy  = val_epoch(model, val_loader, criterion, device)
+
+            val_accuracy_per_epoch.append(val_accuracy)
+            val_loss_per_epoch.append(avg_val_loss)
+
+            # Print epoch metrics
+            if device in [0, 'cuda:0'] and verbose:
+                print(f'Validation Accuracy: {val_accuracy:.4f}, Validation Loss: {avg_val_loss:.4f}, Macro accuracy: {macro_accuracy:.4f}')
+
+            if macro_accuracy > best_val_accuracy:
+                best_val_accuracy = macro_accuracy
+                if macro_accuracy > 91.5:
+                    best_model = model
         
 
     # Return final metrics

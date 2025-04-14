@@ -3,12 +3,12 @@ import numpy as np
 from sklearn.metrics import confusion_matrix
 
 
-def train_loop_ensemble(ensemble, base_models, ensemble_config, train_loader, val_loader, criterion, optimizer, device, verbose=False):
+def train_loop_meta_learner(meta_learner, base_models, meta_learner_config, train_loader, val_loader, criterion, optimizer, device, verbose=False):
     """
-    Training loop used for training a single ensemble
+    Training loop used for training a single meta_learner
 
     Args:
-        ensemble(torch.nn.Module): ensemble to be trained
+        meta_learner(torch.nn.Module): meta_learner to be trained
         train_loader(torch.utils.data.DataLoader): Training data data loader
         val_loader(torch.utils.data.DataLoader): Validation data data loader
         n_epochs(int): Number of epochs to train for
@@ -17,7 +17,7 @@ def train_loop_ensemble(ensemble, base_models, ensemble_config, train_loader, va
         device(torch.cuda.device): Id of the device to execute this training loop
 
     Returns:
-        torch.nn.Module: Trained ensemble
+        torch.nn.Module: Trained meta_learner
         dict: Dictionary containing various training metrics
     """
     train_accuracy_per_epoch = []
@@ -26,10 +26,10 @@ def train_loop_ensemble(ensemble, base_models, ensemble_config, train_loader, va
     val_loss_per_epoch = []
 
     best_val_accuracy = 0
-    best_ensemble = ensemble
+    best_meta_learner = meta_learner
 
-    for epoch in range(ensemble_config['epochs']):
-        ensemble.train()
+    for epoch in range(meta_learner_config['epochs']):
+        meta_learner.train()
 
         train_loss = 0.0
         correct_train = 0
@@ -54,10 +54,10 @@ def train_loop_ensemble(ensemble, base_models, ensemble_config, train_loader, va
             base_models_outputs = torch.cat(base_models_outputs, dim=1) 
 
             base_models_outputs = base_models_outputs.to(device)
-            ensemble = ensemble.to(device)
+            meta_learner = meta_learner.to(device)
 
-            # Pass the stacked and flattened outputs to the ensemble meta-model.
-            outputs = ensemble(base_models_outputs)
+            # Pass the stacked and flattened outputs to the meta_learner meta-model.
+            outputs = meta_learner(base_models_outputs)
 
             # Calculate loss
             loss = criterion(outputs, labels.squeeze(1))
@@ -79,7 +79,7 @@ def train_loop_ensemble(ensemble, base_models, ensemble_config, train_loader, va
         train_accuracy = (correct_train / total_train) * 100
 
         # Validation loop
-        ensemble.eval()
+        meta_learner.eval()
         val_loss = 0.0
         correct_val = 0
         total_val = 0
@@ -105,10 +105,10 @@ def train_loop_ensemble(ensemble, base_models, ensemble_config, train_loader, va
                 base_models_outputs = torch.cat(base_models_outputs, dim=1) 
 
                 base_models_outputs = base_models_outputs.to(device)
-                ensemble = ensemble.to(device)
+                meta_learner = meta_learner.to(device)
 
-                # Pass the stacked and flattened outputs to the ensemble meta-model.
-                outputs = ensemble(base_models_outputs)
+                # Pass the stacked and flattened outputs to the meta_learner meta-model.
+                outputs = meta_learner(base_models_outputs)
 
                 loss = criterion(outputs, labels.squeeze(dim=1))
 
@@ -141,14 +141,14 @@ def train_loop_ensemble(ensemble, base_models, ensemble_config, train_loader, va
 
         # Print epoch metrics
         if verbose:
-            print(f'Epoch [{epoch + 1}/{ensemble_config['epochs']}]:')
+            print(f'Epoch [{epoch + 1}/{meta_learner_config['epochs']}]:')
             print(f'Train Accuracy: {train_accuracy:.4f}, Train Loss: {avg_train_loss:.4f}')
             print(f'Validation Accuracy: {val_accuracy:.4f}, Validation Loss: {avg_val_loss:.4f}, Macro accuracy: {macro_accuracy:.4f}')
 
         if macro_accuracy > best_val_accuracy:
             best_val_accuracy = macro_accuracy
             if macro_accuracy > 91.5:
-                best_ensemble = ensemble
+                best_meta_learner = meta_learner
 
     
     metrics = {
@@ -159,4 +159,4 @@ def train_loop_ensemble(ensemble, base_models, ensemble_config, train_loader, va
         'Best validation accuracy during training' : best_val_accuracy,
     }
 
-    return best_ensemble, metrics
+    return best_meta_learner, metrics

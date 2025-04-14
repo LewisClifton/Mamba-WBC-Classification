@@ -5,11 +5,11 @@ import torch.nn.functional as F
 torch.backends.cudnn.enabled = True
 
 
-class Ensemble(nn.Module):
-    def __init__(self, base_models, num_classes, device):
+class MetaLearner(nn.Module):
+    def __init__(self, num_base_models, num_classes):
         super().__init__()
 
-        in_features = len(base_models) * num_classes
+        in_features = num_base_models * num_classes
 
         self.fc1 = nn.Linear(in_features, in_features // 2)
         self.fc2 = nn.Linear(in_features // 2, in_features // 4)
@@ -26,3 +26,13 @@ class Ensemble(nn.Module):
         x = self.fc3(x)
         return x
 
+
+def get(num_base_models, num_classes, pretrained_model_path):
+
+    # Build the model
+    model = MetaLearner(num_base_models, num_classes)
+
+    if pretrained_model_path is not None:
+        model.load_state_dict(torch.load(pretrained_model_path, map_location="cpu"), strict=False)
+    
+    return model, None

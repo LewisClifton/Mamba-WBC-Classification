@@ -31,16 +31,17 @@ def select_model(model_config, num_classes, device):
     elif model_type == 'complete':
         from .neutrophils import get
     
-        print(model_config)
         base_model_config = model_config['base_model_config']
         base_model_config['num_classes'] = None # so head is removed
         base_model, transform = select_model(base_model_config, None, device)
 
         model = get(base_model=base_model, num_classes=num_classes, pretrained_model_path=pretrained_model_path)
-        
-    # Add new models using elif
-    elif model_type == 'foo':
-        pass
+
+    elif model_type == 'meta_learner':
+        from .meta_learner import get
+
+        model, transform = get(num_base_models=model_config['num_base_models'], num_classes=num_classes, pretrained_model_path=pretrained_model_path)
+
 
     model = model.to(device)
 

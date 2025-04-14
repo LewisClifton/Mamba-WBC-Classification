@@ -1,6 +1,8 @@
-import pandas as np
+import pandas as pd
+import numpy as np
 
 from torch.utils.data import Dataset
+import torch
 
 class TransformedDataset(Dataset):
     def __init__(self, dataset, transform, test=False):
@@ -47,6 +49,8 @@ class MetaLearnerDataset(Dataset):
             transforms_list (list): List of transformations (one per model).
         """
 
+        print('test')
+
          # image dataset
         self.dataset = dataset # (image, true_label, image_name)
 
@@ -64,7 +68,7 @@ class MetaLearnerDataset(Dataset):
                 # Merge dataset with model outputs using the image name
                 all_model_outputs_df = pd.merge(all_model_outputs_df, model_outputs_df, on="name", how="inner")
 
-       self.all_model_outputs_df = all_model_outputs_df # (image_name, model_x_out_1, model_x_out_2, ... , model_x_out_8, model_y_out_1, model_y_out_2, ... , model_y_out_8)
+        self.all_model_outputs_df = all_model_outputs_df # (image_name, model_x_out_1, model_x_out_2, ... , model_x_out_8, model_y_out_1, model_y_out_2, ... , model_y_out_8)
 
 
     def __len__(self):
@@ -74,11 +78,11 @@ class MetaLearnerDataset(Dataset):
         _, label, image_name = self.dataset[idx]
 
         # Get all the model outputs
-        model_outputs = self.all_model_outputs_df[self.all_model_outputs_df['name'] == image_name].drop(columns=['name']).values
+        model_outputs = self.all_model_outputs_df[self.all_model_outputs_df['name'] == image_name].drop(columns=['name']).to_numpy().T
 
-        tensor_values = torch.tensor(model_outputs, dtype=torch.float)
+        model_outputs = torch.tensor(model_outputs, dtype=torch.float).squeeze(-1)
 
-        return model_preds, label, image_name 
+        return model_outputs, label, image_name 
     
 
 def get_dataset(dataset_config, dataset_download_dir, test=False):
@@ -115,5 +119,9 @@ def get_dataset(dataset_config, dataset_download_dir, test=False):
 
     elif dataset_name == 'foo':
         pass
+
+    if 'base_model_outputs_paths' in dataset_config.keys():
+
+        dataset = MetaLearnerDataset(dataset_config['base_model_outputs_paths'], dataset)
 
     return dataset
