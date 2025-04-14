@@ -45,6 +45,12 @@ def train_Kfolds(num_folds, model_config, dataset_config, dataset, device, out_d
     # Trained models for each fold
     all_trained = []
 
+    # Whether to save validiation set outputs for the stacking ensemble
+    save_val_outputs = False    
+    if num_folds < 0:
+        num_folds *= -1
+        save_val_outputs = True
+
     # 5-Fold cross-validation setup
     folds = KFold(n_splits=num_folds, shuffle=True, random_state=42)
 
@@ -58,16 +64,18 @@ def train_Kfolds(num_folds, model_config, dataset_config, dataset, device, out_d
         val_dataset = torch.utils.data.Subset(dataset, val_idx)
 
         # Train this fold
-        trained, metrics = train_model(model_config, dataset_config, train_dataset, val_dataset, device, out_dir, using_dist, verbose)
+        trained, metrics = train_model(model_config, dataset_config, train_dataset, val_dataset, device, out_dir, using_dist, verbose, save_val_outputs)
+        
+        # Save the model
         save_models(out_dir, trained, model_config['name'], metrics, fold=fold+1)
-    
+
         # Aggregate models and metrics from this fold
         all_trained.append(trained)
         all_metrics.append(metrics)
 
     return all_trained, all_metrics
 
-def train_model(model_config, dataset_config, train_dataset, val_dataset, device, out_dir, using_dist=True, verbose=False):
+def train_model(model_config, dataset_config, train_dataset, val_dataset, device, out_dir, using_dist=True, verbose=False, save_val_outputs=False):
     """
     Train a single model
 
@@ -92,7 +100,7 @@ def train_model(model_config, dataset_config, train_dataset, val_dataset, device
 
     # Apply transforms
     train_dataset = TransformedDataset(train_dataset, model_transforms['train'])
-    val_dataset = TransformedDataset(val_dataset, model_transforms['test'])
+    val_dataset = TransformedDataset(val_dataset, model_transforms['test']) if val_dataset else None
 
     # Create data loaders and put model on device
     if using_dist:
@@ -100,12 +108,12 @@ def train_model(model_config, dataset_config, train_dataset, val_dataset, device
         val_sampler = DistributedSampler(val_dataset, shuffle=False)
 
         train_loader = DataLoader(train_dataset, batch_size=model_config['batch_size'], num_workers=1, sampler=train_sampler)
-        val_loader = DataLoader(val_dataset, batch_size=model_config['batch_size'], num_workers=1, sampler=val_sampler)
+        val_loader = DataLoader(val_dataset, batch_size=model_config['batch_size'], num_workers=1, sampler=val_sampler) if val_dataset else None
 
         model = DDP(model, device_ids=[device], output_device=device)
     else:
         train_loader = DataLoader(train_dataset, batch_size=model_config['batch_size'], shuffle=True, num_workers=1)
-        val_loader = DataLoader(val_dataset, batch_size=model_config['batch_size'], shuffle=False, num_workers=1)
+        val_loader = DataLoader(val_dataset, batch_size=model_config['batch_size'], shuffle=False, num_workers=1) if val_dataset else None
     
     # Create criterion
     
@@ -131,6 +139,10 @@ def train_model(model_config, dataset_config, train_dataset, val_dataset, device
     # Get runtime
     metrics['Time to train'] = time.time() - start_time
 
+    # Save outputs on this validation set for stacking ensemble training
+    if save_val_outputs:
+        val_epoch(model, val_loader, criterion, device, save_output=True, model_name=model_config['name'], out_dir=out_dir)
+
     if using_dist:
         return trained.module, metrics
     
@@ -147,8 +159,11 @@ def main(rank, world_size, using_dist, out_dir, model_config, dataset_config, nu
         # Get dataset
         dataset = get_dataset(dataset_config, dataset_download_dir)
 
-        # Train the model using k-fold cross validation and get the training metrics for each fold
-        trained, metrics = train_Kfolds(num_folds, model_config, dataset_config, dataset, rank, out_dir, using_dist, verbose)
+        if num_folds == 1:
+            trained, metrics = train_model(model_config, dataset_config, train_dataset, None, rank, out_dir, using_dist, verbose)
+        else:
+            # Train the model using k-fold cross validation and get the training metrics for each fold
+            trained, metrics = train_Kfolds(num_folds, model_config, dataset_config, dataset, rank, out_dir, using_dist, verbose)
 
     elif dataset_config['name'] == 'bloodmnist':
         # Get dataset
@@ -188,7 +203,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset_config_path', type=str, help='Path to dataset config .yml.', required=True)
     parser.add_argument('--pretrained_path', type=str, help='Path to pre-trained model.pth.')
     parser.add_argument('--use_improvements', action=argparse.BooleanOptionalAction, help='Whether to use the proposed model improvements.')
-    parser.add_argument('--num_folds', type=int, help='Number of folds for cross fold validation if desired. (default=1)', default=1)
+    parser.add_argument('--num_folds', type=int, help='Number of folds for cross fold validation if desired. Make negative to save validation outputs. (default=5)', default=5)
     parser.add_argument('--using_windows', action=argparse.BooleanOptionalAction, help='If using Windows machine for training. Forces --num_gpus to 1')
     parser.add_argument('--num_gpus', type=int, help='Number of GPUs to be used for training. (default=2)', default=2)
     parser.add_argument('--verbose', action=argparse.BooleanOptionalAction, help='Whether to print per epoch metrics during training')

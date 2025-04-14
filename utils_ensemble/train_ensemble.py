@@ -1,4 +1,6 @@
 import torch
+import numpy as np
+from sklearn.metrics import confusion_matrix
 
 
 def train_loop_ensemble(ensemble, base_models, ensemble_config, train_loader, val_loader, criterion, optimizer, device, verbose=False):
@@ -82,6 +84,9 @@ def train_loop_ensemble(ensemble, base_models, ensemble_config, train_loader, va
         correct_val = 0
         total_val = 0
 
+        all_preds = []
+        all_labels = []
+
         with torch.no_grad():
             for images, labels in val_loader:
                 labels = labels.to(device)
@@ -111,7 +116,19 @@ def train_loop_ensemble(ensemble, base_models, ensemble_config, train_loader, va
                 _, preds = outputs.max(1)
                 correct_val += (preds == labels.squeeze(1)).sum().item()
                 total_val += labels.size(0)
-                
+
+                all_preds.extend(preds.cpu().numpy())
+                all_labels.extend(labels.squeeze(1).cpu().numpy())
+        
+        # Calculate macro accuracy
+        all_preds = np.array(all_preds)
+        all_labels = np.array(all_labels)
+        conf_matrix = confusion_matrix(all_preds, all_labels)
+        class_accuracies = np.where(conf_matrix.sum(axis=1) != 0,
+                                    conf_matrix.diagonal() / conf_matrix.sum(axis=1),
+                                    0)
+        macro_accuracy = np.nanmean(class_accuracies) * 100
+
         # Calculate validation metrics
         avg_val_loss = val_loss / len(val_loader)
         val_accuracy = (correct_val / total_val) * 100
@@ -126,11 +143,11 @@ def train_loop_ensemble(ensemble, base_models, ensemble_config, train_loader, va
         if verbose:
             print(f'Epoch [{epoch + 1}/{ensemble_config['epochs']}]:')
             print(f'Train Accuracy: {train_accuracy:.4f}, Train Loss: {avg_train_loss:.4f}')
-            print(f'Validation Accuracy: {val_accuracy:.4f}, Validation Loss: {avg_val_loss:.4f}')
+            print(f'Validation Accuracy: {val_accuracy:.4f}, Validation Loss: {avg_val_loss:.4f}, Macro accuracy: {macro_accuracy:.4f}')
 
-        if val_accuracy > best_val_accuracy:
-            best_val_accuracy = val_accuracy
-            if val_accuracy > 91.5:
+        if macro_accuracy > best_val_accuracy:
+            best_val_accuracy = macro_accuracy
+            if macro_accuracy > 91.5:
                 best_ensemble = ensemble
 
     

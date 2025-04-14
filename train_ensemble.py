@@ -10,7 +10,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, random_split, ConcatDataset
 from sklearn.model_selection import KFold
 
-from datasets import get_dataset, EnsembleDataset
+from datasets import get_dataset, MetaLearnerDataset
 from utils.common import save_models, save
 from utils_ensemble.common import get_ensemble
 from utils_ensemble.train_ensemble import train_loop_ensemble
@@ -83,7 +83,7 @@ def train_ensemble(ensemble_config, dataset_config, train_dataset, val_dataset, 
     ensemble, base_models, base_models_transforms = get_ensemble(ensemble_config, dataset_config['n_classes'], device)
 
     # Initialise data loaders
-    train_dataset = EnsembleDataset(train_dataset, [transform['train'] for transform in base_models_transforms])
+    train_dataset = MetaLearnerDataset(train_dataset, [transform['train'] for transform in base_models_transforms])
     train_loader = DataLoader(train_dataset, batch_size=ensemble_config['batch_size'], shuffle=True, num_workers=1)
     
     val_dataset = EnsembleDataset(val_dataset, [transform['test'] for transform in base_models_transforms])
@@ -118,6 +118,7 @@ def main(device, out_dir, ensemble, dataset_config, num_folds, dataset_download_
     if dataset_config['name'] == 'chula':
         # Get dataset
         dataset = get_dataset(dataset_config, dataset_download_dir)
+        dataset = MetaLearnerDataset(dataset_paths, dataset)
 
         # Train the ensemble using k-fold cross validation and get the training metrics for each fold
         trained, metrics = train_Kfolds(num_folds, ensemble, dataset_config, dataset, device, out_dir, verbose)

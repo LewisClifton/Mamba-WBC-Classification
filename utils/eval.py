@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.metrics import confusion_matrix as sk_confusion_matrix, precision_recall_fscore_support
+from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
 import time
 
 import torch
@@ -19,7 +19,7 @@ def get_eval_metrics(preds, labels):
 
     # Precision, recall, F1-score
     precision, sensitivity, f1, _ = precision_recall_fscore_support(labels, preds, average='weighted', zero_division=0)
-    conf_matrix = sk_confusion_matrix(labels, preds)
+    conf_matrix = confusion_matrix(labels, preds)
 
     # Compute per-class accuracy and macro accuracy
     class_accuracies = np.where(conf_matrix.sum(axis=1) != 0,

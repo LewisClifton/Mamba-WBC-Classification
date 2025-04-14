@@ -4,6 +4,7 @@ import torchvision.transforms as transforms
 from PIL import Image
 import os
 import argparse
+import numpy as np
 
 # Execute script from project root
 
@@ -18,6 +19,7 @@ def center_crop(image, crop_size=(175, 175)):
 
 
 def center_crop_all(images_dir):
+    print('Cropping images...')
     files = os.listdir(images_dir)
 
     for file in files:
@@ -29,31 +31,31 @@ def center_crop_all(images_dir):
 
 
 def clean_labels(labels_path):
-        # Read labels
-        labels = pd.read_csv(labels_path)
+    print('Cleaning labels...')
 
-        # Remove and rename columns
-        labels = labels[['Order.jpg', 'Summary by 5 experts']].rename(columns={'Order.jpg': 'name', 'Summary by 5 experts': 'label'})
-        
-        # Fix typos in labels
-        corrected_labels = {
-            'Eosinophill': 'Eosinophil',
-            'Monocyte ': 'Monocyte',
-            'SNE\t': 'SNE',
-            'Myeolblast': 'Myeloblast',
-            'Atypical lymphocyte': 'Atypical Lymphocyte', 
-            'Smudge cell': 'Smudge Cell',
-            'Giant platelet': 'Giant Platelet'
-        }
-        labels['label'] = labels['label'].replace(corrected_labels).str.strip()
+    # Read labels
+    labels = pd.read_csv(labels_path)
 
-        # Only keep required wbc types
-        # labels = labels[labels['label'].isin(wbc_types)]
+    # Remove and rename columns
+    labels = labels[['Order.jpg', 'Summary by 5 experts']].rename(columns={'Order.jpg': 'name', 'Summary by 5 experts': 'label'})
+    
+    # Fix typos in labels
+    corrected_labels = {
+        'Eosinophill': 'Eosinophil',
+        'Monocyte ': 'Monocyte',
+        'SNE\t': 'SNE',
+        'Myeolblast': 'Myeloblast',
+        'Atypical lymphocyte': 'Atypical Lymphocyte', 
+        'Smudge cell': 'Smudge Cell',
+        'Giant platelet': 'Giant Platelet'
+    }
+    labels['label'] = labels['label'].replace(corrected_labels).str.strip()
 
-        # Remove rows where the label is "LQI"
-        labels = labels[labels['label'] != 'LQI']
+    # Only keep required wbc types
+    wbc_types=['SNE', 'Lymphocyte', 'Monocyte', 'BNE', 'Eosinophil', 'Myeloblast', 'Basophil', 'Metamyelocyte']
+    labels = labels[labels['label'].isin(wbc_types)]
 
-        return labels
+    return labels
 
 
 def train_val_test_split(dataset, test_frac=0.2, val_frac=0.1):
@@ -68,9 +70,8 @@ def train_val_test_split(dataset, test_frac=0.2, val_frac=0.1):
 
     return train, val, test
 
-
-
 def train_test_split(dataset, frac=0.2):
+    print('Creating train-test split...')
     test = dataset.sample(frac=frac, random_state=41)  # 20% of the data
     train = dataset.drop(test.index)
 
@@ -78,19 +79,17 @@ def train_test_split(dataset, frac=0.2):
 
 
 def augment(images_dir):
+    print('Starting augmentation...')
+
     # Augmentation transform
     transform = transforms.Compose([
-        transforms.RandomRotation(degrees=360),
         transforms.RandomAffine(
-            degrees=0,
+            degrees=360,
             translate=(0.1, 0.1),
             scale=(0.9, 1.1),
-            shear=5
         ),
         transforms.RandomHorizontalFlip(p=0.5),
         transforms.RandomVerticalFlip(p=0.5),                
-        transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.05, hue=0.02), 
-        transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 1.0)),
     ])
 
     # Create augmented directory
@@ -104,10 +103,17 @@ def augment(images_dir):
     counter = 5001
     augmented_rows = []
 
+    median = int(np.median(chula_train['label'].value_counts().values))
+
     for label, count in chula_train['label'].value_counts().items():
-        diff = 500 - count  # How many new samples we need
-        if diff <= 0: 
+        diff = 1000 - count
+
+        # diff = int(count * 1.50)
+
+        if diff <= 0:
+            print(f'Label: {label}, Original {count} Augmentations: {0}, Total: {count+diff}')
             continue
+        print(f'Label: {label}, Augmentations: {diff}, Total: {count+diff}')
 
         # Get all images of this label
         label_images = chula_train[chula_train['label'] == label]['name'].tolist()
@@ -117,7 +123,6 @@ def augment(images_dir):
             
             image_name = label_images[i % num_images] 
             image_path = os.path.join(images_dir, image_name)
-            print(image_name)
 
             # Open and center crop the original image
             image = Image.open(image_path)
@@ -138,8 +143,6 @@ def augment(images_dir):
     augmented_df = pd.DataFrame(augmented_rows)
     chula_augmented_train = pd.concat([chula_train, augmented_df], ignore_index=True)
 
-    print(chula_augmented_train['label'].value_counts())
-
     # Shuffle dataset
     chula_augmented_train = chula_augmented_train.sample(frac=1, random_state=42).reset_index(drop=True)
 
@@ -159,24 +162,22 @@ if __name__ == '__main__':
     images_dir = args.images_dir
     labels_dir = args.labels_dir
 
-    # Clean labels and save
-    labels_path = os.path.join(labels_dir, 'labels.csv')
-    labels = clean_labels(labels_path)
-    labels.to_csv(os.path.join(labels_dir, 'labels_clean.csv'), index=False)
+    # # Clean labels and save
+    # labels_path = os.path.join(labels_dir, 'labels.csv')
+    # labels = clean_labels(labels_path)
+    # labels.to_csv(os.path.join(labels_dir, 'labels_clean.csv'), index=False)
 
-    # Center crop images
-    center_crop_all(images_dir)
+    # # # Center crop images
+    # center_crop_all(images_dir)
 
-    # Split labels into train and test set save
-    chula_train, chula_test = train_test_split(labels)
-    chula_train.to_csv(os.path.join(labels_dir, 'labels_train.csv'), index=False)
-    chula_test.to_csv(os.path.join(labels_dir, 'labels_test.csv'), index=False)
+    # # # Split labels into train and test set save
+    # chula_train, chula_test = train_test_split(labels)
+    # chula_train.to_csv(os.path.join(labels_dir, 'labels_train.csv'), index=False)
+    # chula_test.to_csv(os.path.join(labels_dir, 'labels_test.csv'), index=False)
 
     # Apply augmentations to training data to reduce imbalance and save their labels
+
+    chula_train = pd.read_csv(os.path.join(labels_dir, 'labels_train.csv')) 
+    
     chula_augmented_train = augment(images_dir)
     chula_augmented_train.to_csv(os.path.join(labels_dir, 'labels_train_augmented.csv'), index=False)
-
-    # Ensemble training data
-    chula_train, chula_test = train_test_split(chula_augmented_train)
-    chula_train.to_csv('/user/work/js21767/Project/data/labels_ensemble_train.csv', index=False)
-    chula_test.to_csv('/user/work/js21767/Project/data/labels_ensemble_val.csv', index=False)

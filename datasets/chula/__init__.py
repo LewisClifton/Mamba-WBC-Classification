@@ -51,22 +51,18 @@ class ChulaWBC5000(Dataset):
         return self.wbc_type_to_class[label]
 
     def __getitem__(self, idx):
+
+        image_name = self.labels.iloc[idx]['name']
         
-        image_path = os.path.join(self.images_path, self.labels.iloc[idx]['name'])
+        image_path = os.path.join(self.images_path, image_name)
         image = Image.open(image_path)
 
         label = self.labels.iloc[idx]['label']
         label = self.get_class_from_wbc_type(label)
 
         label = torch.tensor(label, dtype=torch.long).unsqueeze(0)
-
-        # if self.test: 
-        #     return image, label, self.labels.iloc[idx]['name']
-
-        if len(self.wbc_types) == 2:
-            label = label.float().unsqueeze(1)
         
-        return image, label
+        return image, label, image_name
     
     def __len__(self):
         return len(self.labels)
