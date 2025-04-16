@@ -24,17 +24,22 @@ def main(out_dir, ensemble_config, dataset_config, dataset_download_dir):
 
     # Initialise model
     stacking_model, base_models, base_models_transforms = get_ensemble(ensemble_config, dataset_config['n_classes'], device)
-    stacking_model.eval()
 
-    # Initialise data loader
+    # Ensures data is fed to models in a consistent order
+    if 'base_model_order' in ensemble_config:
+        base_model_order = ensemble_config['base_model_order']
+    else:
+        base_model_order = base_models.keys()
+
+    # Initialise dataset
     test_dataset = get_dataset(dataset_config, dataset_download_dir, test=True)
-    test_dataset = EnsembleDataset(test_dataset, [transform['test'] for transform in base_models_transforms], test=False) # True
+    test_dataset = EnsembleDataset(test_dataset, [base_models_transforms[base_model]['test'] for base_model in base_model_order], test=True)
 
-    # Create data loaders
+    # Create data loader
     test_loader = DataLoader(test_dataset, batch_size=ensemble_config['batch_size'], shuffle=False, num_workers=1)
 
     # Evaluate the model
-    metrics = evaluate_model(ensemble_config['ensemble_mode'], base_models, test_loader, dataset_config['name'], device, stacking_model=stacking_model)
+    metrics = evaluate_model(ensemble_config['ensemble_mode'], base_models, base_model_order, test_loader, dataset_config['name'], device, stacking_model=stacking_model)
 
     # Create output directory for log
     date = datetime.now().strftime(f'%Y_%m_%d_%p%I_%M_ensemble')

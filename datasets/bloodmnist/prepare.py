@@ -16,19 +16,14 @@ def augment(out_dir):
     
     # Augmentation transform
     transform = transforms.Compose([
-        transforms.RandomRotation(degrees=360),        
         transforms.RandomAffine(
-            degrees=0,                              
-            translate=(0.1, 0.1),                    
-            scale=(0.9, 1.1),                   
-            shear=5                               
+            degrees=360,
+            translate=(0.1, 0.1),
+            scale=(0.9, 1.1),
         ),
         transforms.RandomHorizontalFlip(p=0.5),
-        transforms.RandomHorizontalFlip(p=0.5),                
-        transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.05, hue=0.02), 
-        transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 1.0)),
+        transforms.RandomVerticalFlip(p=0.5),                
     ])
-
 
     dataset = BloodMNIST(split='train', download=True, size=224, root='/user/work/js21767/')
  
@@ -45,7 +40,7 @@ def augment(out_dir):
     for label, count in value_counts.items():
         diff = 2000 - count
         if diff <= 0:
-            continue  # Skip if already has 2000+ images
+            continue 
 
         # Get all images of this label
         label_indices = np.where(dataset.labels[:, 0] == label)[0]

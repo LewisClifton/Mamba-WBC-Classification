@@ -1,15 +1,17 @@
+import time
+
 import torch
 import torch.nn.functional as F
 
 from utils.eval import get_eval_metrics
 
 
-def ensemble_prediction_weighted_average(outputs, num_images, num_classes, device):
+def ensemble_prediction_weighted_average(outputs, num_images, device):
     weights = torch.tensor([91.32706374085684, 91.53605015673982, 93.10344827586206, 91.43155694879833, 92.99895506792059], dtype=torch.float32, device=device) # "localmamba mambavision swin vim vmamba"
-    weights /= weights.sum()  # Normalize weights to sum to 1
+    weights /= weights.sum()
 
     # Collect predictions from all models
-    predictions = torch.zeros((len(outputs), num_images, num_classes), device=device)
+    predictions = torch.zeros((len(outputs), outputs[0].size(0), outputs[0].size(1)), device=device)
     
     for i, output in enumerate(outputs):
         predictions[i] = F.softmax(output, dim=1) * weights[i]  # Apply weight to probabilities
@@ -20,10 +22,10 @@ def ensemble_prediction_weighted_average(outputs, num_images, num_classes, devic
     return torch.argmax(weighted_predictions, dim=1)  # Get final class predictions
 
 
-def ensemble_prediction_average(outputs, num_images, num_classes, device):
-
+def ensemble_prediction_average(outputs, num_images, device):
+  
     # Collect predictions from all models
-    predictions = torch.zeros((len(outputs), num_images, num_classes)).to(device)
+    predictions = torch.zeros((len(outputs), outputs[0].size(0), outputs[0].size(1))).to(device)
     for i, output in enumerate(outputs):
         predictions[i] = F.softmax(output, dim=1)  # Convert logits to probabilities
 
@@ -43,7 +45,19 @@ def ensemble_prediction_majority(outputs, num_images, device):
     return torch.mode(predictions, dim=0).values
 
 
-def evaluate_model(ensemble_mode, base_models, test_loader, dataset_name, device, stacking_model=None):
+def ensemble_stacking(outputs, stacking_model, device):
+
+    # For each base model, compute the output for the entire batch of images.
+    base_models_outputs = torch.cat(base_models_outputs, dim=1) 
+    base_models_outputs = base_models_outputs.to(device)
+
+    stacking_model = stacking_model.to(device)
+    outputs = stacking_model(base_models_outputs)
+
+    return torch.argmax(outputs, dim=1)
+
+
+def evaluate_model(ensemble_mode, base_models, base_model_order, test_loader, dataset_name, device, stacking_model=None):
     """
     Evaluate a trained model on a test dataset and report detailed memory metrics.
 
@@ -70,6 +84,9 @@ def evaluate_model(ensemble_mode, base_models, test_loader, dataset_name, device
     total_memory = 0  # Track cumulative memory usage
     num_batches = 0   # Count number of batches
 
+    # Track time
+    start_time = time.time()
+
     # Get test set results
     with torch.no_grad():
         for images, labels, _ in test_loader:
@@ -77,8 +94,10 @@ def evaluate_model(ensemble_mode, base_models, test_loader, dataset_name, device
             labels = labels.to(device)
 
             base_models_outputs = []
-            for base_model, image in zip(base_models, images):
+            for base_model_name, image in zip(base_model_order, images):
                 image = image.to(device)
+
+                base_model = base_models[base_model_name]
                 base_model.to(device)
 
                 with torch.no_grad():
@@ -89,13 +108,7 @@ def evaluate_model(ensemble_mode, base_models, test_loader, dataset_name, device
 
             # Get the predictions based on ensemble mode
             if ensemble_mode == 'stacking':
-                # For each base model, compute the output for the entire batch of images.
-                base_models_outputs = torch.cat(base_models_outputs, dim=1) 
-                base_models_outputs = base_models_outputs.to(device)
-
-                stacking_model = stacking_model.to(device)
-                outputs = stacking_model(base_models_outputs)
-                outputs = torch.argmax(outputs, dim=1)
+                outputs = ensemble_stacking(base_models_outputs, stacking_model, device)
 
             elif ensemble_mode == 'average':
                 outputs = ensemble_prediction_average(base_models_outputs, labels.shape[0], device)
@@ -126,18 +139,23 @@ def evaluate_model(ensemble_mode, base_models, test_loader, dataset_name, device
             total_memory += batch_memory  # Accumulate total memory
             num_batches += 1  # Increment batch count
 
+    # Runtime
+    runtime = time.time() - start_time
+
     # Compute additional memory metrics
     avg_memory = total_memory / num_batches if num_batches > 0 else 0  # Average memory per batch
     num_images = len(all_labels)  # Total test images
     memory_per_image = max_memory / num_images if num_images > 0 else 0  # Memory per image
 
     metrics = get_eval_metrics(all_preds, all_labels)
+    metrics['Time to evaluate'] = runtime
+    metrics['Throughput'] = num_images / runtime
     metrics['Peak GPU Memory Usage (MB)'] = max_memory
     metrics['Average GPU Memory Usage per Batch (MB)'] = avg_memory
     metrics['Memory Usage per Image (MB)'] = memory_per_image
 
-    if dataset_name == "chula":
-        metrics['BNE images misclassified as SNE'] = misclassified_bne
-        metrics['SNE images misclassified as BNE'] = misclassified_sne
+    # if dataset_name == "chula":
+    #     metrics['BNE images misclassified as SNE'] = misclassified_bne
+    #     metrics['SNE images misclassified as BNE'] = misclassified_sne
 
     return metrics

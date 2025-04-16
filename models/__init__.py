@@ -40,7 +40,7 @@ def select_model(model_config, num_classes, device):
     elif model_type == 'meta_learner':
         from .meta_learner import get
 
-        model, transform = get(num_base_models=model_config['num_base_models'], num_classes=num_classes, pretrained_model_path=pretrained_model_path)
+        model, transform = get(num_base_models=model_config['n_base_models'], num_classes=num_classes, pretrained_model_path=pretrained_model_path)
 
 
     model = model.to(device)

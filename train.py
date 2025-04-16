@@ -231,6 +231,12 @@ if __name__ == '__main__':
     with open(dataset_config_path, 'r') as yml:
         dataset_config = yaml.safe_load(yml)
 
+    # If training the ensemble meta learner save the order of base models inputs to the meta-learner config
+    if 'base_model_outputs_paths' in dataset_config:
+        model_config['base_models_order'] = [base_model['name'] for base_model in dataset_config['base_model_outputs_paths']]
+        with open(model_config_path, 'w') as yml:
+            yaml.dump(model_config, yml)
+
     # Add the pretrained model to the model config
     if pretrained_path:
         model_config['pretrained_model_path'] = pretrained_path

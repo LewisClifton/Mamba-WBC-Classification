@@ -115,8 +115,8 @@ def evaluate_model(model, test_loader, dataset_name, device):
     metrics['Average GPU Memory Usage per Batch (MB)'] = avg_memory
     metrics['Memory Usage per Image (MB)'] = memory_per_image
 
-    if dataset_name == "chula":
-        metrics['BNE images misclassified as SNE'] = misclassified_bne
-        metrics['SNE images misclassified as BNE'] = misclassified_sne
+    # if dataset_name == "chula":
+    #     metrics['BNE images misclassified as SNE'] = misclassified_bne
+    #     metrics['SNE images misclassified as BNE'] = misclassified_sne
 
     return metrics

@@ -37,6 +37,7 @@ class EnsembleDataset(Dataset):
 
     def __getitem__(self, idx):
         images, label, image_name = self.dataset[idx]
+
         transformed_images = [transform(images) for transform in self.base_model_transforms]
         return transformed_images, label, image_name
     
@@ -58,7 +59,7 @@ class MetaLearnerDataset(Dataset):
         for model_outputs_path in model_outputs_paths:
             
             # Get this model outputs 
-            model_outputs_df = pd.read_csv(model_outputs_path) # (image_name, model_x_out_1, model_x_out_2, ... , model_x_out_8)
+            model_outputs_df = pd.read_csv(model_outputs_path['trained_model_path']) # (image_name, model_x_out_1, model_x_out_2, ... , model_x_out_8)
 
             if all_model_outputs_df is None:
                 all_model_outputs_df = model_outputs_df
