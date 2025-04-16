@@ -49,8 +49,6 @@ class MetaLearnerDataset(Dataset):
             transforms_list (list): List of transformations (one per model).
         """
 
-        print('test')
-
          # image dataset
         self.dataset = dataset # (image, true_label, image_name)
 
@@ -69,7 +67,6 @@ class MetaLearnerDataset(Dataset):
                 all_model_outputs_df = pd.merge(all_model_outputs_df, model_outputs_df, on="name", how="inner")
 
         self.all_model_outputs_df = all_model_outputs_df # (image_name, model_x_out_1, model_x_out_2, ... , model_x_out_8, model_y_out_1, model_y_out_2, ... , model_y_out_8)
-
 
     def __len__(self):
         return len(self.dataset)

@@ -52,7 +52,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--out_dir', type=str, help='Path to directory where model evaluation log will be saved (default=cwd)', default='.')
     parser.add_argument('--ensemble_config_path', type=str, help='Path to ensemble config .yml', required=True)
-    parser.add_argument('--stacking_model_path', type=str, help='Path to the trained stacking ensemble .pth to be evaluated')
+    parser.add_argument('--meta_learner_path', type=str, help='Path to the trained stacking ensemble .pth to be evaluated')
     parser.add_argument('--dataset_config_path', type=str, help='Path to dataset .yml used for evaluation', required=True)
     parser.add_argument('--dataset_download_dir', type=str, help='Directory to download dataset to')
 
@@ -69,6 +69,6 @@ if __name__ == "__main__":
         dataset_config = yaml.safe_load(yml)
 
     if ensemble_config['ensemble_mode'] == 'stacking':
-        ensemble_config['stacking_model_path'] = args.stacking_model_path
+        ensemble_config['meta_learner_path'] = args.meta_learner_path
 
     main(out_dir, ensemble_config, dataset_config, dataset_download_dir)

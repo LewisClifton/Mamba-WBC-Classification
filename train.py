@@ -156,16 +156,14 @@ def main(rank, world_size, using_dist, out_dir, model_config, dataset_config, nu
     # Setup GPU network if required
     if using_dist: setup_dist(rank, world_size)
 
-    print('start')
-
     # Train using specified dataset with/without k-fold cross validation
     if dataset_config['name'] == 'chula':
         # Get dataset
         dataset = get_dataset(dataset_config, dataset_download_dir)
 
         if num_folds == 1:
-            print('start1')
-            trained, metrics = train_model(model_config, dataset_config, train_dataset, None, rank, out_dir, using_dist, verbose)
+            trained, metrics = train_model(model_config, dataset_config, dataset, None, rank, out_dir, using_dist, verbose)
+            save_models(out_dir, trained, model_config['name'], metrics)
         else:
             # Train the model using k-fold cross validation and get the training metrics for each fold
             trained, metrics = train_Kfolds(num_folds, model_config, dataset_config, dataset, rank, out_dir, using_dist, verbose)
@@ -181,7 +179,7 @@ def main(rank, world_size, using_dist, out_dir, model_config, dataset_config, nu
 
         # Train model only once (i.e. without k-fold cross validation)
         trained, metrics = train_model(model_config, dataset_config, train_dataset, val_dataset, rank, out_dir, using_dist, verbose)
-        save_models(out_dir, trained, model_config['name'], metrics, 2)
+        save_models(out_dir, trained, model_config['name'], metrics)
 
     # Can add more datasets here..
     elif dataset_config['name'] == 'foo':

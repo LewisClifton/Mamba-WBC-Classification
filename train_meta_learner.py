@@ -12,7 +12,7 @@ from sklearn.model_selection import KFold
 
 from datasets import get_dataset, MetaLearnerDataset
 from utils.common import save_models, save
-from utils_ensemble.common import get_meta_learner
+from utils_ensemble.common import get_ensemble
 from utils_ensemble.train_meta_learner import train_loop_meta_learner
 from models import init_model
 
@@ -81,7 +81,7 @@ def train_meta_learner(meta_learner_config, dataset_config, train_dataset, val_d
     print('Training...')
 
     # Initialise model
-    meta_learner, _ = get_meta_learner(meta_learner_config, dataset_config['n_classes'], device)
+    meta_learner, _ = get_ensemble(meta_learner_config, dataset_config['n_classes'], device)
 
     # Initialise data loaders
     train_dataset = MetaLearnerDataset(train_dataset, [transform['train'] for transform in base_models_transforms])

@@ -1,37 +1,33 @@
 import torch
 
 from models import init_model
-from models.meta_learner import MetaLearner
 
 
-def get_meta_learner(meta_learner_config, num_classes, device):
+def get_ensemble(ensemble_config, num_classes, device):
 
     base_models = []
     base_models_transforms = []
 
-    stacking = False#meta_learner_config['meta_learner_mode'] == 'stacking'
+    for base_model_config in ensemble_config['models']:
 
-    for base_model_config in meta_learner_config['models']:
-
-        if stacking: 
-            base_model_config['pretrained_model_path'] = base_model_config['trained_model_path']
-            base_model, base_model_transform = init_model(base_model_config, None, device)
-
-        else:
-
-            base_model, base_model_transform = init_model(base_model_config, num_classes, device)
-            base_model.load_state_dict(torch.load(base_model_config['trained_model_path'], map_location=device), strict=False)
+        base_model, base_model_transform = init_model(base_model_config, num_classes, device)
+        base_model.load_state_dict(torch.load(base_model_config['trained_model_path'], map_location=device), strict=False)
 
         base_model.eval()
 
         base_models.append(base_model)
         base_models_transforms.append(base_model_transform)
 
-    meta_learner = meta_learner(base_models, num_classes, device)
+   
 
-    if 'stacking_model_path' in meta_learner_config:
-        meta_learner.load_state_dict(torch.load(meta_learner_config['stacking_model_path'], map_location="cpu"))
+    if ensemble_config['ensemble_mode'] == 'stacking':
 
-    meta_learner = meta_learner.to(device)
+        meta_learner, _ = init_model(ensemble_config, num_classes, device)
+
+        if 'meta_learner_path' in ensemble_config:
+            meta_learner.load_state_dict(torch.load(ensemble_config['meta_learner_path'], map_location="cpu"))
+            meta_learner = meta_learner.to(device)
+
+        return meta_learner, base_models, base_models_transforms
     
-    return meta_learner, base_models, base_models_transforms
+    return None, base_models, base_models_transforms

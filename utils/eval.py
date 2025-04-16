@@ -70,7 +70,7 @@ def evaluate_model(model, test_loader, dataset_name, device):
     
     # Get test set results
     with torch.no_grad():
-        for images, labels in test_loader:
+        for images, labels, _ in test_loader:
             torch.cuda.reset_peak_memory_stats(device)  # Reset memory tracking
             images, labels = images.to(device), labels.to(device)
 
