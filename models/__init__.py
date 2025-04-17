@@ -28,8 +28,8 @@ def select_model(model_config, num_classes, device):
         from .localmamba import get
         model, transform = get(num_classes=num_classes, pretrained_model_path=pretrained_model_path)
 
-    elif model_type == 'complete':
-        from .neutrophils import get
+    elif model_type == 'hybrid':
+        from .hybrid import get
     
         base_model_config = model_config['base_model_config']
         base_model_config['num_classes'] = None # so head is removed

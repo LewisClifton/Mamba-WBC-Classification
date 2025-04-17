@@ -234,6 +234,7 @@ if __name__ == '__main__':
     # If training the ensemble meta learner save the order of base models inputs to the meta-learner config
     if 'base_model_outputs_paths' in dataset_config:
         model_config['base_models_order'] = [base_model['name'] for base_model in dataset_config['base_model_outputs_paths']]
+        model_config['n_base_models'] = len(dataset_config['base_model_outputs_paths'])
         with open(model_config_path, 'w') as yml:
             yaml.dump(model_config, yml)
 

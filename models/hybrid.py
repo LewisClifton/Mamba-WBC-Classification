@@ -10,7 +10,7 @@ import torch.nn.functional as F
 from torchvision import transforms
 
 
-TRANSFORM_NEUTROPHILS = {    
+TRANSFORM_HYBRID = {    
     'train': transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.CenterCrop(224),
@@ -27,7 +27,7 @@ TRANSFORM_NEUTROPHILS = {
 
 
 # Two-tier model making use of a bespoke neutrophils classifier to try to improve results
-class CompleteClassifier(nn.Module):
+class HybridClassifier(nn.Module):
     def __init__(self, base_model, num_classes):
         super().__init__()
 
@@ -140,7 +140,7 @@ class CompleteClassifier(nn.Module):
 def get(base_model, num_classes, pretrained_model_path):
 
     # Build the model
-    model = CompleteClassifier(base_model, num_classes)
+    model = HybridClassifier(base_model, num_classes)
 
     if pretrained_model_path is not None:
         model.load_state_dict(torch.load(pretrained_model_path, map_location="cpu"), strict=False)

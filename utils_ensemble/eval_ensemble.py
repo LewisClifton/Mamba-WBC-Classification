@@ -6,14 +6,14 @@ import torch.nn.functional as F
 from utils.eval import get_eval_metrics
 
 
-def ensemble_prediction_weighted_average(outputs, num_images, device):
+def ensemble_prediction_weighted_average(base_models_outputs, num_images, device):
     weights = torch.tensor([91.32706374085684, 91.53605015673982, 93.10344827586206, 91.43155694879833, 92.99895506792059], dtype=torch.float32, device=device) # "localmamba mambavision swin vim vmamba"
     weights /= weights.sum()
 
     # Collect predictions from all models
-    predictions = torch.zeros((len(outputs), outputs[0].size(0), outputs[0].size(1)), device=device)
+    predictions = torch.zeros((len(base_models_outputs), base_models_outputs[0].size(0), base_models_outputs[0].size(1)), device=device)
     
-    for i, output in enumerate(outputs):
+    for i, output in enumerate(base_models_outputs):
         predictions[i] = F.softmax(output, dim=1) * weights[i]  # Apply weight to probabilities
 
     # Weighted sum of predictions
@@ -22,11 +22,11 @@ def ensemble_prediction_weighted_average(outputs, num_images, device):
     return torch.argmax(weighted_predictions, dim=1)  # Get final class predictions
 
 
-def ensemble_prediction_average(outputs, num_images, device):
+def ensemble_prediction_average(base_models_outputs, num_images, device):
   
     # Collect predictions from all models
-    predictions = torch.zeros((len(outputs), outputs[0].size(0), outputs[0].size(1))).to(device)
-    for i, output in enumerate(outputs):
+    predictions = torch.zeros((len(base_models_outputs), base_models_outputs[0].size(0), base_models_outputs[0].size(1))).to(device)
+    for i, output in enumerate(base_models_outputs):
         predictions[i] = F.softmax(output, dim=1)  # Convert logits to probabilities
 
     # Average the predictions across models
@@ -34,18 +34,18 @@ def ensemble_prediction_average(outputs, num_images, device):
     return torch.argmax(predictions, dim=1)
 
 
-def ensemble_prediction_majority(outputs, num_images, device):
+def ensemble_prediction_majority(base_models_outputs, num_images, device):
 
     # Collect predictions from all models
-    predictions = torch.zeros((len(outputs), num_images)).to(device)
+    predictions = torch.zeros((len(base_models_outputs), num_images)).to(device)
 
-    for i, output in enumerate(outputs):
+    for i, output in enumerate(base_models_outputs):
         predictions[i] = torch.argmax(output, dim=1)
 
     return torch.mode(predictions, dim=0).values
 
 
-def ensemble_stacking(outputs, stacking_model, device):
+def ensemble_stacking(base_models_outputs, stacking_model, device):
 
     # For each base model, compute the output for the entire batch of images.
     base_models_outputs = torch.cat(base_models_outputs, dim=1) 
