@@ -2,7 +2,7 @@ name: chula
 images_dir: [Path to WBC 5000 dir]
 train_labels_path: [Path to labels_train.csv]
 test_labels_path: [Path to labels_test.csv]
-n_classes: 8 # Adjust to match the number of classes
+num_classes: 8 # Adjust to match the number of classes
 classes:
 - "SNE"
 - "Lymphocyte"

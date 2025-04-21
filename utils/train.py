@@ -10,7 +10,7 @@ import torch.nn as nn
 
 def average_across_gpus(list_, device):
     """
-    # Average the items in a list across all GPUs used in the process group
+    Average the items in a list across all GPUs used in the process group (if using multiple gpus)
 
     Args:
         list_(list[object]): List of objects to be averaged over each GPU
@@ -20,12 +20,28 @@ def average_across_gpus(list_, device):
         list[object]: List averaged over each GPU
     """
     tensor = torch.tensor(list_).to(device)
-    dist.all_reduce(tensor, op=dist.ReduceOp.SUM) # GLOO doesn't support AVG :(
+    dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
     tensor /= dist.get_world_size()
     return tensor.tolist()
 
 
-def train_epoch(model, train_loader, criterion, optimizer, device):
+def train_epoch(model, train_loader, criterion, optimiser, device):
+    """
+    Train set epoch
+
+    Args:
+        model(torch.nn.Module): Model to be trained
+        train_loader(torch.utils.data.DataLoader): Training data data loader
+        criterion(torch.utils.data.DataLoader): Validation data data loader
+        optimiser(torc.optim): Optimiser e.g AdamW
+        device(int): Number of epochs to train for
+
+    Returns:
+        nn.Module: Model after training epoch
+        float: Average train set loss during epoch
+        float: Average train set accuracy during epoch
+    """
+
     train_loss = 0.0
     correct_train = 0
     total_train = 0
@@ -39,10 +55,10 @@ def train_epoch(model, train_loader, criterion, optimizer, device):
         # Calculate loss    
         loss = criterion(outputs, labels.squeeze(1))
 
-        # Backward pass and optimization
-        optimizer.zero_grad()
+        # Backward pass and optimisation
+        optimiser.zero_grad()
         loss.backward()
-        optimizer.step()
+        optimiser.step()
 
         # Track loss
         train_loss += loss.item()
@@ -64,6 +80,22 @@ def train_epoch(model, train_loader, criterion, optimizer, device):
 
 
 def val_epoch(model, val_loader, criterion, device, save_output=False, model_name=None, out_dir=None):
+    """
+    Validation set epoch
+
+    Args:
+        model(torch.nn.Module): Model to be trained
+        val_loader(torch.utils.data.DataLoader): Training data data loader
+        criterion(torch.utils.data.DataLoader): Validation data data loader
+        device(int): Number of epochs to train for
+        save_output(torch.nn.Module): Training loss function
+        model_name(torch.optim): Training optimiser
+        out_dir(torch.cuda.device): Id of the device to execute this training loop
+
+    Returns:
+        None or (list, list, list): No return if just saving outputs for meta-learner, otherwise (val_accuracy, avg_val_loss, macro_accuracy) 
+    """
+
     val_loss = 0.0
     correct_val = 0
     total_val = 0
@@ -88,7 +120,7 @@ def val_epoch(model, val_loader, criterion, device, save_output=False, model_nam
             # Track loss
             val_loss += loss.item()
 
-            # Track accuracy
+            # Get predictions (use sigmoid threshold if doing binary prediction)
             if isinstance(criterion, nn.BCEWithLogitsLoss):
                 preds = (torch.sigmoid(outputs) > 0.5).long()  
             else:
@@ -100,8 +132,8 @@ def val_epoch(model, val_loader, criterion, device, save_output=False, model_nam
             all_preds.extend(preds.cpu().numpy())
             all_labels.extend(labels.squeeze(1).cpu().numpy())
 
+            # Save outputs from the cross-validation fold
             if save_output:
-
                 if all_outputs is None:
                     all_outputs = outputs.cpu().numpy()
                 else:
@@ -137,13 +169,12 @@ def val_epoch(model, val_loader, criterion, device, save_output=False, model_nam
 
     else:
 
-        # Calculate macro accuracy
+        # Calculate performance metrics
         all_preds = np.array(all_preds)
         all_labels = np.array(all_labels)
         conf_matrix = confusion_matrix(all_preds, all_labels)
         class_accuracies = np.where(conf_matrix.sum(axis=1) != 0,
-                                    conf_matrix.diagonal() / conf_matrix.sum(axis=1),
-                                    0)
+                                    conf_matrix.diagonal() / conf_matrix.sum(axis=1), 0)
         macro_accuracy = np.nanmean(class_accuracies) * 100
                 
         # Calculate validation metrics
@@ -153,7 +184,7 @@ def val_epoch(model, val_loader, criterion, device, save_output=False, model_nam
         return val_accuracy, avg_val_loss, macro_accuracy 
 
 
-def train_loop(model, model_config, train_loader, val_loader, criterion, optimizer, device, using_dist, verbose=False):
+def train_loop(model, model_config, train_loader, val_loader, criterion, optimiser, device, using_dist, verbose=False):
     """
     Training loop used for training a single model
 
@@ -163,7 +194,7 @@ def train_loop(model, model_config, train_loader, val_loader, criterion, optimiz
         val_loader(torch.utils.data.DataLoader): Validation data data loader
         n_epochs(int): Number of epochs to train for
         criterion(torch.nn.Module): Training loss function
-        optimizer(torch.optim): Training optimizer
+        optimiser(torch.optim): Training optimiser
         device(torch.cuda.device): Id of the device to execute this training loop
 
     Returns:
@@ -184,7 +215,7 @@ def train_loop(model, model_config, train_loader, val_loader, criterion, optimiz
         model.train()
         if using_dist:
             train_loader.sampler.set_epoch(epoch)
-        model, avg_train_loss, train_accuracy = train_epoch(model, train_loader, criterion, optimizer, device)
+        model, avg_train_loss, train_accuracy = train_epoch(model, train_loader, criterion, optimiser, device)
 
         train_accuracy_per_epoch.append(train_accuracy)
         train_loss_per_epoch.append(avg_train_loss)

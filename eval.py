@@ -12,25 +12,9 @@ from datasets import get_dataset, TransformedDataset
 from models import init_model
 from utils.common import save_log
 from utils.eval import get_eval_metrics, evaluate_model
-from models.complete import CompleteClassifier
 
 
 torch.backends.cudnn.enabled = True
-
-
-def load_model(model_config, device):
-    # Load model
-    if 'neutrophil_model_path' in model_config: 
-        model = CompleteClassifier(model_config, dataset_config)
-        transforms = model.model_transforms
-    else: 
-        model, transforms = init_model(model_config, dataset_config['n_classes'], device)
-        model.load_state_dict(torch.load(model_config['trained_model_path'], map_location=device))
-
-    model = model.to(device)
-    model.eval()
-
-    return model, transforms
 
 
 def main(model_config, batch_size, dataset_config, dataset_download_dir):
@@ -39,7 +23,7 @@ def main(model_config, batch_size, dataset_config, dataset_download_dir):
     device = 'cuda'
 
     # Load model
-    model, transforms = init_model(model_config, dataset_config['n_classes'], device)
+    model, transforms = init_model(model_config, dataset_config['num_classes'], device)
 
     # Apply transforms
     test_dataset = get_dataset(dataset_config, dataset_download_dir, test=True)
@@ -76,7 +60,6 @@ if __name__ == "__main__":
     batch_size = args.batch_size
     dataset_config_path= args.dataset_config_path
     dataset_download_dir = args.dataset_download_dir
-
     
     with open(model_config_path, 'r') as yml:
         model_config = yaml.safe_load(yml)

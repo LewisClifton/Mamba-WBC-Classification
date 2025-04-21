@@ -5,21 +5,18 @@ from sklearn.utils.class_weight import compute_class_weight
 
 from datasets import get_dataset
 
-# Calculate class weights for a given dataset and save them to the config file for use when training
+def get_class_weights(dataset):
 
-def get_class_weights(dataset, num_classes=None):
+    # Get all the dataset labels
     labels = []    
-
     for _, label in dataset:
         if hasattr(label, 'item'):
-            labels.append(label.item())
+            labels.append(label.item()) # in case dataset returns tensors
         else:
             labels.append(int(label))
     labels = np.array(labels)
 
-    if num_classes is None:
-        num_classes = labels.max() + 1
-
+    # Calculate class weights
     classes = np.arange(num_classes)
     weights = compute_class_weight(class_weight='balanced', classes=classes, y=labels)
     return weights
@@ -45,10 +42,10 @@ if __name__ == '__main__':
     elif dataset_config['name'] == 'chula':
         dataset = get_dataset(dataset_config, dataset_download_dir)
 
+    print(f'Calculating class weights of {dataset_config['name']}.')
     class_weights = get_class_weights(dataset)
 
     print(f'Class weights: {class_weights}')
-
     dataset_config['class_weights'] = class_weights.tolist()
 
     # Save

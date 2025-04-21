@@ -4,6 +4,7 @@ import numpy as np
 from torch.utils.data import Dataset
 import torch
 
+# Dataset wrappaer that applies model transforms to images before they are used for model input
 class TransformedDataset(Dataset):
     def __init__(self, dataset, transform, test=False):
         self.dataset = dataset
@@ -21,6 +22,7 @@ class TransformedDataset(Dataset):
         return len(self.dataset)
     
 
+# Dataset for ensemble which returns image batches using the transform for each base model
 class EnsembleDataset(Dataset):
     def __init__(self, dataset, base_model_transforms, test=False):
         """
@@ -42,6 +44,7 @@ class EnsembleDataset(Dataset):
         return transformed_images, label, image_name
     
 
+# Dataset for the stacking meta learner which comprises the out of fold outputs for each base model
 class MetaLearnerDataset(Dataset):
     def __init__(self, model_outputs_paths, dataset):
         """
@@ -50,7 +53,7 @@ class MetaLearnerDataset(Dataset):
             transforms_list (list): List of transformations (one per model).
         """
 
-         # image dataset
+         # Image dataset
         self.dataset = dataset # (image, true_label, image_name)
 
         all_model_outputs_df = None
@@ -73,11 +76,13 @@ class MetaLearnerDataset(Dataset):
         return len(self.dataset)
 
     def __getitem__(self, idx):
+        # Get the image name and label - we don't need the image itself as the meta learner is just trained on base model outputs
         _, label, image_name = self.dataset[idx]
 
         # Get all the model outputs
         model_outputs = self.all_model_outputs_df[self.all_model_outputs_df['name'] == image_name].drop(columns=['name']).to_numpy().T
 
+        # Convert to tensor
         model_outputs = torch.tensor(model_outputs, dtype=torch.float).squeeze(-1)
 
         return model_outputs, label, image_name 
@@ -85,15 +90,15 @@ class MetaLearnerDataset(Dataset):
 
 def get_dataset(dataset_config, dataset_download_dir, test=False):
     """
-    Initialise fresh model prior to training
+    Get dataset used for training / evaluation.
 
     Args:
-        model_type (string): Model type e.g. 'swin'
-        num_classes (int): Number of WBC classification classes
+        dataset_config (dict): Dataset configuration file
+        dataset_download_dir (string): Directory to download the dataset to if necessary (e.g. for BloodMNIST)
+        test (bool): Whether to return the train split or test split
 
     Returns:
-        torch.nn.Module: Initialised model ready for training
-        dict: Dictionary containing the required data transforms. Use "train"/"val" keys to access training/validation data transforms
+        torch.utils.data.Dataset: Loaded dataset
     """
 
     dataset_name = dataset_config['name']

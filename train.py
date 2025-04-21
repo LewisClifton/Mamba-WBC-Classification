@@ -96,7 +96,7 @@ def train_model(model_config, dataset_config, train_dataset, val_dataset, device
         print('Training...')
 
     # Initialise model
-    model, model_transforms = init_model(model_config, dataset_config['n_classes'], device)
+    model, model_transforms = init_model(model_config, dataset_config['num_classes'], device)
     model = model.to(device)
 
     # Apply transforms
@@ -118,8 +118,7 @@ def train_model(model_config, dataset_config, train_dataset, val_dataset, device
         val_loader = DataLoader(val_dataset, batch_size=model_config['batch_size'], shuffle=False, num_workers=1) if val_dataset else None
     
     # Create criterion
-    
-    if model_config['name'] == 'neutrophils':
+    if dataset_config['num_classes'] == 2:
         criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(dataset_config['class_weights']))
     else:
         if 'class_weights' in model_config.keys():
@@ -127,13 +126,13 @@ def train_model(model_config, dataset_config, train_dataset, val_dataset, device
         else:
             criterion = nn.CrossEntropyLoss()
 
-    # Create optimizer
-    optimizer = optim.AdamW(model.parameters(), lr=model_config['learning_rate'], weight_decay=model_config['optim_weight_decay'])
+    # Create optimiser
+    optimiser = optim.AdamW(model.parameters(), lr=model_config['learning_rate'], weight_decay=model_config['optim_weight_decay'])
 
     start_time = time.time()
 
     # Train the model
-    trained, metrics = train_loop(model, model_config, train_loader, val_loader, criterion, optimizer, device, using_dist, verbose)
+    trained, metrics = train_loop(model, model_config, train_loader, val_loader, criterion, optimiser, device, using_dist, verbose)
 
     if device in [0, 'cuda:0']:
         print('Done.')

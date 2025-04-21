@@ -1,2 +1,2 @@
 name: bloodmnist
-n_classes: 8
+num_classes: 8

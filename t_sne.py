@@ -12,19 +12,25 @@ from torch.utils.data import DataLoader
 
 from datasets import get_dataset, TransformedDataset
 from models import init_model
-from models.complete import CompleteClassifier
 from utils.eval import evaluate_model
 
 
-def load_model(model_config, dataset_config, device):
-    """ Load the model and apply necessary transformations. """
+def load_model(model_config, num_classes, device):
+    """
+    Load model if one is provided.
+
+    Args:
+        model_config (dict): model configuration file
+        num_classes (int): number of classes in the dataset
+        device (torch.device): device to put model on
+
+    Returns:
+        torch.nn.Module: initialise model
+    """
+
     if 'trained_model_path' in model_config:
-        if 'neutrophil_model_path' in model_config:
-            model = CompleteClassifier(model_config, dataset_config)
-            transforms = model.model_transforms
-        else:
-            model, transforms = init_model(model_config, dataset_config['n_classes'], device)
-            model.load_state_dict(torch.load(model_config['trained_model_path'], map_location=device))
+        model, transforms = init_model(model_config, num_classes, device)
+        model.load_state_dict(torch.load(model_config['trained_model_path'], map_location=device))
 
         model = model.to(device)
         model.eval()
@@ -35,96 +41,99 @@ def load_model(model_config, dataset_config, device):
 
 
 def extract_features(model, test_loader, device, target_layers=None):
-    """ Extract features from a specified layer using hooks. """
+    """
+    Get features from the model at the target layer(s).
+
+    Args:
+        model_config (dict): model configuration file
+        test_loader (torch.utils.data.DataLoader): test data loader
+        device (torch.device): torch device to use for inference
+        target_layers (list[torch.nn.module]): layers to extract features from
+        
+    Returns:
+        (numpy.ndarray, numpy.ndarray): extracted features and output labels
+    """
+
     activations = {}
 
+    # Register hook in target layers
     def hook_fn(module, input, output):
         activations[module] = output.detach()
 
-    # Register hooks for each target layer if model exists
-    if model:
-        for layer in target_layers:
-            layer.register_forward_hook(hook_fn)
+    for layer in target_layers:
+        layer.register_forward_hook(hook_fn)
 
     labels, features = [], []
 
     # Extract features
-    for images, target in test_loader:
+    for images, target, _ in test_loader:
         images, target = images.to(device), target.numpy().flatten()
         labels.extend(target)
 
-        with torch.no_grad():
-            if model:
-                _ = model(images)  # Forward pass triggers hook
-                for layer in target_layers:
-                    f = activations[layer].cpu().numpy()
-                    f = f.reshape(f.shape[0], -1)  # Flatten feature maps
-                    features.extend(f)
-            else:
-                # No model case: directly flatten images as features
-                features.extend(images.cpu().numpy().reshape(images.shape[0], -1))
+        # Get the activations of the target layers given input images, model output is discarded
+        _ = model(images)
+        for layer in target_layers:
+            f = activations[layer].cpu().numpy()
+            f = f.reshape(f.shape[0], -1)
+            features.extend(f)
 
     return np.array(features), np.array(labels)
 
 
 def plot_tsne(features, labels, dataset_config, model_name=None):
-    """ Plot t-SNE visualization of extracted features with discrete colors for classes and legend. """
+    """
+    Evaluate a trained model on a test dataset and report detailed memory metrics.
+
+    Args:
+        model_config (dict): model configuration file
+        batch_size (int): batch size for data loader
+        dataset_config (dict): dataset configuration file
+        dataset_download_dir (str): directory to download datasets to if requried
+    """
     
     dataset_name = dataset_config['name']
 
+    # Use the correct labels for the dataset
     if dataset_name == 'chula':
         classes = ["SNE", "LYMPH", "MONO", "BNE", "EOSI", "MYBL", "BASO", "MEMY"]
     elif dataset_name == 'bloodmnist':
         classes = ['BASO', 'EOSI', 'ERYTH', 'IMM. GRAN', 'LYMPH', 'MONO', 'NEUT', 'PLT']
     
     # Number of classes
-    n_classes = len(classes)
+    num_classes = len(classes)
 
-    # Create a discrete version of the viridis colormap
-    viridis = plt.cm.viridis  # Continuous colormap
+    # Colour map
+    viridis_discrete = plt.cm.viridis(np.linspace(0, 1, num_classes))
 
-    import numpy as np
-    viridis_discrete = viridis(np.linspace(0, 1, n_classes))  # Discretize it
-
-    # t-SNE transformation
+    # t-SNE
     tsne = manifold.TSNE(n_components=2, perplexity=40.0, init='pca', random_state=42)
     X_tsne = tsne.fit_transform(features)
 
-    # Adjust figure size to fit the legend outside
+    # Create plot
     fig, ax = plt.subplots(figsize=(8, 4))
-
-    # Scatter plot with discrete colors for each class
     scatter = ax.scatter(X_tsne[:, 0], X_tsne[:, 1], c=labels, cmap=ListedColormap(viridis_discrete), alpha=0.7)
-
     ax.set_xlabel('t-SNE 1')
     ax.set_ylabel('t-SNE 2')
-
-    # Create legend
-    handles = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=viridis_discrete[i], markersize=10) for i in range(n_classes)]
-    
-    # Place the legend outside the plot area
-    ax.legend(handles, classes, title="Classes", loc="center left", bbox_to_anchor=(1, 0.5))
-
     ax.grid(True, linestyle="--", alpha=0.6)
-
+    class_labels = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=viridis_discrete[i], markersize=10) for i in range(num_classes)]
+    ax.legend(class_labels, classes, loc="center right", bbox_to_anchor=(1, 0.5))
+    
+    # Set output dir
     out_dir = '/user/work/js21767/Project/out/t_sne/'
     os.makedirs(out_dir, exist_ok=True)
-
     if model_name:
         graph_path = f'/user/work/js21767/Project/out/t_sne/{dataset_name}_{model_name}_tsne.png'
     else:
         graph_path = f'/user/work/js21767/Project/out/t_sne/{dataset_name}_tsne.png'
 
-    # Adjust layout to make room for the legend
-    plt.tight_layout(rect=[0, 0, 0.8, 1])
-
-    plt.savefig(graph_path, bbox_inches='tight')  # Ensure legend is fully visible
+    # Save plot
+    plt.savefig(graph_path, bbox_inches='tight')
     plt.show()
     print(f'Saved graph to {graph_path}')
 
 
 def main(model_config, batch_size, dataset_config, dataset_download_dir):
-    """ Main function to load model, extract features, and plot t-SNE. """
+
     device = 'cuda'
 
     # Load dataset
@@ -132,21 +141,21 @@ def main(model_config, batch_size, dataset_config, dataset_download_dir):
 
     print('Beginning feature extraction for t-SNE...')
     if model_config['name'] is not None:
-        # Load model if model path is provided, otherwise use raw dataset features
+        # Load model if given
         model, transforms = load_model(model_config, dataset_config, device)
 
+        # Get dataset 
         test_dataset = TransformedDataset(test_dataset, transforms['test'], test=True)
         test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
-        # Determine target layers based on model type (only if model is provided)
+        # Get layers to extract features from
         target_layers = []
-
         if model_config['name'] == 'mambavision':
-            target_layers = [model.model.levels[2].downsample]  # Specify the layer for mambavision
+            target_layers = [model.model.levels[2].downsample]
         elif model_config['name'] == 'localmamba':
-            target_layers = [model.layers[-1].mixer.in_proj]  # Last convolution layer for localmamba
+            target_layers = [model.layers[-1].mixer.in_proj]
         elif model_config['name'] == 'swin':
-            target_layers = [model.features[-1][-1].norm1]  # Last normalization layer for swin
+            target_layers = [model.features[-1][-1].norm1]
         elif model_config['name'] == 'vmamba':
             target_layers = [model.layers[-1].blocks[-1].norm2]
 
@@ -154,13 +163,13 @@ def main(model_config, batch_size, dataset_config, dataset_download_dir):
         features, labels = extract_features(model, test_loader, device, target_layers)
 
     else:
-        # If no model is passed, extract images and labels from the original dataset
+        # If no model is passed do tsne on just the dataset
         features, labels = [], []
 
-        for image, target in test_dataset:
-            # Convert PIL image to NumPy array
-            image_array = np.array(image)  # Convert image to NumPy array
-            image_array = image_array.flatten()  # Flatten to 1D vector
+        # Get all images and labels for tsne
+        for image, target, _ in test_dataset:
+            image_array = np.array(image)
+            image_array = image_array.flatten()
             
             features.append(image_array)
             labels.append(target)
@@ -169,9 +178,7 @@ def main(model_config, batch_size, dataset_config, dataset_download_dir):
         features = np.array(features)
         labels = np.array(labels)
 
-        # **Ensure features are 2D**
-        features = features.reshape(features.shape[0], -1)  # Reshape to (num_samples, num_features)
-
+        features = features.reshape(features.shape[0], -1)
 
     # Plot t-SNE
     print('Plotting graph.')
@@ -198,9 +205,5 @@ if __name__ == "__main__":
         'trained_model_path': args.trained_model_path,
         'name': args.model_type,
     }
-    if args.neutrophil_model_path:
-        model_config['neutrophil_model_path'] = args.neutrophil_model_path
-    if args.use_improvements:
-        model_config['use_improvements'] = args.use_improvements
 
     main(model_config, args.batch_size, dataset_config, args.dataset_download_dir)

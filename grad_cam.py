@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 from PIL import Image
 import pandas as pd
+import math
 
 from pytorch_grad_cam import GradCAM
 from pytorch_grad_cam.utils.image import show_cam_on_image, preprocess_image
@@ -19,11 +20,7 @@ from models import init_model
 torch.backends.cudnn.enabled = True
 
 
-def save_grad_cam_heatmap(transformed_image, ):
-    pass
-
-
-def main(model_config, num_classes, out_dir):
+def main(model_config, num_classes):
 
     # Setup GPU
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -42,11 +39,13 @@ def main(model_config, num_classes, out_dir):
         target_layers = [model.model.levels[2].downsample]
 
     if model_config['name'] == 'localmamba':
-        target_layers = [model.layers[-1].mixer.in_proj]  # Choose the last convolution layer
+        target_layers = [model.layers[-1].mixer.in_proj]
 
     if model_config['name'] == 'swin':
         target_layers = [model.features[-1][-1].norm1]
-        # target_layers = [model.layers[-1].blocks[-1].norm1]
+
+    if model_config['name'] == 'vmamba':
+        target_layers = [model.features[-1][-1].norm1]
 
     # Data
     images_path = "/tmp/js21767/WBC 5000/"  # Update with your image directory
@@ -87,10 +86,6 @@ def main(model_config, num_classes, out_dir):
         # Get label
         target = [ClassifierOutputTarget(labels_convert.index(label))]
 
-        
-
-        import math
-
         def swin_reshape_transform(tensor, height=7, width=7):
             # Reshape the tensor to match a spatial layout (BATCH_SIZE, HEIGHT, WIDTH, CHANNELS)
             result = tensor.reshape(tensor.size(0), height, width, 768)  # Reshaping to (BATCH, 7, 7, 768)
@@ -123,12 +118,10 @@ def main(model_config, num_classes, out_dir):
         with GradCAM(model=model, target_layers=target_layers, reshape_transform=swin_reshape_transform) as cam:
 
             grayscale_cam = cam(input_tensor=input_tensor, targets=target)
-
-            
-
             grayscale_cam = grayscale_cam[0, :]
-            
             visualization = show_cam_on_image(image, grayscale_cam, use_rgb=False)
+
+            out_dir = "/user/work/js21767/Project/out/grad_cam/"
 
             print(f'Target: {target[0].category}. Output:{torch.argmax(cam.outputs, dim=1).cpu().item()}')
             if target[0].category == torch.argmax(cam.outputs, dim=1).cpu().item():
@@ -145,7 +138,6 @@ def main(model_config, num_classes, out_dir):
 if __name__ == "__main__":
     # Command line args
     parser = argparse.ArgumentParser()
-    parser.add_argument("--out_dir", type=str, help="Path to output directory", required=True)
     parser.add_argument("--trained_model_path", type=str, help="Path to trained model .pth", required=True)
     parser.add_argument("--model_type", type=str, help='Model type e.g. "swin", "vmamba"', required=True)
     parser.add_argument("--num_classes", type=int, help="Number of dataset classes", required=True)
@@ -158,4 +150,4 @@ if __name__ == "__main__":
         "name": args.model_type,
     }
 
-    main(model_config, args.num_classes, args.out_dir)
+    main(model_config, args.num_classes)

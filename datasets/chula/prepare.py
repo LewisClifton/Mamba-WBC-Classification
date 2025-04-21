@@ -1,15 +1,27 @@
 import pandas as pd
 import os
-import torchvision.transforms as transforms
 from PIL import Image
 import os
 import argparse
 import numpy as np
 
-# Execute script from project root
+import torchvision.transforms as transforms
+
+# (Execute this script from project root)
 
 def center_crop(image, crop_size=(175, 175)):
-    # Crop image at center
+    """
+    Center crop an image for a given size.
+
+    Args:
+        image (Image): Image
+        crop_size (tuple): Crop size
+
+    Returns:
+        Image: Center cropped image
+    """
+
+    # Crop image at center (https://stackoverflow.com/questions/16646183/crop-an-image-in-the-centre-using-pil)
     width, height = image.size
     left = (width - crop_size[0]) // 2
     top = (height - crop_size[1]) // 2
@@ -19,18 +31,35 @@ def center_crop(image, crop_size=(175, 175)):
 
 
 def center_crop_all(images_dir):
+    """
+    Center crop all images in the dataset, saving to existing locations.
+
+    Args:
+        images_dir (string): Path to dataset image directory
+    """
+
     print('Cropping images...')
     files = os.listdir(images_dir)
 
+    # Crop all images
     for file in files:
-        if file == 'augmented': continue
+        if file == 'augmented': continue # ignore 
         file = os.path.join(images_dir, file)
+
+        # Crop and save image
         image = Image.open(file)
         cropped_image = center_crop(image)
         cropped_image.save(file)
 
 
 def clean_labels(labels_path):
+    """
+    Clean the dataset labels, removing unwanted column, correcting class name typos, removing unwanted classes.
+
+    Args:
+        labels_path (string): Path of dataset labels.csv
+    """
+
     print('Cleaning labels...')
 
     # Read labels
@@ -58,27 +87,50 @@ def clean_labels(labels_path):
     return labels
 
 
-def train_val_test_split(dataset, test_frac=0.2, val_frac=0.1):
+def split_dataset(dataset, test_frac=0.2, val_frac=None): # val_frac=0.1
+    """
+    Split the dataset into train, validaiton (if required) and test split.
+
+    Args:
+        dataset (pandas.Dataframe): Dataset labels
+        test_frac (float): Fraction of dataset used for test set
+        test_frac (float): Fraction of train set used for validation set
+
+    Return:
+        pandas.DataFrame: Train split
+        pandas.DataFrame or None: Validation split (if required)
+        pandas.DataFrame: Test split
+    """
+
     # First, sample the test set
     test = dataset.sample(frac=test_frac, random_state=41)
     remain = dataset.drop(test.index)
 
-    # Compute validation fraction relative to the remaining data
-    val_relative_frac = val_frac / (1 - test_frac)
-    val = remain.sample(frac=val_relative_frac, random_state=41)
-    train = remain.drop(val.index)
+    if val_frac:
+        # Compute validation fraction relative to the remaining data
+        val_relative_frac = val_frac / (1 - test_frac)
+        val = remain.sample(frac=val_relative_frac, random_state=41)
+        train = remain.drop(val.index)
 
-    return train, val, test
+        return train, val, test
 
-def train_test_split(dataset, frac=0.2):
-    print('Creating train-test split...')
-    test = dataset.sample(frac=frac, random_state=41)  # 20% of the data
-    train = dataset.drop(test.index)
+    else:
 
-    return train, test
+        return train, None, test
 
 
-def augment(images_dir):
+def augment(images_dir, chula_train):
+    """
+    Augment the dataset and return the updated labels.csv now containing the labels for generated images.
+
+    Args:
+        images_dir (string): Path to dataset images directory
+        chula_train (pandas.Dataframe): The original dataset labels prior to augmentation
+
+    Return:
+        pandas.DataFrame: Updated labels set including the labels for augmented data
+    """
+
     print('Starting augmentation...')
 
     # Augmentation transform
@@ -103,13 +155,18 @@ def augment(images_dir):
     counter = 5001
     augmented_rows = []
 
-    median = int(np.median(chula_train['label'].value_counts().values))
+    # median = int(np.median(chula_train['label'].value_counts().values))
 
-    for label, count in chula_train['label'].value_counts().items():
-        diff = 1000 - count
+    # Get class frequencies
+    value_counts = chula_train['label'].value_counts()
+
+    # Iterate through the classes to augment each if necessary
+    for label, count in value_counts.items():
+        diff = 1000 - count # this is found to be the best augmentation target
 
         # diff = int(count * 1.50)
 
+        # If already sufficient samples in this class, skip
         if diff <= 0:
             print(f'Label: {label}, Original {count} Augmentations: {0}, Total: {count+diff}')
             continue
@@ -119,9 +176,11 @@ def augment(images_dir):
         label_images = chula_train[chula_train['label'] == label]['name'].tolist()
         num_images = len(label_images)
 
+        # Produce as many samples as needed to reach the augmentation target
         for i in range(diff):
             
-            image_name = label_images[i % num_images] 
+            # Get the source image for augmentation
+            image_name = label_images[i % num_images] # fairly augment each original image 
             image_path = os.path.join(images_dir, image_name)
 
             # Open and center crop the original image
@@ -171,7 +230,7 @@ if __name__ == '__main__':
     # center_crop_all(images_dir)
 
     # # # Split labels into train and test set save
-    # chula_train, chula_test = train_test_split(labels)
+    # chula_train, _, chula_test = split_dataset(labels)
     # chula_train.to_csv(os.path.join(labels_dir, 'labels_train.csv'), index=False)
     # chula_test.to_csv(os.path.join(labels_dir, 'labels_test.csv'), index=False)
 
@@ -179,5 +238,5 @@ if __name__ == '__main__':
 
     chula_train = pd.read_csv(os.path.join(labels_dir, 'labels_train.csv')) 
     
-    chula_augmented_train = augment(images_dir)
+    chula_augmented_train = augment(images_dir, chula_train)
     chula_augmented_train.to_csv(os.path.join(labels_dir, 'labels_train_augmented.csv'), index=False)

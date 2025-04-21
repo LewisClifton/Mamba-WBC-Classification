@@ -1,5 +1,18 @@
 def select_model(model_config, num_classes, device):
-    # Get the required model. Use inner imports to allow for different conda env / OS
+    """
+    Initialise a model which can class num_classes classes based on the provided configuration file. 
+
+    Args:
+        model_config (dict): Model configuration file
+        num_classes (int): Number of classes in the dataset
+        device (torch.device): Device to place model on
+
+    Returns:
+        nn.Module: Initialised model
+        dict: Dictionary containing the required data transforms. Use "train"/"val" keys to access training/validation data transforms
+    """
+
+    # Get the required model. Use inner imports to limit importing and prevent breaking when packages are missing
 
     model_type = model_config['name']
     pretrained_model_path = model_config['pretrained_model_path'] if 'pretrained_model_path' in model_config.keys() else None
@@ -30,11 +43,11 @@ def select_model(model_config, num_classes, device):
 
     elif model_type == 'hybrid':
         from .hybrid import get
-    
-        base_model_config = model_config['base_model_config']
-        base_model_config['num_classes'] = None # so head is removed
-        base_model, transform = select_model(base_model_config, None, device)
 
+        # get base model
+        base_model_config = model_config['base_model_config']
+        base_model, transform = select_model(base_model_config, None, device) # num_classes = None so head is removed
+        
         model = get(base_model=base_model, num_classes=num_classes, pretrained_model_path=pretrained_model_path)
 
     elif model_type == 'meta_learner':
@@ -53,8 +66,8 @@ def init_model(model_config, num_classes, device):
     Initialise fresh model prior to training
 
     Args:
-        model_type (string): Model type e.g. 'swin'
-        num_classes (int): Number of WBC classification classes
+        model_config (dict): Model configuration
+        num_classes (int): Number of WBC classes to predict
 
     Returns:
         torch.nn.Module: Initialised model ready for training

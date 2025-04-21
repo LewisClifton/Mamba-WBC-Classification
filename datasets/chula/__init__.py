@@ -52,11 +52,12 @@ class ChulaWBC5000(Dataset):
 
     def __getitem__(self, idx):
 
+        # Get image
         image_name = self.labels.iloc[idx]['name']
-        
         image_path = os.path.join(self.images_path, image_name)
         image = Image.open(image_path)
 
+        # Get label and convert to numerical
         label = self.labels.iloc[idx]['label']
         label = self.get_class_from_wbc_type(label)
 
@@ -70,6 +71,7 @@ class ChulaWBC5000(Dataset):
 
 def get(dataset_config, test=False):
 
+    # Get train or test dataset
     if test:
         labels_path = dataset_config['test_labels_path']
     else:
