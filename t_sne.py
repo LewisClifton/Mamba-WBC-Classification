@@ -15,31 +15,6 @@ from models import init_model
 from utils.eval import evaluate_model
 
 
-def load_model(model_config, num_classes, device):
-    """
-    Load model if one is provided.
-
-    Args:
-        model_config (dict): model configuration file
-        num_classes (int): number of classes in the dataset
-        device (torch.device): device to put model on
-
-    Returns:
-        torch.nn.Module: initialise model
-    """
-
-    if 'trained_model_path' in model_config:
-        model, transforms = init_model(model_config, num_classes, device)
-        model.load_state_dict(torch.load(model_config['trained_model_path'], map_location=device))
-
-        model = model.to(device)
-        model.eval()
-        
-        return model, transforms
-    else:
-        return None, None
-
-
 def extract_features(model, test_loader, device, target_layers=None):
     """
     Get features from the model at the target layer(s).
@@ -140,45 +115,30 @@ def main(model_config, batch_size, dataset_config, dataset_download_dir):
     test_dataset = get_dataset(dataset_config, dataset_download_dir, test=True)
 
     print('Beginning feature extraction for t-SNE...')
-    if model_config['name'] is not None:
-        # Load model if given
-        model, transforms = load_model(model_config, dataset_config, device)
 
-        # Get dataset 
-        test_dataset = TransformedDataset(test_dataset, transforms['test'], test=True)
-        test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    # Load model if given
+    model, transforms = init_model(model_config, num_classes, device)
+    model.load_state_dict(torch.load(model_config['trained_model_path'], map_location=device))
+    model = model.to(device)
+    model.eval()
 
-        # Get layers to extract features from
-        target_layers = []
-        if model_config['name'] == 'mambavision':
-            target_layers = [model.model.levels[2].downsample]
-        elif model_config['name'] == 'localmamba':
-            target_layers = [model.layers[-1].mixer.in_proj]
-        elif model_config['name'] == 'swin':
-            target_layers = [model.features[-1][-1].norm1]
-        elif model_config['name'] == 'vmamba':
-            target_layers = [model.layers[-1].blocks[-1].norm2]
+    # Get dataset 
+    test_dataset = TransformedDataset(test_dataset, transforms['test'], test=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
-        # Extract features
-        features, labels = extract_features(model, test_loader, device, target_layers)
+    # Get layers to extract features from
+    target_layers = []
+    if model_config['name'] == 'mambavision':
+        target_layers = [model.model.levels[2].downsample]
+    elif model_config['name'] == 'localmamba':
+        target_layers = [model.layers[-1].mixer.in_proj]
+    elif model_config['name'] == 'swin':
+        target_layers = [model.features[-1][-1].norm1]
+    elif model_config['name'] == 'vmamba':
+        target_layers = [model.layers[-1].blocks[-1].norm2]
 
-    else:
-        # If no model is passed do tsne on just the dataset
-        features, labels = [], []
-
-        # Get all images and labels for tsne
-        for image, target, _ in test_dataset:
-            image_array = np.array(image)
-            image_array = image_array.flatten()
-            
-            features.append(image_array)
-            labels.append(target)
-
-        # Convert lists to NumPy arrays
-        features = np.array(features)
-        labels = np.array(labels)
-
-        features = features.reshape(features.shape[0], -1)
+    # Extract features
+    features, labels = extract_features(model, test_loader, device, target_layers)
 
     # Plot t-SNE
     print('Plotting graph.')
