@@ -3,13 +3,15 @@ import numpy as np
 
 from torch.utils.data import Dataset
 import torch
+from torchvision import transforms
 
 # Dataset wrappaer that applies model transforms to images before they are used for model input
 class TransformedDataset(Dataset):
-    def __init__(self, dataset, transform, test=False):
+    def __init__(self, dataset, transform):
         self.dataset = dataset
-        self.transform = transform
-        self.test=test
+        self.transform = transforms.Compose([transforms.Resize((224, 224)),
+                                             transforms.ToTensor(),
+                                             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
 
     def __getitem__(self, idx):
 
@@ -24,7 +26,7 @@ class TransformedDataset(Dataset):
 
 # Dataset for ensemble which returns image batches using the transform for each base model
 class EnsembleDataset(Dataset):
-    def __init__(self, dataset, base_model_transforms, test=False):
+    def __init__(self, dataset, base_model_transforms):
         """
         Args:
             image_paths (list): List of image file paths.
@@ -32,7 +34,6 @@ class EnsembleDataset(Dataset):
         """
         self.dataset = dataset
         self.base_model_transforms = base_model_transforms
-        self.test = test
 
     def __len__(self):
         return len(self.dataset)

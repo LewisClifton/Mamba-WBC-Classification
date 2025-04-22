@@ -33,7 +33,7 @@ def main(out_dir, ensemble_config, dataset_config, batch_size, dataset_download_
 
     # Initialise dataset
     test_dataset = get_dataset(dataset_config, dataset_download_dir, test=True)
-    test_dataset = EnsembleDataset(test_dataset, [base_models_transforms[base_model]['test'] for base_model in base_model_order], test=True)
+    test_dataset = EnsembleDataset(test_dataset, [base_models_transforms[base_model]['test'] for base_model in base_model_order])
 
     # Create data loader
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=1)

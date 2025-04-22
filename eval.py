@@ -27,7 +27,7 @@ def main(model_config, batch_size, dataset_config, dataset_download_dir):
 
     # Apply transforms
     test_dataset = get_dataset(dataset_config, dataset_download_dir, test=True)
-    test_dataset = TransformedDataset(test_dataset, transforms['test'], test=True)
+    test_dataset = TransformedDataset(test_dataset, transforms['test'])
 
     # Create data loader
     test_loader = DataLoader(test_dataset, batch_size=batch_size)

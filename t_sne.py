@@ -112,7 +112,7 @@ def main(model_config, batch_size, dataset_config, dataset_download_dir):
     device = 'cuda'
 
     # Load dataset
-    test_dataset = get_dataset(dataset_config, dataset_download_dir, test=True)
+    test_dataset = get_dataset(dataset_config, dataset_download_dir)
 
     print('Beginning feature extraction for t-SNE...')
 
@@ -123,7 +123,7 @@ def main(model_config, batch_size, dataset_config, dataset_download_dir):
     model.eval()
 
     # Get dataset 
-    test_dataset = TransformedDataset(test_dataset, transforms['test'], test=True)
+    test_dataset = TransformedDataset(test_dataset, transforms['test'])
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     # Get layers to extract features from
@@ -147,7 +147,6 @@ def main(model_config, batch_size, dataset_config, dataset_download_dir):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--trained_model_path', type=str, help='Path to trained model .pth')
-    parser.add_argument('--neutrophil_model_path', type=str, help='Path to trained neutrophil model .pth')
     parser.add_argument('--use_improvements', action=argparse.BooleanOptionalAction, help='Enable model improvements')
     parser.add_argument('--model_type', type=str, help='Model type e.g. "swin", "vmamba"')
     parser.add_argument('--batch_size', type=int, default=32, help='Batch size for evaluation')
