@@ -25,7 +25,7 @@ class AugBloodMNIST(Dataset):
 
         label = row['label']
 
-        label = torch.tensor(label, dtype=torch.long).unsqueeze(0)
+        label = torch.tensor(label, dtype=torch.float).unsqueeze(0)
         
         return image, label
 
@@ -41,7 +41,7 @@ class BloodMNISTWrapper(Dataset):
 
     def __getitem__(self, idx):
         image, label = self.dataset[idx]
-        return image, torch.tensor(label, dtype=torch.long)
+        return image, torch.tensor(label, dtype=torch.float)
 
     def __len__(self):
         return len(self.dataset)

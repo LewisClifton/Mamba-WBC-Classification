@@ -44,11 +44,13 @@ def select_model(model_config, num_classes, device):
     elif model_type == 'hybrid':
         from .hybrid import get
 
-        # get base model
+        # If doing initial training load the base model 
         base_model_config = model_config['base_model_config']
-        base_model, transform = select_model(base_model_config, None, device) # num_classes = None so head is removed
+        base_model, transform = select_model(base_model_config, num_classes, device)
+
+        model = get(pretrained_model_path=pretrained_model_path, num_classes=num_classes, base_model=base_model)
         
-        model = get(base_model=base_model, num_classes=num_classes, pretrained_model_path=pretrained_model_path)
+        transform = None
 
     elif model_type == 'meta_learner':
         from .meta_learner import get

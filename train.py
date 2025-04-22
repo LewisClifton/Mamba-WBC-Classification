@@ -103,6 +103,9 @@ def train_model(model_config, dataset_config, train_dataset, val_dataset, device
     if model_transforms:
         train_dataset = TransformedDataset(train_dataset, model_transforms['train'])
         val_dataset = TransformedDataset(val_dataset, model_transforms['test']) if val_dataset else None
+    else:
+        train_dataset = TransformedDataset(train_dataset, None)
+        val_dataset = TransformedDataset(val_dataset, None) if val_dataset else None
 
     # Create data loaders and put model on device
     if using_dist:
@@ -119,7 +122,7 @@ def train_model(model_config, dataset_config, train_dataset, val_dataset, device
     
     # Create criterion
     if dataset_config['num_classes'] == 2:
-        criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(dataset_config['class_weights']))
+        criterion = nn.BCEWithLogitsLoss()# pos_weight=torch.tensor(dataset_config['class_weights']))
     else:
         if 'class_weights' in model_config.keys():
             criterion = nn.CrossEntropyLoss(weight=torch.tensor(dataset_config['class_weights']))
@@ -261,4 +264,4 @@ if __name__ == '__main__':
     if using_dist:
         mp.spawn(main, args=(num_gpus, True, out_dir, model_config, dataset_config, num_folds, dataset_download_dir, verbose), nprocs=num_gpus)
     else:
-        main(0, 1, False, out_dir, model_config, dataset_config, num_folds, dataset_download_dir, verbose)
+        main('cuda:0', 1, False, out_dir, model_config, dataset_config, num_folds, dataset_download_dir, verbose)

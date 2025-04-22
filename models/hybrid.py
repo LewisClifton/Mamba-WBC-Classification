@@ -27,18 +27,9 @@ TRANSFORM_HYBRID = {
 }
 
 
-class HybridClassifier(nn.Module):
-    def __init__(self, base_model, num_classes, fine_tuning=False):
+class NeutClassifier(nn.Module):
+    def __init__(self, base_model_output_size):
         super().__init__()
-
-        # Freeze the base model if training, unfreeze if doing the final fine-tuning
-        if not fine_tuning:
-            base_model.eval()
-        else:
-            base_model.train()
-
-        self.base_model = base_model
-        self.fine_tuning = fine_tuning
 
         # Feature dimension to project both base model features and morphological features to
         d_model = 256
@@ -58,14 +49,11 @@ class HybridClassifier(nn.Module):
             #nn.Dropout(0.5),
         )
 
-        # Get the output size of the base model features (which varies across architectures)
-        base_model_out_features = self._get_model_output_size(self.base_model)
-
         # Project these features to the specified feature dimension
         self.base_proj = nn.Sequential(
-            #nn.BatchNorm1d(base_model_out_features),
-            nn.Linear(base_model_out_features, base_model_out_features // 2),
-            nn.Linear(base_model_out_features // 2, d_model),
+            #nn.BatchNorm1d(base_model_output_size),
+            nn.Linear(base_model_output_size, base_model_output_size // 2),
+            nn.Linear(base_model_output_size // 2, d_model),
             nn.BatchNorm1d(d_model),
         )
 
@@ -86,20 +74,9 @@ class HybridClassifier(nn.Module):
             nn.Dropout(0.5),
             nn.Linear(d_model // 2, d_model // 4),
             nn.ReLU(),
-            nn.Linear(d_model // 4, num_classes) # Head
+            nn.Linear(d_model // 4, 1) # Binary classifying head
         )
-        # self.classifier = nn.Sequential(
-        #     nn.Linear(d_model, num_classes),
-        #     #nn.ReLU(),
-        #     #nn.Linear(16, num_classes) # Head
-        # )
 
-    @staticmethod
-    def _get_model_output_size(model):
-        with torch.no_grad():
-            dummy_input = torch.randn(1, 3, 224, 224).cuda()
-            base_output = model(dummy_input)
-            return base_output.shape[1]
 
     @staticmethod
     def _count_lobes_and_areas(mask):
@@ -155,7 +132,7 @@ class HybridClassifier(nn.Module):
             eroded_masks.append(eroded)
 
             # Get features for the current level of erosion
-            num_lobes, areas = HybridClassifier._count_lobes_and_areas(eroded)
+            num_lobes, areas = NeutClassifier._count_lobes_and_areas(eroded)
 
             # Only consider the four highest lobe areas
             largest = sorted(areas, reverse=True)[:4] + [0] * (4 - len(areas))
@@ -197,15 +174,15 @@ class HybridClassifier(nn.Module):
         """
 
         # Get the nucleus mask
-        mask = HybridClassifier._get_mask(image)
+        mask = NeutClassifier._get_mask(image)
         
         # Get 36 mask features
         feature_names = ['axis_major_length', 'perimeter', 'solidity', 'eccentricity', 'moments_hu', 'area']
-        features = HybridClassifier._get_mask_features(mask, feature_names)
+        features = NeutClassifier._get_mask_features(mask, feature_names)
 
         # Get a further 20 erosion features
         erosion_iters = [3, 5, 7, 9]
-        erosion_features = HybridClassifier._get_erosion_features(mask, erosion_iters)
+        erosion_features = NeutClassifier._get_erosion_features(mask, erosion_iters)
         features.extend(erosion_features)
 
         # Total output featues = 36 + 20 = 56
@@ -230,40 +207,17 @@ class HybridClassifier(nn.Module):
 
         return denormalise_transform(image_tensors) * 255
 
-    def forward(self, x):
-
-        # Don't do backprop for base model unless doing the final fine-tuning step
-        if not self.fine_tuning:
-            with torch.no_grad():
-                base_out = self.base_model(x)
-        else:
-            base_out = self.base_model(x)
-
-        base_pred = torch.argmax(wbc_out, dim=1)
-
-         # Mask for images classified as neutrophils
-        neutrophil_mask = torch.isin(wbc_type, self.neutrophils_indices.to(wbc_type.device))
-
-        if neutrophil_mask.any():
-            # Get indices of images classified as neutrophils
-            neutrophil_indices = torch.where(neutrophil_mask)[0]
-
-            # Get neutrophil type prediction
-            neutrophil_out = self.neutrophils_model(x[neutrophil_indices])
-            neutrophil_type = torch.argmax(neutrophil_out, dim=1)
-
-            # Map the neutrophils binary predictions to WBC classes
-            wbc_type[neutrophil_indices] = torch.where(neutrophil_type == 1, self.BNE_index, self.SNE_index)
+    def forward(self, x, base_model_features):
         
-
         # Morphological feature pipeline
-        x_np = HybridClassifier._denormalise(x).detach().cpu().permute(0, 2, 3, 1).numpy() # denormalise image so can do image processing
-        morph_features = np.array([HybridClassifier._extract_morph_features(img) for img in x_np]) # get feautes for each
+        x_np = NeutClassifier._denormalise(x).detach().clone().cpu().permute(0, 2, 3, 1).numpy() # denormalise image so can do image processing
+        morph_features = np.array([NeutClassifier._extract_morph_features(img) for img in x_np]) # get feautes for each
         morph_features = torch.tensor(morph_features, dtype=torch.float32, device=x.device) # convert features to tensor
+        morph_features = morph_features.to('cuda:0')
         encoded_morph_features = self.morph_encoder(morph_features) # pass features through the encoder
 
         # Project the base model output to the same dimensions as the morphological features
-        base_proj = self.base_proj(base_out)
+        base_proj = self.base_proj(base_model_features)
 
         # Gate the base model features and morphological features
         gate_input = torch.cat([base_proj, encoded_morph_features], dim=1)
@@ -281,29 +235,44 @@ class HybridClassifier(nn.Module):
 
 
 class HybridClassifier(nn.Module):
-    def __init__(self, base_model, neut_model, num_classes, fine_tuning=False):
+    def __init__(self, num_classes, base_model, fine_tuning=False):
         super().__init__()
 
-        # Freeze the base model if training, unfreeze if doing the final fine-tuning
-        if not fine_tuning:
-            base_model.eval()
+        self.fine_tuning = fine_tuning
+        
+        # Set the forward function based on if not training the neutrophils model and not fine-tuning the hybrid network
+        if num_classes == 2:
+            self.forward = self.train_forward
         else:
+            self.forward = self.test_forward
+        
+        # If pretrained_base_model is given, implies fine-tuning the whole mode further
+        self.fine_tuning = fine_tuning
+        self.fine_tuning = True if fine_tuning else False
+
+        if fine_tuning:
             base_model.train()
+        else:
+            base_model.eval()
 
         self.base_model = base_model
-        self.fine_tuning = fine_tuning
-        self.neut_model = 
 
-    @staticmethod
-    def _get_model_output_size(model):
+        # Initialise neutrophils model
+        base_model_output_size = self._get_base_model_output_size()
+        self.neut_model = NeutClassifier(base_model_output_size)
+
+        # Neutrophils to be update with by NeutClassifier predictions
+        self.SNE_index = 0
+        self.BNE_index = 2
+
+    def _get_base_model_output_size(self):
         with torch.no_grad():
-            dummy_input = torch.randn(1, 3, 224, 224).cuda()
-            base_output = model(dummy_input)
-            return base_output.shape[1]
+            dummy_input = torch.randn(1, 3, 224, 224).to('cuda:0')
+            base_model_output = self.base_model(dummy_input)
+            return base_model_output.shape[1]
 
-
-
-    def forward(self, x):
+    def train_forward(self, x):
+        # Train the base model to take combine base model outputs with morphological features
 
         # Don't do backprop for base model unless doing the final fine-tuning step
         if not self.fine_tuning:
@@ -312,35 +281,59 @@ class HybridClassifier(nn.Module):
         else:
             base_out = self.base_model(x)
 
+        neut_type = self.neut_model(x, base_out)
+
+        return neut_type.squeeze(-1)
+
+
+    def test_forward(self, x):
+        # Forward function that uses conditional neutrophils path
+
+        # Get base model output
+        base_out = self.base_model(x)
+        
+        # Get base model prediction
         base_pred = torch.argmax(wbc_out, dim=1)
 
-         # Mask for images classified as neutrophils
-        neutrophil_mask = torch.isin(wbc_type, self.neutrophils_indices.to(wbc_type.device))
+        # Get images classified as neutrophils
+        neutrophil_mask = torch.isin(base_pred, self.neutrophils_indices.to(base_pred.device))
 
-        if neutrophil_mask.any():
-            # Get indices of images classified as neutrophils
-            neutrophil_indices = torch.where(neutrophil_mask)[0]
+        # if no neutrophils predictions return just return the base model output
+        if not neutrophil_mask.any():
+            return base_pred 
 
-            # Get neutrophil type prediction
-            neutrophil_out = self.neutrophils_model(x[neutrophil_indices])
-            neutrophil_type = torch.argmax(neutrophil_out, dim=1)
+        # Get indices of images classified as neutrophils
+        neutrophil_indices = torch.where(neutrophil_mask)[0]
 
-            # Map the neutrophils binary predictions to WBC classes
-            wbc_type[neutrophil_indices] = torch.where(neutrophil_type == 1, self.BNE_index, self.SNE_index)
-        
+        # Get confirmed neutrophil type prediction
+        neutrophil_out = self.neutrophils_model(x[neutrophil_indices], base_out)
+        neutrophil_type = torch.argmax(neutrophil_out, dim=1)
 
-        return out
+        # Map the neutrophils binary predictions to WBC classes
+        base_pred[neutrophil_indices] = torch.where(neutrophil_type == 1, self.BNE_index, self.SNE_index)
+        return base_pred
 
 
+def get(pretrained_model_path, num_classes, base_model):
 
-def get(base_model, num_classes, pretrained_model_path):
-
+    
+    # Load trained model if provided
     if pretrained_model_path is not None:
-        model = HybridClassifier(base_model, num_classes, fine_tuning=True)
+
+        if num_classes == 2:
+            # Fine-tuning
+            model = HybridClassifier(num_classes=num_classes, base_model=base_model, fine_tuning=True)
+        else:
+            # Evaluation
+            model = HybridClassifier(num_classes=num_classes, base_model=base_model, fine_tuning=False)
+            
         model.load_state_dict(torch.load(pretrained_model_path, map_location="cpu"), strict=False)
 
+        model = model.to('cuda:0')
+        return model
+
     else:
-        # Build the model
-        model = HybridClassifier(base_model, num_classes, fine_tuning=False)
+        # Initialise fresh model
+        model = HybridClassifier(num_classes=num_classes, base_model=base_model).to('cuda:0')
 
     return model

@@ -61,7 +61,7 @@ class ChulaWBC5000(Dataset):
         label = self.labels.iloc[idx]['label']
         label = self.get_class_from_wbc_type(label)
 
-        label = torch.tensor(label, dtype=torch.long).unsqueeze(0)
+        label = torch.tensor(label, dtype=torch.float).unsqueeze(0)
         
         return image, label, image_name
     

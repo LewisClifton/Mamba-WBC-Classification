@@ -51,8 +51,10 @@ def train_epoch(model, train_loader, criterion, optimiser, device):
 
         # Forward pass
         outputs = model(images)
+        outputs = outputs.cuda()
+        labels = labels.cuda()
 
-        # Calculate loss    
+        # Calculate loss
         loss = criterion(outputs, labels.squeeze(1))
 
         # Backward pass and optimisation
@@ -65,7 +67,8 @@ def train_epoch(model, train_loader, criterion, optimiser, device):
         
         # Track accuracy
         if isinstance(criterion, nn.BCEWithLogitsLoss):
-            preds = (torch.sigmoid(outputs) > 0.5).long()  
+            preds = (torch.sigmoid(outputs) > 0.5).float()  
+            
         else:
             _, preds = outputs.max(1)
     
@@ -115,14 +118,14 @@ def val_epoch(model, val_loader, criterion, device, save_output=False, model_nam
             outputs = model(images)
 
             # Calculate loss
-            loss = criterion(outputs, labels.squeeze(dim=1))
+            loss = criterion(outputs, labels.squeeze(1))
 
             # Track loss
             val_loss += loss.item()
 
             # Get predictions (use sigmoid threshold if doing binary prediction)
             if isinstance(criterion, nn.BCEWithLogitsLoss):
-                preds = (torch.sigmoid(outputs) > 0.5).long()  
+                preds = (torch.sigmoid(outputs) > 0.5).float()  
             else:
                 _, preds = outputs.max(1)
 
