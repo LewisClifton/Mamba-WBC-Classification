@@ -35,7 +35,6 @@ def get_eval_metrics(preds, labels):
                                 0)
     macro_accuracy = np.nanmean(class_accuracies) * 100  # Fair metric across classes
 
-
     return {
         "Accuracy": accuracy,
         "Macro Accuracy": macro_accuracy,

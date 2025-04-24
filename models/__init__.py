@@ -44,9 +44,8 @@ def select_model(model_config, num_classes, device):
     elif model_type == 'hybrid':
         from .hybrid import get
 
-        # If doing initial training load the base model 
         base_model_config = model_config['base_model_config']
-        base_model, transform = select_model(base_model_config, num_classes, device)
+        base_model, transform = select_model(model_config=base_model_config, num_classes=8, device=device)
 
         model = get(pretrained_model_path=pretrained_model_path, num_classes=num_classes, base_model=base_model)
         

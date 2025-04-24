@@ -112,17 +112,17 @@ def train_model(model_config, dataset_config, train_dataset, val_dataset, device
         train_sampler = DistributedSampler(train_dataset, shuffle=True)
         val_sampler = DistributedSampler(val_dataset, shuffle=False)
 
-        train_loader = DataLoader(train_dataset, batch_size=model_config['batch_size'], num_workers=1, sampler=train_sampler)
-        val_loader = DataLoader(val_dataset, batch_size=model_config['batch_size'], num_workers=1, sampler=val_sampler) if val_dataset else None
+        train_loader = DataLoader(train_dataset, batch_size=model_config['batch_size'], num_workers=1, sampler=train_sampler, drop_last=True)
+        val_loader = DataLoader(val_dataset, batch_size=model_config['batch_size'], num_workers=1, sampler=val_sampler, drop_last=True) if val_dataset else None
 
         model = DDP(model, device_ids=[device], output_device=device)
     else:
-        train_loader = DataLoader(train_dataset, batch_size=model_config['batch_size'], shuffle=True, num_workers=1)
-        val_loader = DataLoader(val_dataset, batch_size=model_config['batch_size'], shuffle=False, num_workers=1) if val_dataset else None
+        train_loader = DataLoader(train_dataset, batch_size=model_config['batch_size'], shuffle=True, num_workers=1, drop_last=True)
+        val_loader = DataLoader(val_dataset, batch_size=model_config['batch_size'], shuffle=False, num_workers=1, drop_last=True) if val_dataset else None
     
     # Create criterion
     if dataset_config['num_classes'] == 2:
-        criterion = nn.BCEWithLogitsLoss()# pos_weight=torch.tensor(dataset_config['class_weights']))
+        criterion = nn.BCEWithLogitsLoss(pos_weight=torch.as_tensor(dataset_config['class_weights'], dtype=torch.float32))
     else:
         if 'class_weights' in model_config.keys():
             criterion = nn.CrossEntropyLoss(weight=torch.tensor(dataset_config['class_weights']))
@@ -162,7 +162,6 @@ def main(rank, world_size, using_dist, out_dir, model_config, dataset_config, nu
     if dataset_config['name'] == 'chula':
         # Get dataset
         dataset = get_dataset(dataset_config, dataset_download_dir)
-        val_dataset = get_dataset(dataset_config, dataset_download_dir, test=True)
         if num_folds == 1:
             trained, metrics = train_model(model_config, dataset_config, dataset, val_dataset, rank, out_dir, using_dist, verbose)
             save_models(out_dir, trained, model_config['name'], metrics)

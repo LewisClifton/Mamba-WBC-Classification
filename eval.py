@@ -27,10 +27,13 @@ def main(model_config, batch_size, dataset_config, dataset_download_dir):
 
     # Apply transforms
     test_dataset = get_dataset(dataset_config, dataset_download_dir, test=True)
-    test_dataset = TransformedDataset(test_dataset, transforms['test'])
+    if transforms:
+        test_dataset = TransformedDataset(test_dataset, transforms['test'])
+    else:
+        test_dataset = TransformedDataset(test_dataset, None)
 
     # Create data loader
-    test_loader = DataLoader(test_dataset, batch_size=batch_size)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, drop_last=True)
 
     # Evaluate the model
     metrics = evaluate_model(model, test_loader, dataset_config['name'], device)

@@ -88,7 +88,7 @@ class MetaLearnerDataset(Dataset):
         model_outputs = self.all_model_outputs_df[self.all_model_outputs_df['name'] == image_name].drop(columns=['name']).to_numpy().T
 
         # Convert to tensor
-        model_outputs = torch.tensor(model_outputs, dtype=torch.float).squeeze(-1)
+        model_outputs = torch.tensor(model_outputs, dtype=torch.float32).squeeze(-1)
 
         return model_outputs, label, image_name 
     
