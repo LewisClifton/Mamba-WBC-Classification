@@ -2,4 +2,4 @@ name: mambavision
 learning_rate: 6.e-5
 optim_weight_decay: 0.05
 batch_size: 32
-epochs: 30
+epochs: 100

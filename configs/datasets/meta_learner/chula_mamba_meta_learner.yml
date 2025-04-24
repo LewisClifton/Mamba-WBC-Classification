@@ -1,0 +1,34 @@
+class_weights:
+- 0.674278091650973
+- 1.074125
+- 1.074125
+- 1.074125
+- 1.074125
+- 1.074125
+- 1.074125
+- 1.074125
+classes:
+- SNE
+- Lymphocyte
+- Monocyte
+- BNE
+- Eosinophil
+- Myeloblast
+- Basophil
+- Metamyelocyte
+images_dir: /user/work/js21767/Project/data/WBC 5000/
+num_classes: 8
+name: chula
+test_labels_path: /user/work/js21767/Project/data/labels_test.csv
+train_labels_path: /user/work/js21767/Project/data/labels_train_augmented.csv
+base_model_outputs_paths:
+  - name: 'localmamba'
+    path: "/user/work/js21767/Project/out/chula/ensemble/base_model_outputs/2025_04_16_AM11_15_localmamba/localmamba.csv" 
+  - name: 'mambavision'
+    path: "/user/work/js21767/Project/out/chula/ensemble/base_model_outputs/2025_04_16_AM11_15_mambavision/mambavision.csv"
+  - name: 'vim'
+    path: "/user/work/js21767/Project/out/chula/ensemble/base_model_outputs/2025_04_16_AM11_15_vim/vim.csv" 
+  - name: 'vmamba'
+    path: "/user/work/js21767/Project/out/chula/ensemble/base_model_outputs/2025_04_16_AM11_51_vmamba/vmamba.csv" 
+  - name: 'medmamba'
+    path: '/user/work/js21767/Project/out/chula/ensemble/base_model_outputs/2025_04_16_PM05_01_medmamba/medmamba.csv'

@@ -1,0 +1,12 @@
+class_weights: 1.1
+classes:
+- SNE
+- BNE
+images_dir: /user/work/js21767/Project/data/WBC 5000/
+num_classes: 2
+name: chula
+test_labels_path: /user/work/js21767/Project/data/labels_test.csv
+train_labels_path: /user/work/js21767/Project/data/labels_train_augmented.csv
+# base_model_outputs_paths:
+#   - name: 'vmamba'
+#     path: "/user/work/js21767/Project/out/chula/ensemble/base_model_outputs/2025_04_16_AM11_51_vmamba/vmamba.csv" 

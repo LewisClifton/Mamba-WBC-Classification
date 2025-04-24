@@ -1,0 +1,8 @@
+name: hybrid
+base_model_config:
+  name: vmamba
+  pretrained_model_path: /user/work/js21767/Project/out/chula/no_pretrain_aug/baseline/1000/2025_04_12_PM07_06_vmamba/vmamba_fold_5_acc_96.9533574488556.pth
+learning_rate: 0.01
+optim_weight_decay: 0.01
+batch_size: 128
+epochs: 30

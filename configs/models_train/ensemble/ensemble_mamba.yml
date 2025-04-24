@@ -1,0 +1,24 @@
+base_models:
+- name: localmamba
+  trained_model_path: /user/work/js21767/Project/out/chula/ensemble/trained_base_models/2025_04_16_PM12_12_localmamba/localmamba_acc_0.pth
+- name: mambavision
+  trained_model_path: /user/work/js21767/Project/out/chula/ensemble/trained_base_models/2025_04_16_AM11_30_mambavision/mambavision_acc_0.pth
+- name: vim
+  trained_model_path: /user/work/js21767/Project/out/chula/ensemble/trained_base_models/2025_04_16_AM11_31_vim/vim_acc_0.pth
+- name: vmamba
+  trained_model_path: /user/work/js21767/Project/out/chula/ensemble/trained_base_models/2025_04_16_AM11_32_vmamba/vmamba_acc_0.pth
+- name: medmamba
+  trained_model_path: /user/work/js21767/Project/out/chula/ensemble/trained_base_models/2025_04_16_AM11_30_medmamba/medmamba_acc_0.pth
+base_models_order:
+- localmamba
+- mambavision
+- vim
+- vmamba
+- medmamba
+batch_size: 64
+ensemble_mode: majority
+epochs: 5
+learning_rate: 0.001
+n_base_models: 3
+name: meta_learner
+optim_weight_decay: 0.01

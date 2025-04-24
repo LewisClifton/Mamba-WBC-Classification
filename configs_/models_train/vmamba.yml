@@ -1,5 +1,5 @@
-name: localmamba
+name: vmamba
 learning_rate: 1.e-4
 optim_weight_decay: 0.05
 batch_size: 32
-epochs: 30
+epochs: 12

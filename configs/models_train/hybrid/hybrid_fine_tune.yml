@@ -1,0 +1,7 @@
+name: hybrid
+base_model_config:
+  name: vmamba
+learning_rate: 0.01
+optim_weight_decay: 0.005
+batch_size: 128
+epochs: 20

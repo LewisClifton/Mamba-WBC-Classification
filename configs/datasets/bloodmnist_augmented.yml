@@ -1,0 +1,13 @@
+augmented_images_dir: /user/work/js21767/Project/data/BloodMNIST/aug/
+augmented_labels_path: /user/work/js21767/Project/data/BloodMNIST/augmented_labels.csv
+class_weights:
+- 1.0335625
+- 0.9477877120586887
+- 1.0335625
+- 1.0202986179664364
+- 1.0335625
+- 1.0335625
+- 0.8871781115879829
+- 1.0335625
+num_classes: 8
+name: bloodmnist

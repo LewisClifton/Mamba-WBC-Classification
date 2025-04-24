@@ -1,3 +1,12 @@
+class_weights:
+- 0.674278091650973
+- 1.074125
+- 1.074125
+- 1.074125
+- 1.074125
+- 1.074125
+- 1.074125
+- 1.074125
 classes:
 - SNE
 - Lymphocyte
@@ -11,4 +20,4 @@ images_dir: /user/work/js21767/Project/data/WBC 5000/
 num_classes: 8
 name: chula
 test_labels_path: /user/work/js21767/Project/data/labels_test.csv
-train_labels_path: /user/work/js21767/Project/data/labels_train.csv
+train_labels_path: /user/work/js21767/Project/data/labels_train_augmented.csv
