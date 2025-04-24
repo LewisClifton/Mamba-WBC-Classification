@@ -1,5 +1,0 @@
-name: medmamba
-learning_rate: 0.001
-optim_weight_decay: 0.1
-batch_size: 32
-epochs: 30

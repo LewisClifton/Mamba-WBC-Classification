@@ -1,13 +1,14 @@
+*.pyc
+
+# Datasets, Models, Slurm output
+*.csv
+*.pth
+*.out
+
+# Misc
+jobs/
+my_configs/
 datasets/chula/data/WBC 5000/
 out/
-*.pyc
 my_config/
 models/vim/causal-conv1d/
-datasets/chula/data/labels_clean.csv
-datasets/chula/data/labels_test.csv
-datasets/chula/data/labels_train_augmented.csv
-datasets/chula/data/labels_train.csv
-*.pth
-jobs/
-*.sh
-my_configs/
