@@ -1,6 +1,6 @@
 # Mamba-based WBC classification
 
-An exploration of Mamba-based methods for White Blood Cell (WBC) classification. 
+An application and evaluation of Mamba-based methods for White Blood Cell (WBC) classification. 
 
 Supported models:
 - Swin Transformer (for comparison) ([code](https://pytorch.org/vision/main/models/swin_transformer.html), [paper](http://arxiv.org/abs/2103.14030))
@@ -19,9 +19,9 @@ Completed as part of my undergraduate dissertation at the University of Bristol.
 - BloodMNIST dataset ([code](https://github.com/MedMNIST/MedMNIST), [paper](https://www.nature.com/articles/s41597-022-01721-8), [data](https://doi.org/10.5281/zenodo.10519652))
 
 ## Requirements
-- Windows or Linux
+- Windows or Linux (multi-GPU support exclusive to Linux)
 - CUDA drivers
-- 1+ Nvidia GPU (multi-GPU support exclusive to Linux)
+- 1+ Nvidia GPU (Turing architecture - Mamba implementation does not support older Pascal architectures)
 
 ## Getting started
 
