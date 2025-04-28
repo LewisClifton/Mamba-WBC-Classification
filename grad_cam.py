@@ -5,6 +5,7 @@ import numpy as np
 from PIL import Image
 import pandas as pd
 import math
+import yaml
 
 from pytorch_grad_cam import GradCAM
 from pytorch_grad_cam.utils.image import show_cam_on_image, preprocess_image
@@ -13,141 +14,195 @@ from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 import torch
 import torch.nn.functional as F
 from torchvision import transforms
+from torch.utils.data import DataLoader
 
 from models import init_model
+from datasets import get_dataset, TransformedDataset
 
 
 torch.backends.cudnn.enabled = True
 
+# transforms based on https://github.com/jacobgil/pytorch-grad-cam/blob/master/tutorials/vision_transformers.md
+def swin_reshape_transform(tensor):
+    result = tensor.reshape(tensor.size(0), 7, 7, 768)
+    result = result.transpose(2, 3).transpose(1, 2)
+    return result
 
-def main(model_config, num_classes):
+def localmamba_reshape_transform(tensor):
+    result = tensor.reshape(tensor.size(0), 14, 14, 768)
+    result = result.transpose(2, 3).transpose(1, 2)
+    return result
+
+# TODO: add the layers for the other models
+
+def get_grad_cam_config(model_name, model):
+    """
+    Get the target layers and feature reshape transformation for a given model
+
+    Args:
+        model_name (string): Model name
+        model (nn.Module): Model
+
+    Return:
+        list[nn.Module]: List of layers for Grad-CAM feature extraction
+        func(tensor -> tensor): Reshape transformation for layer features 
+    """
+
+    
+    if model_name == 'swin':
+        target_layer = [model.features[-1][-1].norm1]
+        reshape_transform = swin_reshape_transform
+
+    elif model_name == 'mambavision':
+        target_layer = [model.model.levels[2].downsample]
+        reshape_transform = None
+
+    elif model_name == 'localmamba':
+        target_layer = [model.layers[-1].mixer.in_proj]
+        reshape_transform = localmamba_reshape_transform
+
+    elif model_name == 'vmamba':
+        target_layer = [model.layers[-2].downsample[3]]
+        reshape_transform = None
+
+    elif model_name == 'vim':
+        target_layer = None
+        reshape_transform = None
+
+    elif model_name == 'medmamba':
+        target_layer = None
+        reshape_transform = None
+
+    return target_layer, reshape_transform
+
+
+def save_log(out_dir, correct_image_names, incorrect_image_names):
+    """
+    Save training log
+
+    Args:
+        out_dir (string): Path to directory to save the log file to
+        correct_image_names (list[string]): List of image names that were predicted correctly
+        incorrect_image_names (list[string]): List of image names that were predicted correctly
+    """
+
+    log_path = os.path.join(out_dir, 'log.txt')
+    with open(log_path , 'w') as file:
+        file.write(f'Correct images:\n')
+        file.write(str(correct_image_names))
+
+        file.write(f'\nIncorrect images:\n')
+        file.write(str(incorrect_image_names))
+
+    print(f'\nSaved log to {log_path}')
+
+
+def grad_cam(out_dir, model, dataset, target_layers, reshape_transform, device):
+
+    # Get prediction
+    transform = transforms.Compose([transforms.ToTensor(),
+                                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
+
+    correct_image_names = []
+    incorrect_image_names = []
+
+    # Iterate through dataset
+    counter = 0
+    for image, label, image_name in dataset:
+
+        # Convert image
+        image = np.array(image.resize((224, 224)))
+
+        # Get model output                        
+        image_transformed = transform(image).unsqueeze(0)
+        image_transformed = image_transformed.to(device)
+
+        image = np.float32(image) / 255     
+
+        # Get label
+        target = [ClassifierOutputTarget(int(label.item()))]
+
+        # Setup Grad-CAM feature tracking
+        with GradCAM(model=model, target_layers=target_layers, reshape_transform=reshape_transform) as cam:
+
+            # Get the feature activations at the given layer for the image label
+            grayscale_cam = cam(input_tensor=image_transformed, targets=target)[0, :]
+
+            # Put the Grad-CAM heatmap on the image
+            grad_cam_image = show_cam_on_image(image, grayscale_cam, use_rgb=False)
+
+            # Check if the prediction is correct
+            is_correct = target[0].category == torch.argmax(cam.outputs, dim=1).cpu().item()
+
+            # Get heatmap image output path
+            image_name_string = image_name.removesuffix('jpg')
+            if is_correct:
+                correct_image_names.append(image_name)
+                image_name = f"correct/{model_config['name']}_{image_name_string}_correct_grad_cam.jpg"
+            else:
+                incorrect_image_names.append(image_name)
+                image_name = f'incorrect/{model_config['name']}_{image_name_string}_incorrect_grad_cam.jpg' 
+                
+            
+            # Save heatmap image
+            image_path = os.path.join(out_dir, image_name)
+            cv2.imwrite(image_path, grad_cam_image)
+            print(f'Saved heatmap image to {image_path}.')
+
+        counter += 1
+
+        if counter > 5:
+            #quit()
+            pass
+
+    # Save the correct and incorrect image names
+    save_log(out_dir, correct_image_names, incorrect_image_names)
+
+
+def main(out_dir, model_config, dataset_config, dataset_download_dir):
 
     # Setup GPU
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # Initialise model
-    model, transforms_dict = init_model(model_config, num_classes, device)
-    transform = transforms_dict["test"]
+    model, _ = init_model(model_config, dataset_config['num_classes'], device)
+    model.eval()
 
-    # Load model
-    model.load_state_dict(torch.load(model_config["trained_model_path"], map_location=device))
+    # Get dataloader
+    dataset = get_dataset(dataset_config, dataset_download_dir, test=True)
 
-    model = model.to(device)
+    # Grad-CAM layers and feature transformation
+    target_layers, reshape_transform = get_grad_cam_config(model_config['name'], model)
 
-    # Target layers
-    if model_config['name'] == 'mambavision':
-        target_layers = [model.model.levels[2].downsample]
-
-    if model_config['name'] == 'localmamba':
-        target_layers = [model.layers[-1].mixer.in_proj]
-
-    if model_config['name'] == 'swin':
-        target_layers = [model.features[-1][-1].norm1]
-
-    if model_config['name'] == 'vmamba':
-        target_layers = [model.features[-1][-1].norm1]
-
-    # Data
-    images_path = "/tmp/js21767/WBC 5000/"  # Update with your image directory
-    labels_path = "/tmp/js21767/labels_test.csv" 
-
-    labels_convert = ['SNE', 'Lymphocyte', 'Monocyte', 'BNE', 'Eosinophil', 'Myeloblast', 'Basophil', 'Metamyelocyte']
-    
-    labels = pd.read_csv(labels_path)
-    labels = labels[labels['label'].isin(labels_convert)]
-
-    sample = labels.sample(n=20)
-    images_names = labels['name'].tolist()
-    image_labels = labels['label'].tolist() 
-
-    output_dir = "./out"
-    os.makedirs(output_dir, exist_ok=True)
-
-    images_processed = 0
-
-    correct = True
-    incorrect = True
-    count = 0
-    for image_name, label in zip(images_names, image_labels):
-        image_path = os.path.join(images_path, image_name)
-        output_path = os.path.join(output_dir, f"gradcam_{image_name}")
-
-        # Load image
-        image = Image.open(image_path)
-
-        input_tensor = transform(image).unsqueeze(0).to(device)
-
-        image_resized = image.resize((224, 224))
-        image_array = np.array(image_resized)[:, :, ::-1]
-        image_normalized = image_array / 255.0
-        image = image_normalized.astype(np.float32)
-
-
-        # Get label
-        target = [ClassifierOutputTarget(labels_convert.index(label))]
-
-        def swin_reshape_transform(tensor, height=7, width=7):
-            # Reshape the tensor to match a spatial layout (BATCH_SIZE, HEIGHT, WIDTH, CHANNELS)
-            result = tensor.reshape(tensor.size(0), height, width, 768)  # Reshaping to (BATCH, 7, 7, 768)
-            
-            # Bring channels to the first dimension (CNN style), like (BATCH, CHANNELS, HEIGHT, WIDTH)
-            result = result.transpose(2, 3).transpose(1, 2)
-            return result
-
-
-        def localmamba_reshape_transform(tensor):
-            """
-            Reshape activations from (B, SeqLen, C) to (B, C, H, W)
-            where H x W = SeqLen.
-            """
-            B, SeqLen, C = tensor.shape  # Expecting (B, SeqLen, 384)
-            
-            # Compute the spatial dimensions
-            height = width = int(math.sqrt(SeqLen))
-            assert height * width == SeqLen, "SeqLen must be a perfect square!"
-
-            # Reshape into (B, H, W, C)
-            result = tensor.view(B, height, width, C)
-
-            # Rearrange to (B, C, H, W)
-            result = result.permute(0, 3, 1, 2)  # Move channels to first dimension
-            
-            return result
-
-
-        with GradCAM(model=model, target_layers=target_layers, reshape_transform=swin_reshape_transform) as cam:
-
-            grayscale_cam = cam(input_tensor=input_tensor, targets=target)
-            grayscale_cam = grayscale_cam[0, :]
-            visualization = show_cam_on_image(image, grayscale_cam, use_rgb=False)
-
-            out_dir = "/user/work/js21767/Project/out/grad_cam/"
-
-            print(f'Target: {target[0].category}. Output:{torch.argmax(cam.outputs, dim=1).cpu().item()}')
-            if target[0].category == torch.argmax(cam.outputs, dim=1).cpu().item():
-                cv2.imwrite(os.path.join(out_dir, f"{model_config['name']}_{image_name}_correct_grad-cam.jpg"), visualization)
-                correct = False
-            
-            if target[0].category != torch.argmax(cam.outputs, dim=1).cpu().item():
-                cv2.imwrite(os.path.join(out_dir, f"{model_config['name']}_{image_name}_incorrect_grad-cam.jpg"), visualization)
-                incorrect = False
-            count+= 1
-            
+    # Do Grad-CAM
+    print(f'Beginning Grad-CAM for {model_config["name"]} on the {dataset_config["name"]} dataset.')
+    grad_cam(out_dir, model, dataset, target_layers, reshape_transform, device)
 
 
 if __name__ == "__main__":
     # Command line args
     parser = argparse.ArgumentParser()
+    parser.add_argument('--out_dir', type=str, help='Path to directory where Grad-CAM heatmaps are saved.', required=True)
     parser.add_argument("--trained_model_path", type=str, help="Path to trained model .pth", required=True)
+    parser.add_argument("--dataset_config_path", type=str, help="Path to trained model .pth", required=True)
     parser.add_argument("--model_type", type=str, help='Model type e.g. "swin", "vmamba"', required=True)
-    parser.add_argument("--num_classes", type=int, help="Number of dataset classes", required=True)
+    parser.add_argument('--dataset_download_dir', type=str, help='Directory to download dataset to')
 
     # Parse command line args
     args = parser.parse_args()
 
     model_config = {
-        "trained_model_path": args.trained_model_path,
+        "pretrained_model_path": args.trained_model_path,
         "name": args.model_type,
     }
+    
+    # Make output directory
+    out_dir = args.out_dir
+    os.makedirs(os.path.join(out_dir, 'correct'), exist_ok=True)
+    os.makedirs(os.path.join(out_dir, 'incorrect'), exist_ok=True)
 
-    main(model_config, args.num_classes)
+    # Get the model and dataset configs
+    with open(args.dataset_config_path, 'r') as yml:
+        dataset_config = yaml.safe_load(yml)
+
+    main(args.out_dir, model_config, dataset_config, args.dataset_download_dir)
