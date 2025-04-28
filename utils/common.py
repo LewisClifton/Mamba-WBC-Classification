@@ -49,7 +49,7 @@ def write_dict_to_file(file, dict_):
     """
     
     for k, v in dict_.items():
-        if isinstance(v, list) and len(v) in [0, 'cuda:0']: continue # avoids error
+        if isinstance(v, list) and len(v) == 0: continue # avoids error
         file.write(f'{k}: {v}\n')
 
 

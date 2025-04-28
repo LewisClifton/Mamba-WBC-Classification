@@ -23,7 +23,7 @@ def main(out_dir, ensemble_config, dataset_config, batch_size, dataset_download_
     device = 'cuda'
 
     # Initialise model
-    stacking_model, base_models, base_models_transforms = get_ensemble(ensemble_config, dataset_config['num_classes'], device)
+    meta_learner, base_models, base_models_transforms = get_ensemble(ensemble_config, dataset_config['num_classes'], device)
 
     # Ensures data is fed to models in a consistent order
     if 'base_model_order' in ensemble_config:
@@ -39,7 +39,7 @@ def main(out_dir, ensemble_config, dataset_config, batch_size, dataset_download_
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=1)
 
     # Evaluate the model
-    metrics = evaluate_model(ensemble_config['ensemble_mode'], base_models, base_model_order, test_loader, dataset_config['name'], device, stacking_model=stacking_model)
+    metrics = evaluate_model(ensemble_config['ensemble_mode'], base_models, base_model_order, test_loader, dataset_config['name'], device, meta_learner=meta_learner)
 
     # Create output directory for log
     date = datetime.now().strftime(f'%Y_%m_%d_%p%I_%M_ensemble')

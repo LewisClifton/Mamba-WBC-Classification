@@ -176,12 +176,12 @@ class NeutClassifier(nn.Module):
         feature_names = ['axis_major_length', 'perimeter', 'solidity', 'eccentricity', 'moments_hu', 'area']
         features = NeutClassifier._get_mask_features(mask, feature_names)
 
-        # Get a further 20 erosion features
-        erosion_iters = [3, 5, 7, 9, 11] # 3
+        # Get a further 25 erosion features
+        erosion_iters = [3, 5, 7, 9, 11]
         erosion_features = NeutClassifier._get_erosion_features(mask, erosion_iters)
         features.extend(erosion_features)
 
-        # Total output featues = 36 + 15 = 51
+        # Total output featues = 36 + 25 = 61
         return np.array(features, dtype=np.float32)
 
     @staticmethod

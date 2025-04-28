@@ -27,7 +27,7 @@ class AugBloodMNIST(Dataset):
 
         label = torch.tensor(label, dtype=torch.float32).unsqueeze(0)
         
-        return image, label
+        return image, label, None
 
     def __len__(self):
         return len(self.images)
@@ -35,13 +35,13 @@ class AugBloodMNIST(Dataset):
 
 # Dataset wrapper to allows concatenation with the augmented train set
 class BloodMNISTWrapper(Dataset):
-    def __init__(self, dataset_download_dir):
+    def __init__(self, dataset_download_dir, split='train'):
         super(BloodMNISTWrapper, self).__init__()
-        self.dataset = BloodMNIST(split='train', download=True, size=224, root=dataset_download_dir)
+        self.dataset = BloodMNIST(split=split, download=True, size=224, root=dataset_download_dir)
 
     def __getitem__(self, idx):
         image, label = self.dataset[idx]
-        return image, torch.tensor(label, dtype=torch.float32)
+        return image, torch.tensor(label, dtype=torch.float32), None
 
     def __len__(self):
         return len(self.dataset)
@@ -51,7 +51,7 @@ class BloodMNISTWrapper(Dataset):
 class TrainBloodMNIST(Dataset):
     def __init__(self, images_path, labels_path, dataset_download_dir):
         super(TrainBloodMNIST, self).__init__()
-        train_dataset = BloodMNISTWrapper(dataset_download_dir)
+        train_dataset = BloodMNISTWrapper(dataset_download_dir, split='train')
 
         aug_dataset = AugBloodMNIST(images_path, labels_path)
         
@@ -78,10 +78,10 @@ def get(dataset_config, dataset_download_dir, test=False, augmented_data_dir=Non
         if 'augmented_images_dir' in dataset_config.keys():
             train_dataset = TrainBloodMNIST(dataset_config['augmented_images_dir'], dataset_config['augmented_labels_path'], dataset_download_dir)
         else:
-            train_dataset = BloodMNIST(split='train', download=True, size=224, root=dataset_download_dir)
+            train_dataset = BloodMNISTWrapper(dataset_download_dir, split='train')
 
-        val_dataset = BloodMNIST(split='val', download=True, size=224, root=dataset_download_dir)
+        val = BloodMNISTWrapper(dataset_download_dir, split='val')
         return train_dataset, val_dataset
     else: 
-        test_dataset = BloodMNIST(split='test', download=True, size=224, root=dataset_download_dir)
+        test_dataset = BloodMNISTWrapper(dataset_download_dir, split='test')
         return test_dataset

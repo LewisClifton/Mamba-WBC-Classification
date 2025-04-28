@@ -42,14 +42,14 @@ def ensemble_prediction_majority(base_models_outputs, num_images, device):
     """
     
     # Get all model predictions and probabilites for all images
-    preds = torch.zeros(base_model_outputs.size()[:1]).to(device) # shape (num_models, num_images)
-    probs = torch.zeros(base_model_outputs.size()).to(device) # shape (num_models, num_images, num_classes)
+    preds = torch.zeros(np.shape(np.array(base_models_outputs))[:2]).to(device) # shape (num_models, num_images)
+    probs = torch.zeros(np.shape(np.array(base_models_outputs))).to(device) # shape (num_models, num_images, num_classes)
     for i, output in enumerate(base_models_outputs):
         preds[i] = torch.argmax(output, dim=1)
         probs[i] = torch.softmax(output, dim=1)
     
     # One prediction per image
-    out_preds = torch.zeros(base_model_outputs.size(1)).to(device) # shape (num_models, num_images)
+    out_preds = torch.zeros(np.shape(np.array(base_models_outputs))[1]).to(device) # shape (num_models, num_images)
 
     # Get the majority vote for each model
     for i in range(num_images):
@@ -140,7 +140,7 @@ def evaluate_model(ensemble_mode, base_models, base_model_order, test_loader, da
 
     # Get test set results
     with torch.no_grad():
-        for images, labels, _ in test_loader:
+        for images, labels, image_names in test_loader:
             torch.cuda.reset_peak_memory_stats(device)  # Reset memory tracking
             labels = labels.to(device)
 
@@ -174,7 +174,7 @@ def evaluate_model(ensemble_mode, base_models, base_model_order, test_loader, da
             if dataset_name == "chula":
                 for i in range(labels.size(0)):
                     true_label = labels[i].item()
-                    predicted_label = outputs[i].item()
+                    predicted_label = preds[i].item()
                     image_name = image_names[i]
 
                     # if BNE but predicted SNE
