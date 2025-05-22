@@ -15,7 +15,7 @@ Completed as part of my undergraduate dissertation at the University of Bristol.
 *Note: This repository is currently a work-in-progress. As a result, the current documentation may be out of date.*
 
 ## Supported Datasets
-- Private "Chula-WBC-8" WBC dataset
+- "Chula-WBC-8" WBC dataset ([data](https://huggingface.co/datasets/LewisClifton/Chula-WBC-8))
 - BloodMNIST dataset ([code](https://github.com/MedMNIST/MedMNIST), [paper](https://www.nature.com/articles/s41597-022-01721-8), [data](https://doi.org/10.5281/zenodo.10519652))
 
 ## Requirements
