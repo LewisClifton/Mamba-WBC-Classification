@@ -1,7 +1,5 @@
 # Mamba-based WBC classification
 
-An application and evaluation of Mamba-based methods for White Blood Cell (WBC) classification. 
-
 Supported models:
 - Swin Transformer (for comparison) ([code](https://pytorch.org/vision/main/models/swin_transformer.html), [paper](http://arxiv.org/abs/2103.14030))
 - Vim ([code](https://github.com/hustvl/Vim), [paper](https://arxiv.org/abs/2401.09417))
