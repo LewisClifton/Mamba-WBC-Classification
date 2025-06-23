@@ -56,7 +56,7 @@ conda activate mamba_wbc_classification
 - Install `environment.yml`:
 `conda env update --file environment.yml`
 
-- *Note: If unsuccessful, please trying the Manual Installation steps below.*
+*Note: If unsuccessful, please trying the Manual Installation steps below.*
 
 <details>
 <summary>Manual Installation</summary>
@@ -89,7 +89,7 @@ conda activate mamba_wbc_classification
     CAUSAL_CONV1D_FORCE_BUILD=TRUE CAUSAL_CONV1D_SKIP_CUDA_BUILD=TRUE CAUSAL_CONV1D_FORCE_CXX11_ABI=TRUE pip install .
     ```
 
-    *Note: Please create an Issue if this does not work.*
+*Note: Please create an Issue if even manual installation fails.*
 </details>
 
 
