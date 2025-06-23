@@ -222,9 +222,9 @@ if __name__ == '__main__':
     labels_dir = args.labels_dir
 
     # # Clean labels and save
-    # labels_path = os.path.join(labels_dir, 'labels.csv')
-    # labels = clean_labels(labels_path)
-    # labels.to_csv(os.path.join(labels_dir, 'labels_clean.csv'), index=False)
+    labels_path = os.path.join(labels_dir, 'labels.csv')
+    labels = clean_labels(labels_path)
+    labels.to_csv(os.path.join(labels_dir, 'labels_clean.csv'), index=False)
 
     # # # Center crop images
     # center_crop_all(images_dir)
