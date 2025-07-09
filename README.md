@@ -97,5 +97,19 @@ conda activate mamba_wbc_classification
 
 Coming soon...
 
+# Citation
+
+If you use this code or the Chula-WBC-8 dataset, please cite our paper:
+
+```bibtex
+@misc{clifton2025mambawbc,
+  title        = {Mamba‐Based Ensemble learning for White Blood Cell Classification},
+  author       = {Lewis Clifton and Xin Tian and Duangdao Palasuwan and Phandee Watanaboonyongcharoen and Ponlapat Rojnuckarin and Nantheera Anantrasirichai},
+  year         = {2025},
+  howpublished = {arXiv preprint arXiv:2504.11438},
+  url          = {https://arxiv.org/abs/2504.11438}
+}
+```
+
 # Acknowledgements
 Thank you to all of the authors of the work that this project is based on.
