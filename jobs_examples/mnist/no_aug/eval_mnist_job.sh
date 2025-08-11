@@ -25,7 +25,7 @@ echo "Evaluating model: $MODEL_NAME"
 
 # Paths
 OUT_DIR="/user/work/js21767/Project/out/mnist/no_aug/eval/"
-DATASET_CONFIG_PATH="my_configs/datasets/bloodmnist.yml"
+DATASET_CONFIG_PATH="my_configs/dataset/bloodmnist.yml"
 DATASET_DOWNLOAD_DIR="/user/work/js21767/"
 
 # Load environment

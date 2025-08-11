@@ -7,7 +7,7 @@ import time
 import torch
 from torch.utils.data import DataLoader
 
-from datasets import get_dataset, EnsembleDataset, TransformedDataset
+from dataset import get_dataset, EnsembleDataset
 from utils.common import save_log
 
 from utils_ensemble.common import get_ensemble

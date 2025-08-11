@@ -7,8 +7,6 @@ classes:
 - Myeloblast
 - Basophil
 - Metamyelocyte
-images_dir: /user/work/js21767/Project/data/WBC 5000/
+huggingface_url: LewisClifton/Chula-WBC-8
 num_classes: 8
 name: chula
-test_labels_path: /user/work/js21767/Project/data/labels_test.csv
-train_labels_path: /user/work/js21767/Project/data/labels_train.csv

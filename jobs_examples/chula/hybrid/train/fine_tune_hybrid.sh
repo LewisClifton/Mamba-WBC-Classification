@@ -10,7 +10,7 @@
 # Paths
 OUT_DIR="/user/work/js21767/Project/out/chula/hybrid/fine_tuned/"
 MODEL_CONFIG_PATH="my_configs/models_train/hybrid/hybrid_fine_tune.yml"
-DATASET_CONFIG_PATH="my_configs/datasets/chula_hybrid.yml"
+DATASET_CONFIG_PATH="my_configs/dataset/chula_hybrid.yml"
 
 PRETRAINED_PATH="/user/work/js21767/Project/out/chula/hybrid/pre_trained/2025_04_24_AM10_21_hybrid/hybrid_acc_70.38910837620442.pth"
 

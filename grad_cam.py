@@ -17,7 +17,7 @@ from torchvision import transforms
 from torch.utils.data import DataLoader
 
 from models import init_model
-from datasets import get_dataset, TransformedDataset
+from dataset import get_dataset, TransformedDataset
 
 
 torch.backends.cudnn.enabled = True

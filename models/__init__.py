@@ -19,47 +19,48 @@ def select_model(model_config, num_classes, device):
 
     if model_type == 'swin':
         from .swin import get
-        model, transform = get(num_classes=num_classes, pretrained_model_path=pretrained_model_path)
+        model = get(num_classes=num_classes, pretrained_model_path=pretrained_model_path)
 
     elif model_type == 'medmamba':
         from .medmamba import get
-        model, transform = get(num_classes=num_classes, pretrained_model_path=pretrained_model_path)
+        model = get(num_classes=num_classes, pretrained_model_path=pretrained_model_path)
 
     elif model_type == 'vmamba':
         from .vmamba import get
-        model, transform = get(num_classes=num_classes, pretrained_model_path=pretrained_model_path)
+        model = get(num_classes=num_classes, pretrained_model_path=pretrained_model_path)
 
     elif model_type == 'mambavision':
         from .mambavision import get
-        model, transform = get(num_classes=num_classes, pretrained_model_path=pretrained_model_path)
+        model = get(num_classes=num_classes, pretrained_model_path=pretrained_model_path)
 
     elif model_type == 'vim':
         from .vim import get
-        model, transform = get(num_classes=num_classes, pretrained_model_path=pretrained_model_path)
+        model = get(num_classes=num_classes, pretrained_model_path=pretrained_model_path)
 
     elif model_type == 'localmamba':
         from .localmamba import get
-        model, transform = get(num_classes=num_classes, pretrained_model_path=pretrained_model_path)
+        model = get(num_classes=num_classes, pretrained_model_path=pretrained_model_path)
 
     elif model_type == 'hybrid':
         from .hybrid import get
 
         base_model_config = model_config['base_model_config']
-        base_model, transform = select_model(model_config=base_model_config, num_classes=8, device=device)
+        base_model = select_model(model_config=base_model_config, num_classes=8, device=device)
 
         model = get(pretrained_model_path=pretrained_model_path, num_classes=num_classes, base_model=base_model)
-        
-        transform = None
 
     elif model_type == 'meta_learner':
         from .meta_learner import get
 
-        model, transform = get(num_base_models=model_config['n_base_models'], num_classes=num_classes, pretrained_model_path=pretrained_model_path)
+        model = get(num_base_models=model_config['n_base_models'], num_classes=num_classes, pretrained_model_path=pretrained_model_path)
 
+    elif model_type == 'student':
+        from .student import get
+        model = get(num_classes=num_classes)
 
     model = model.to(device)
 
-    return model, transform
+    return model
 
 
 def init_model(model_config, num_classes, device):
@@ -74,13 +75,9 @@ def init_model(model_config, num_classes, device):
         torch.nn.Module: Initialised model ready for training
         dict: Dictionary containing the required data transforms. Use "train"/"val" keys to access training/validation data transforms
     """
-    # TO DO: ADD DOCSTRINGS TO EACH MODEL INIT
     
-    if 'use_improvements' in model_config.keys():
-        pass
-    else: 
-        model, transform = select_model(model_config, num_classes, device)
+    model = select_model(model_config, num_classes, device)
     
     model = model.to(device)
 
-    return model, transform
+    return model

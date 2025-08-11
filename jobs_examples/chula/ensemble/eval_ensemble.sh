@@ -18,7 +18,7 @@ META_LEARNER_DIR="/user/work/js21767/Project/out/chula/ensemble/meta_learner/exh
 META_LEARNER_PATH="$META_LEARNER_DIR/meta_learner_acc_0.pth"
 
 OUT_DIR="$META_LEARNER_DIR"
-DATASET_CONFIG_PATH="my_configs/datasets/chula.yml"
+DATASET_CONFIG_PATH="my_configs/dataset/chula.yml"
 DATASET_DOWNLOAD_DIR="/user/work/js21767/"
 
 cd /user/home/js21767/Project/

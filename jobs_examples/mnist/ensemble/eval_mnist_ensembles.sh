@@ -20,7 +20,7 @@ TRAINED_ENSEMBLE_PATH=${TRAINED_ENSEMBLE_PATHS[$SLURM_ARRAY_TASK_ID]}
 # Paths
 ENSEMBLE_CONFIG_PATH="/user/home/js21767/Project/my_configs/models_train/ensemble/$ENSEMBLE_CONFIG_NAME.yml"
 OUT_DIR="/user/work/js21767/Project/out/mnist/ensemble/$ENSEMBLE_CONFIG_NAME/"
-DATASET_CONFIG_PATH="my_configs/datasets/bloodmnist.yml"
+DATASET_CONFIG_PATH="my_configs/dataset/bloodmnist.yml"
 DATASET_DOWNLOAD_DIR="/user/work/js21767/"
 
 # Load environment

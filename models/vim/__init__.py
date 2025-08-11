@@ -59,31 +59,6 @@ class gray_scale(object):
             return img
 
 
-TRANSFORM_VIM = {
-    'train': transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.RandomCrop(224, padding=4, padding_mode='reflect'),
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomChoice([
-                gray_scale(p=1.0),
-                Solarization(p=1.0),
-                GaussianBlur(p=1.0)
-            ]),
-            transforms.ColorJitter(0.4, 0.4, 0.4),  # Assuming color_jitter = 0.4
-            transforms.ToTensor(),
-            transforms.Normalize(mean=torch.tensor([0.485, 0.456, 0.406]), 
-                                 std=torch.tensor([0.229, 0.224, 0.225]))
-        ]),
-        
-        'test': transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=torch.tensor([0.485, 0.456, 0.406]), 
-                                 std=torch.tensor([0.229, 0.224, 0.225]))
-        ])
-}
-
-
 def __build_model(model_size):
 
     # Build the model
@@ -177,4 +152,4 @@ def get(num_classes, pretrained_model_path):
         if num_classes != pretrained_num_classes:
             model.head = nn.Linear(model.head.in_features, num_classes)
     
-    return model, TRANSFORM_VIM
+    return model

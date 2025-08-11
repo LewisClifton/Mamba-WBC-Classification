@@ -93,6 +93,67 @@ conda activate mamba_wbc_classification
 </details>
 
 
+## Usage
+
+Example SLURM jobs using the following examples can be found under `jobs/`.
+
+### Training
+
+Train a new model using the training set for a given dataset
+
+Models can be loaded from pre-trained at a given path and otherwise ImageNet pre-trained weights are used
+
+```
+python train.py --out_dir=./out --trained_model_path=[path to your model.pth] --model_config=[path to your model.yml] --dataset_config_path=[path to your dataset.yml] 
+```
+
+### Evaluation
+
+Evaluate an existing trained model using the test set for a given dataset.
+
+```
+python eval.py --trained_model_path=[path to your model.pth] --model_config=[path to your model.yml] --dataset_config_path=[path to your dataset.yml] 
+```
+
+### Ensemble
+
+```
+python grad_cam.py --out_dir=./out --trained_model_path=[path to your model.pth] --model_type=[e.g. 'swin'] --dataset_config_path=[path to your dataset.yml]
+```
+
+Train any number of "base" models
+Run the evaluation script using the obtain model outputs flag
+Train the meta learner using the training script
+
+### Distillation (New)
+
+```
+python grad_cam.py --out_dir=./out --trained_model_path=[path to your model.pth] --model_type=[e.g. 'swin'] --dataset_config_path=[path to your dataset.yml]
+```
+
+### Grad-CAM
+
+```
+python grad_cam.py --out_dir=./out --trained_model_path=[path to your model.pth] --model_type=[e.g. 'swin'] --dataset_config_path=[path to your dataset.yml]
+```
+
+### t-SNE
+
+```
+python t_sne.py --out_dir=./out --trained_model_path=[path to your model.pth] --model_type=[e.g. 'swin'] --dataset_config_path=[path to your dataset.pth]
+```
+
+If necessary modify the code to choose a target layer to extract the t-SNE features from.
+
+### Adding new models
+
+If you wish to use this setup for new models. Introduce a new module under the models/ directory including a `__init__.py` file which includes a `get` function. Add an elif clause to `models/__init__` to use this new `get` if required. Create a `.yml` for this new dataset containing the model name and hyperparameters, and anything else necessary for your model module implementation. 
+
+
+### Adding new datasets
+
+If you wish to use this setup for new datasets. Introduce a new module under the dataset/ directory including a `__init__.py` file which includes a `get` function. Add an elif clause to `dataset/__init__` to use this new `get` if required. Create a `.yml` for this new dataset containing the number of classes, the class names, and anything else necessary for your dataset module implementation. 
+
 # Results
 
 Coming soon...

@@ -3,7 +3,7 @@ import yaml
 import numpy as np
 from sklearn.utils.class_weight import compute_class_weight
 
-from datasets import get_dataset
+from dataset import get_dataset
 
 def get_class_weights(dataset):
 

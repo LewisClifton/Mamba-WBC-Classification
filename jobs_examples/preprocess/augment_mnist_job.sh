@@ -12,4 +12,4 @@ conda activate leuk_classification
 
 python3 datasets/bloodmnist/prepare.py --out_dir="/user/work/js21767/Project/data/BloodMNIST/"
 
-python3 class_weights.py --dataset_config_path="my_configs/datasets/bloodmnist_augmented.yml" --dataset_download_dir="/user/work/js21767/Project"
+python3 class_weights.py --dataset_config_path="my_configs/dataset/bloodmnist_augmented.yml" --dataset_download_dir="/user/work/js21767/Project"

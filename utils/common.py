@@ -130,3 +130,20 @@ def save(out_dir, metrics, trained, model_config, dataset_config):
     # save_models(out_dir, trained, model_config['name'], model_config['epochs'], metrics)
     save_log(out_dir, metrics, model_config, dataset_config)
     save_config(out_dir, model_config)
+
+
+def average_across_gpus(list_, device):
+    """
+    Average the items in a list across all GPUs used in the process group (if using multiple gpus)
+
+    Args:
+        list_(list[object]): List of objects to be averaged over each GPU
+        device(torch.cuda.device): Id of the device used to call this function
+
+    Returns:
+        list[object]: List averaged over each GPU
+    """
+    tensor = torch.tensor(list_).to(device)
+    dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
+    tensor /= dist.get_world_size()
+    return tensor.tolist()

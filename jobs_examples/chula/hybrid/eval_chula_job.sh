@@ -34,7 +34,7 @@ echo "Evaluating model: $MODEL_NAME"
 # Paths
 OUT_DIR="/user/work/js21767/Project/out/chula/neutrophils/eval/"
 
-DATASET_CONFIG_PATH="my_configs/datasets/chula.yml"
+DATASET_CONFIG_PATH="my_configs/dataset/chula.yml"
 DATASET_DOWNLOAD_DIR="/user/work/js21767/"
 
 # Load environment

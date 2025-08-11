@@ -5,48 +5,25 @@ from torch.utils.data import Dataset
 import torch
 from torchvision import transforms
 
+
 # Dataset wrappaer that applies model transforms to images before they are used for model input
 class TransformedDataset(Dataset):
     def __init__(self, dataset, transform = None):
         self.dataset = dataset
 
-        if transform:
-            self.transform = transform
-        else:
-            self.transform = transforms.Compose([transforms.Resize((224, 224)),
-                                                 transforms.ToTensor(),
-                                                 transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
+        self.transform = transforms.Compose([transforms.Resize((224, 224)),
+                                                transforms.ToTensor(),
+                                                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
 
     def __getitem__(self, idx):
 
-        image, label, image_name = self.dataset[idx]
+        image, *data = self.dataset[idx]
         image = self.transform(image)
         
-        return image, label, image_name
+        return image, *data
 
     def __len__(self):
         return len(self.dataset)
-    
-
-# Dataset for ensemble which returns image batches using the transform for each base model
-class EnsembleDataset(Dataset):
-    def __init__(self, dataset, base_model_transforms):
-        """
-        Args:
-            image_paths (list): List of image file paths.
-            transforms_list (list): List of transformations (one per model).
-        """
-        self.dataset = dataset
-        self.base_model_transforms = base_model_transforms
-
-    def __len__(self):
-        return len(self.dataset)
-
-    def __getitem__(self, idx):
-        images, label, image_name = self.dataset[idx]
-
-        transformed_images = [transform(images) for transform in self.base_model_transforms]
-        return transformed_images, label, image_name
     
 
 # Dataset for the stacking meta learner which comprises the out of fold outputs for each base model
@@ -92,6 +69,22 @@ class MetaLearnerDataset(Dataset):
 
         return model_outputs, label, image_name 
     
+
+class DistillationDataset(Dataset):
+    def __init__(self, dataset, num_classes, logits_path):
+        self.dataset = dataset
+        self.num_classes = num_classes
+        self.logits = pd.read_csv(logits_path)
+
+    def __len__(self):
+        return len(self.dataset)
+    
+    def __getitem__(self, idx):
+        image, label, image_name = self.dataset[idx]
+        teacher_outputs = np.array([self.logits[self.logits['name']==image_name][f'logit_{i}'].item() for i in range(0, self.num_classes)])
+
+        return image, label, image_name, teacher_outputs
+
 
 def get_dataset(dataset_config, dataset_download_dir, test=False):
     """

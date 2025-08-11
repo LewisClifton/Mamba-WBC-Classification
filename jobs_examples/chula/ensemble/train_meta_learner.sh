@@ -10,7 +10,7 @@
 SLURM_ARRAY_TASK_ID=0
 DATASET_CONFIG_NAMES=("chula_mamba_meta_learner" "chula_swin_meta_learner")
 DATASET_CONFIG_NAME=${DATASET_CONFIG_NAMES[$SLURM_ARRAY_TASK_ID]}
-DATASET_CONFIG_PATH="my_configs/datasets/meta_learner/${DATASET_CONFIG_NAME}.yml"
+DATASET_CONFIG_PATH="my_configs/dataset/meta_learner/${DATASET_CONFIG_NAME}.yml"
 
 META_LEARNER_NAMES=("ensemble_mamba" "ensemble_swin")
 META_LEARNER_NAME=${META_LEARNER_NAMES[$SLURM_ARRAY_TASK_ID]}

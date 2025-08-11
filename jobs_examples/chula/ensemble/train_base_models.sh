@@ -18,7 +18,7 @@ echo "Training model: $MODEL_NAME"
 # Paths
 OUT_DIR="/user/work/js21767/Project/out/chula/ensemble/trained_base_models/"
 MODEL_CONFIG_PATH="my_configs/models_train/${MODEL_NAME}.yml"
-DATASET_CONFIG_PATH="my_configs/datasets/chula_augmented.yml"
+DATASET_CONFIG_PATH="my_configs/dataset/chula_augmented.yml"
 
 # Load environment
 cd /user/home/js21767/Project/

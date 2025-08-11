@@ -10,7 +10,7 @@ import yaml
 import torch
 from torch.utils.data import DataLoader
 
-from datasets import get_dataset, TransformedDataset
+from dataset import get_dataset, TransformedDataset
 from models import init_model
 from utils.eval import evaluate_model
 
@@ -167,7 +167,7 @@ def main(out_dir, model_config, dataset_config, dataset_download_dir):
 
     if model:
         # Load model if given
-        model, transforms = init_model(model_config, dataset_config['num_classes'], device)
+        model = init_model(model_config, dataset_config['num_classes'], device)
         model.load_state_dict(torch.load(model_config['trained_model_path'], map_location=device))
         model = model.to(device)
         model.eval()

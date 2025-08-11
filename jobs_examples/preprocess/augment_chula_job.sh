@@ -13,4 +13,4 @@ conda activate leuk_classification
 
 python3 datasets/chula/prepare.py --images_dir="/user/work/js21767/Project/data/WBC 5000/" --labels_dir="/user/work/js21767/Project/data/"
 
-python3 class_weights.py --dataset_config_path="my_configs/datasets/chula_augmented.yml"
+python3 class_weights.py --dataset_config_path="my_configs/dataset/chula_augmented.yml"

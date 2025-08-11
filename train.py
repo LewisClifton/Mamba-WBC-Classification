@@ -13,7 +13,7 @@ from torch.utils.data import ConcatDataset, DataLoader, DistributedSampler, rand
 from torch.nn.parallel import DistributedDataParallel as DDP
 from sklearn.model_selection import KFold
 
-from datasets import get_dataset, TransformedDataset
+from dataset import get_dataset, TransformedDataset
 from utils.common import setup_dist, save, save_models
 from utils.train import train_loop, val_epoch as get_val_outputs
 from models import init_model
@@ -206,9 +206,7 @@ if __name__ == '__main__':
     parser.add_argument('--model_config_path', type=str, help='Path to model config .yml.', required=True)
     parser.add_argument('--dataset_config_path', type=str, help='Path to dataset config .yml.', required=True)
     parser.add_argument('--pretrained_path', type=str, help='Path to pre-trained model.pth.')
-    parser.add_argument('--use_improvements', action=argparse.BooleanOptionalAction, help='Whether to use the proposed model improvements.')
     parser.add_argument('--num_folds', type=int, help='Number of folds for cross fold validation if desired. Make negative to save validation outputs. (default=5)', default=5)
-    parser.add_argument('--using_windows', action=argparse.BooleanOptionalAction, help='If using Windows machine for training. Forces --num_gpus to 1')
     parser.add_argument('--num_gpus', type=int, help='Number of GPUs to be used for training. (default=2)', default=2)
     parser.add_argument('--verbose', action=argparse.BooleanOptionalAction, help='Whether to print per epoch metrics during training')
     parser.add_argument('--dataset_download_dir', type=str, help='Directory to download dataset to')
@@ -219,9 +217,7 @@ if __name__ == '__main__':
     model_config_path = args.model_config_path
     dataset_config_path = args.dataset_config_path
     pretrained_path = args.pretrained_path
-    use_improvements = args.use_improvements
     num_folds = args.num_folds
-    using_windows = args.using_windows
     num_gpus = min(args.num_gpus, torch.cuda.device_count())
     verbose = args.verbose
     dataset_download_dir = args.dataset_download_dir
@@ -242,24 +238,15 @@ if __name__ == '__main__':
     # Add the pretrained model to the model config
     if pretrained_path:
         model_config['pretrained_model_path'] = pretrained_path
-    if use_improvements:
-        model_config['use_improvements'] = use_improvements
 
     # Set up output directory
-    if use_improvements:
-        date = datetime.now().strftime(f'%Y_%m_%d_%p%I_%M_{model_config['name']}_improved')
-    else:
-        date = datetime.now().strftime(f'%Y_%m_%d_%p%I_%M_{model_config['name']}')
+    date = datetime.now().strftime(f'%Y_%m_%d_%p%I_%M_{model_config['name']}')
     out_dir = os.path.join(out_dir, f'{date}/')
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
     
-    # Multi GPU not supported for windows and trivially not for 1 GPU
-    using_dist = True
-    if using_windows or num_gpus == 1:
-        using_dist = False
-
     # Create process group if using multi gpus on Linux
+    using_dist = num_gpus != 1
     if using_dist:
         mp.spawn(main, args=(num_gpus, True, out_dir, model_config, dataset_config, num_folds, dataset_download_dir, verbose), nprocs=num_gpus)
     else:

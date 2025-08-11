@@ -10,7 +10,7 @@
 # Paths
 OUT_DIR="/user/work/js21767/Project/out/chula/hybrid/pre_trained"
 MODEL_CONFIG_PATH="my_configs/models_train/hybrid/hybrid_train.yml"
-DATASET_CONFIG_PATH="my_configs/datasets/chula_hybrid.yml"
+DATASET_CONFIG_PATH="my_configs/dataset/chula_hybrid.yml"
 
 # Load environment
 cd /user/home/js21767/Project/

@@ -11,7 +11,7 @@ TRAINED_MODEL_PATH="/user/work/js21767/Project/out/chula/hybrid/fine_tuned/2025_
 
 # Paths
 OUT_DIR="/user/work/js21767/Project/out/chula/hybrid/"
-DATASET_CONFIG_PATH="my_configs/datasets/chula.yml"
+DATASET_CONFIG_PATH="my_configs/dataset/chula.yml"
 DATASET_DOWNLOAD_DIR="/user/work/js21767/"
 MODEL_CONFIG="my_configs/models_train/hybrid/hybrid_fine_tune.yml"
 

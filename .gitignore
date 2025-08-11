@@ -8,7 +8,8 @@
 # Misc
 jobs/
 my_configs/
-datasets/chula/data/WBC 5000/
+dataset/chula/data/WBC 5000/
 out/
 my_config/
 models/vim/causal-conv1d/
+trained/
